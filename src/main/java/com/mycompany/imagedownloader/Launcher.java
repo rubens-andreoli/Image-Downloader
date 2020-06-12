@@ -1,6 +1,5 @@
 package com.mycompany.imagedownloader;
 
-import com.mycompany.imagedownloader.view_controller.GooglePanel;
 import com.mycompany.imagedownloader.view_controller.ImageDownloader;
 import com.mycompany.imagedownloader.view_controller.ScrapperPanel;
 import com.mycompany.imagedownloader.view_controller.SequencialPanel;

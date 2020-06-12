@@ -1,6 +1,5 @@
 package com.mycompany.imagedownloader.model;
 
-import com.mycompany.imagedownloader.view_controller.BoundsException;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;

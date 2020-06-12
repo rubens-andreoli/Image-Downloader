@@ -158,7 +158,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setValue(0);
         tasks = new ArrayList<>();
         btnStart.setEnabled(true);
-        taskPanels.forEach(p -> p.clear());
+        taskPanels.forEach(p -> p.reset());
     }
     
     @Override

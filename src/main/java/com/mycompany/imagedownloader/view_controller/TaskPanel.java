@@ -20,7 +20,7 @@ public abstract class TaskPanel extends JPanel {
     }
     
     public abstract void setEditable(boolean b);
-    public abstract void clear();
+    public abstract void reset();
 
     public void setTaskListener(TaskPanelListener listener) {
         this.listener = listener;
