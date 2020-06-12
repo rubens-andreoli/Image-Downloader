@@ -12,12 +12,12 @@ import org.jsoup.select.Elements;
 
 public class ScrapperTask implements Task{
 
-    public static final int CONNECTION_TIMEOUT = 2000; //ms
+    private static final int CONNECTION_TIMEOUT = 2000; //ms
     public static final int DEPTH_LIMIT = 3;
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+    
     private static final String FILENAME_MASK = "%s/%s%s";
     private static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
-    
     private static final String URL_REGEX = "^(https*:\\/\\/)([^\\/]+\\/)+[^\\/\\s]*\\s$";
     
     private static final String INVALID_URL_MSG = "Invalid URL.";
@@ -33,7 +33,7 @@ public class ScrapperTask implements Task{
         if(depth < 0 || depth > DEPTH_LIMIT){
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
-        if(path.matches(URL_REGEX)){
+        if(!path.matches(URL_REGEX)){
             throw new MalformedURLException(INVALID_URL_MSG);
         }
         File folder = new File(dest);
@@ -51,63 +51,75 @@ public class ScrapperTask implements Task{
     }
     
     @Override
-    public void perform() {
-        download(path);
+    public boolean perform(ProgressListener listener) {
+        listener.progress();
+        try {
+            download(path);
+        } catch (IOException ex) {
+            return false;
+        }
+        return true;
     }
     
-    private void download(String url){
-        try {
-            //JSOUP CONNECTION
-            Document doc = Jsoup.connect(url)
-//                    .header("Accept", "text/html; charset=UTF-8")
-                    .userAgent(USER_AGENT)
-                    .get();
+    private void download(String url) throws IOException{
+        //JSOUP CONNECTION
+        Document doc = Jsoup.connect(url) //throw failed connection
+                .header("Accept", "text/html; charset=UTF-8")
+                .userAgent(USER_AGENT)
+                .get();
 
-            //PARSING IMAGES
-            Elements images = doc.getElementsByTag("img");
-            for (Element image : images) {
-                String imageUrl = image.absUrl("src");
-                int removeIndex = imageUrl.indexOf("?"); //fix some images url with values after extension
-                if(removeIndex != -1){
-                    imageUrl = imageUrl.substring(0, removeIndex);
-                }
+        //PARSING IMAGES
+        Elements images = doc.getElementsByTag("img");
+        for (Element image : images) {
+            String imageUrl = image.absUrl("src");
+            int removeIndex = imageUrl.indexOf("?"); //fix some images url with values after extension
+            if(removeIndex != -1){
+                imageUrl = imageUrl.substring(0, removeIndex);
+            }
 //                    System.out.println(imageUrl);
-                String tempFilename = imageUrl.substring(imageUrl.lastIndexOf("/")+1);
-                int extIndex = tempFilename.lastIndexOf(".");
-                if(extIndex < 1) return;
-                String filename = tempFilename.substring(0, extIndex);
-                String extension = tempFilename.substring(extIndex);
-                File file = new File(String.format(FILENAME_MASK, destination,filename,extension));
-                for(int n=1; file.exists(); n++){
-                    file = new File(String.format(DUPLICATED_FILENAME_MASK, destination,filename,n,extension));
-                }
+            String tempFilename = imageUrl.substring(imageUrl.lastIndexOf("/")+1);
+            int extIndex = tempFilename.lastIndexOf(".");
+            if(extIndex < 1) return;
+            String filename = tempFilename.substring(0, extIndex);
+            String extension = tempFilename.substring(extIndex);
+            File file = new File(String.format(FILENAME_MASK, destination,filename,extension));
+            for(int n=1; file.exists(); n++){
+                file = new File(String.format(DUPLICATED_FILENAME_MASK, destination,filename,n,extension));
+            }
 //                System.out.println(file.getAbsolutePath());
-                try{
-                    FileUtils.copyURLToFile(new URL(imageUrl), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
-                }catch(IOException ex){
-                    System.err.println("Failed downloading: "+ imageUrl);
-                }
+            try{
+                FileUtils.copyURLToFile(new URL(imageUrl), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
+            }catch(IOException ex){
+                System.err.println("Failed downloading and saving: "+ imageUrl);
             }
+        }
 
-            //PARSING LINKS
-            if(depth > 0){
-                depth--;
-                Elements links = doc.getElementsByTag("a"); //TODO: link with image as href
-                for (Element link : links) {
-                    String linkUrl = link.absUrl("href");
+        //PARSING LINKS
+        if(depth > 0){
+            depth--;
+            Elements links = doc.getElementsByTag("a"); //TODO: link with image as href
+            for (Element link : links) {
+                String linkUrl = link.absUrl("href");
 //                    System.out.println(linkUrl);
-                    if(linkUrl.startsWith(root)){ //TODO: better solution?
-                        download(linkUrl);
-                    }
+                if(linkUrl.startsWith(root)){ //TODO: better solution?
+                    download(linkUrl);
                 }
             }
-        } catch (IOException ex) {
-            System.err.println("Failed connecting: "+ url);
         }
     }
 
-    public String getPath() {return path;}
-    public String getRoot() {return root;}
-    public String getDestination() {return destination;}
+    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
+    public String getPath() {
+        return path;
+    }
+    
+    public String getRoot() {
+        return root;
+    }
+    
+    public String getDestination() {
+        return destination;
+    }
+    // </editor-fold>
     
 }

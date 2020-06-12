@@ -1,9 +1,13 @@
 package com.mycompany.imagedownloader.view_controller;
 
+import com.mycompany.imagedownloader.model.BoundsException;
 import com.mycompany.imagedownloader.model.ScrapperTask;
 import static com.mycompany.imagedownloader.model.ScrapperTask.DEPTH_LIMIT;
 import com.mycompany.imagedownloader.model.Task;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 public class ScrapperPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
@@ -112,8 +116,27 @@ public class ScrapperPanel extends TaskPanel {
             txfUrl.setText("");
             listener.taskCreated(t);
             appendTaskDescription(url, val, dest);
-        }catch(Exception e){ //TODO: proper messages
-            System.out.println(e.getMessage());
+        } catch (MalformedURLException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                ex.getMessage()+"\nPlease verify if the link provided is valid.", 
+                "Malformed URL", 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                ex.getMessage()+"\nPlease verify if the destination folder is valid.", 
+                "Invalid Folder", 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } catch (BoundsException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                ex.getMessage()+"\nPlease verify if the depth set is lower then the limit: "+ScrapperTask.DEPTH_LIMIT, 
+                "Invalid Depth",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
 
     }//GEN-LAST:event_btnAddActionPerformed

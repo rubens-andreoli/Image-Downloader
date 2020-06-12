@@ -132,7 +132,7 @@ public class SequencialPanel extends TaskPanel {
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the marked file number and the target set.", 
+                ex.getMessage()+"\nPlease verify if the marked file number is lower than the target set.", 
                 "Invalid Numbering Bounds",
                 JOptionPane.ERROR_MESSAGE
             );

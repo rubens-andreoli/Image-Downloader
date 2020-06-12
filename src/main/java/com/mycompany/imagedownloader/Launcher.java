@@ -1,5 +1,6 @@
 package com.mycompany.imagedownloader;
 
+import com.mycompany.imagedownloader.view_controller.GooglePanel;
 import com.mycompany.imagedownloader.view_controller.ImageDownloader;
 import com.mycompany.imagedownloader.view_controller.ScrapperPanel;
 import com.mycompany.imagedownloader.view_controller.SequencialPanel;
@@ -22,7 +23,7 @@ public class Launcher {
         ImageDownloader view = new ImageDownloader();
         view.addTaskPanel(new SequencialPanel());
         view.addTaskPanel(new ScrapperPanel());
-//        view.addTaskPanel(new GooglePanel());
+        view.addTaskPanel(new GooglePanel());
 	
         java.awt.EventQueue.invokeLater(() -> {
             view.setVisible(true);

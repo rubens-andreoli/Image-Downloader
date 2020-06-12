@@ -109,12 +109,22 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
         SwingWorker<Boolean, Integer> worker = new SwingWorker<>() {
             
+            private int counter;
+            
             @Override
             protected Boolean doInBackground() throws Exception {
-		for (int i = 0; i < tasks.size(); i++) {
-                    tasks.get(i).perform();
-                    publish(i+1);
+		for (Task task : tasks) {
+                    task.perform(() -> {
+                        publish(counter++);
+                    });
                 }
+//                
+//                for (counter = 0; counter < tasks.size(); counter++) {
+//                    tasks.get(counter).perform(() -> {
+//                        publish(counter+1);
+//                    });
+//                    
+//                }
                 return true;
             }
 
@@ -150,7 +160,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private void lockUI(){
         taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
-        pgbTasks.setMaximum(tasks.size());
+        int processes = 0;
+        for (Task task : tasks) {
+            processes += task.getProcessesCount();
+        }
+        pgbTasks.setMaximum(processes);
         pgbTasks.setValue(0);
     }
     

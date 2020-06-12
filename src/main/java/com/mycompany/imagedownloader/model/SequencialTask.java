@@ -8,13 +8,12 @@ import org.apache.commons.io.FileUtils;
 
 public class SequencialTask implements Task{
 	
-    public static final int CONNECTION_TIMEOUT = 2000; //ms
+    private static final int CONNECTION_TIMEOUT = 2000; //ms
 //    public static final int FAILED_ATTEMPTS = 5;
     
     private static final String FILENAME_MASK = "%s/%s%s";
     private static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
     private static final String URL_MASK = "%s%s%s";
-    
     private static final String EXTENSION_REGEX = "^.[a-z]{3,4}$";
     private static final String URL_REGEX = "^(https*:\\/\\/)(.*\\/)(.*\\.)([a-z]{3,})$"; //Complete URL: ^http(s|):\/\/(([^\{\}\/]+\/)+)[^\{\}]+(\{\d+\})[^\{\}\/]+\.([a-z]{3,})$
     private static final String LOWER_MARKER = "{";
@@ -82,9 +81,10 @@ public class SequencialTask implements Task{
     }
 
     @Override
-    public void perform(){
+    public boolean perform(ProgressListener listener){
 //        int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
+            listener.progress();
             //OUTPUT FILE
             String formatedFilename = String.format(filename, i);
             File file = new File(String.format(FILENAME_MASK, destination,formatedFilename,extension));
@@ -97,16 +97,36 @@ public class SequencialTask implements Task{
             try {
                 FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
             } catch (IOException ex) {
-                System.err.println("Failed downloading: "+ url);
+                System.err.println("Failed downloading and saving: "+ url);
 //                fails++;
             }
 //            if(fails>=FAILED_ATTEMPTS) break;
         }
+        return true;
     }
 
-    public String getPath() {return path;}
-    public String getFilename() {return filename;}
-    public String getExtension() {return extension;}
-    public String getDestiantion() {return destination;}
+    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
+    public String getPath() {
+        return path;
+    }
+    
+    public String getFilename() {
+        return filename;
+    }
+    
+    public String getExtension() {
+        return extension;
+    }
+    
+    public String getDestiantion() {
+        return destination;
+    }
+    
+    @Override
+    public int getProcessesCount() {
+        return upperBound-lowerBound;
+    }
+    // </editor-fold>
+
 
 }

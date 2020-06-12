@@ -31,19 +31,24 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="0" attributes="0">
-                      <Component id="btnDest" min="-2" max="-2" attributes="0"/>
+                  <Component id="pnlScroll" pref="495" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="1" max="-2" attributes="0">
+                          <Component id="btnFolder" max="32767" attributes="0"/>
+                          <Component id="btnDest" max="32767" attributes="0"/>
+                      </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="txfDest" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="txfDest" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Component id="txfUrl" pref="256" max="32767" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
+                              <Component id="txfNumber" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
+                          </Group>
+                      </Group>
                   </Group>
-                  <Group type="102" alignment="0" attributes="0">
-                      <Component id="txfUrl" max="32767" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Component id="txfNumber" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
-                  </Group>
-                  <Component id="pnlScroll" alignment="0" pref="495" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -61,10 +66,11 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="txfUrl" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="btnAdd" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnFolder" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="txfNumber" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="pnlScroll" pref="199" max="32767" attributes="0"/>
+              <Component id="pnlScroll" pref="202" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -84,25 +90,21 @@
         <Property name="editable" type="boolean" value="false"/>
       </Properties>
     </Component>
+    <Component class="javax.swing.JButton" name="btnFolder">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Folder"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnFolderActionPerformed"/>
+      </Events>
+    </Component>
     <Component class="javax.swing.JTextField" name="txfUrl">
       <Properties>
+        <Property name="editable" type="boolean" value="false"/>
         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
           <Dimension value="[300, 22]"/>
         </Property>
       </Properties>
-    </Component>
-    <Component class="javax.swing.JTextField" name="txfNumber">
-      <Properties>
-        <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" value="0"/>
-        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[35, 22]"/>
-        </Property>
-      </Properties>
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new NumberField()"/>
-        <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="4"/>
-      </AuxValues>
     </Component>
     <Component class="javax.swing.JButton" name="btnAdd">
       <Properties>
@@ -128,5 +130,14 @@
         </Component>
       </SubComponents>
     </Container>
+    <Component class="com.mycompany.imagedownloader.view_controller.NumberField" name="txfNumber">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="0"/>
+        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[35, 22]"/>
+        </Property>
+      </Properties>
+    </Component>
   </SubComponents>
 </Form>
