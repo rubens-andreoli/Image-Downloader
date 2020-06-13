@@ -10,7 +10,7 @@ import javax.swing.JTextField;
  * https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
  * @author Morus
  */
-public final class NumberField extends JTextField{ //TODO: limit number
+public final class NumberField extends JTextField{
     private static final long serialVersionUID = 1L;
     
     public static final int DEFAULT_VALUE = 0;

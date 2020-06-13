@@ -118,25 +118,20 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                         publish(counter++);
                     });
                 }
-//                
-//                for (counter = 0; counter < tasks.size(); counter++) {
-//                    tasks.get(counter).perform(() -> {
-//                        publish(counter+1);
-//                    });
-//                    
-//                }
                 return true;
             }
 
             @Override
             protected void process(List<Integer> chunks) {
                 pgbTasks.setValue(chunks.get(chunks.size()-1));
+                pgbTasks.setToolTipText(pgbTasks.getValue()+":"+pgbTasks.getMaximum());
             }
 
             @Override
             protected void done() {
 //                get(); //get doInBackground return
                 pgbTasks.setValue(pgbTasks.getMaximum());
+                pgbTasks.setToolTipText(null);
                 JOptionPane.showMessageDialog(
                         ImageDownloader.this,
                         "All available files were downloaded.",
