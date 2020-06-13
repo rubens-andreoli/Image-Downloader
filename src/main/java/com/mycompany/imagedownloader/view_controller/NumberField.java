@@ -8,7 +8,6 @@ import javax.swing.JTextField;
  * https://stackoverflow.com/questions/3622402/how-to-intercept-keyboard-strokes-going-to-java-swing-jtextfield
  * https://stackoverflow.com/questions/4863850/disable-input-some-symbols-to-jtextfield
  * https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
- * @author Morus
  */
 public final class NumberField extends JTextField{
     private static final long serialVersionUID = 1L;

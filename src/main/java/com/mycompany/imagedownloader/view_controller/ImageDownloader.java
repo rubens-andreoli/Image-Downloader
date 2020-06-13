@@ -124,7 +124,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             @Override
             protected void process(List<Integer> chunks) {
                 pgbTasks.setValue(chunks.get(chunks.size()-1));
-                pgbTasks.setToolTipText(pgbTasks.getValue()+":"+pgbTasks.getMaximum());
+                pgbTasks.setToolTipText(pgbTasks.getValue()+"/"+pgbTasks.getMaximum());
             }
 
             @Override

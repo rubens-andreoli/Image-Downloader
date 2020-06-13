@@ -71,7 +71,7 @@ public class Utils {
         return ext;
     }
     
-    public static String getFilename(String path){
+    public static String getFilename(String path){ //TODO: fix if too big
 //        System.out.println("getFilename: "+path);
         String filename = getFile(path);
         int extIndex = filename.lastIndexOf(".");

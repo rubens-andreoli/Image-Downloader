@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 public class GooglePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
@@ -120,12 +121,18 @@ public class GooglePanel extends TaskPanel {
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
         if(flcFolder.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
 	    String dest = flcFolder.getSelectedFile().getAbsolutePath();
+            if(dest.isBlank()) return;
             try {
                 task.setDestination(dest);
                 txfDest.setText(dest);
             } catch (IOException ex) {
-                System.err.println("dest error");
-            }
+                JOptionPane.showMessageDialog(
+                    this, 
+                    ex.getMessage()+"\nPlease verify if the destination folder is valid.", 
+                    "Invalid Folder", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }   
 	}
     }//GEN-LAST:event_btnDestActionPerformed
 
@@ -137,7 +144,12 @@ public class GooglePanel extends TaskPanel {
             listener.taskCreated(task);
             appendTaskDescription(task.getSource()+" ["+task.getStartIndex()+":"+task.getImageCount()+"] -> "+task.getDestination());
         } catch (BoundsException ex) {
-            System.err.println("start error");
+            JOptionPane.showMessageDialog(
+                this, 
+                ex.getMessage()+"\nPlease verify if file index is not negative and it is lower than the number of images in the source folder.", 
+                "Invalid Numbering Bounds",
+                JOptionPane.ERROR_MESSAGE
+            );
         }
     }//GEN-LAST:event_btnAddActionPerformed
 
@@ -149,8 +161,13 @@ public class GooglePanel extends TaskPanel {
                 txfUrl.setText(source);
                 txfNumber.setMaxValue(task.getImageCount());
             } catch (IOException ex) {
-                System.err.println("source error");
-            }
+                JOptionPane.showMessageDialog(
+                    this, 
+                    ex.getMessage()+"\nPlease verify if the source folder is valid and contain supported images.", 
+                    "Invalid/Empty Folder", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+            } 
 	}
     }//GEN-LAST:event_btnFolderActionPerformed
 
@@ -183,7 +200,7 @@ public class GooglePanel extends TaskPanel {
         try {
             task.setDestination(txfDest.getText());
         } catch (IOException ex) {
-            System.err.println("dest error");
+            txfDest.setText("");
         }
     }
     

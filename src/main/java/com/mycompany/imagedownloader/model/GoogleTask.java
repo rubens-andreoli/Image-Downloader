@@ -33,7 +33,6 @@ import org.jsoup.nodes.Element;
  * https://javapapers.com/java/glob-with-java-nio/
  * https://stackoverflow.com/questions/5923817/how-to-clone-an-inputstream/5924132
  * https://stackoverflow.com/questions/12107049/how-can-i-make-a-copy-of-a-bufferedreader
- * @author Morus
  */
 public class GoogleTask implements Task {
 
@@ -41,7 +40,7 @@ public class GoogleTask implements Task {
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
     private static final int SEARCH_MAX_TIMEOUT = 2000; //ms
     private static final int SEARCH_MIN_TIMEOUT = 1000; //ms
-    private static final double MIN_FILESIZE_RATIO = 0.3;
+    private static final double MIN_FILESIZE_RATIO = 0.25;
     
     private static final String RESPONSE_LINK_PREFIX_MARKER = "/search?tbs=simg:";
     private static final String RESPONSE_LINK_TEXT_MARKER = "Todos os tamanhos";
@@ -93,7 +92,7 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream((imageBytes)));
             int height = image.getHeight();
             int width = image.getWidth();
-            System.out.println("WARNING: LOADING IMAGE "+file+" -> "+width+":"+height+" ["+size+"]");
+            System.out.println("LOG: LOADING IMAGE "+file+" -> "+width+":"+height+" ["+size+"]");
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -105,7 +104,7 @@ public class GoogleTask implements Task {
             try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
                 HttpResponse response = client.execute(post);
                 String site = response.getFirstHeader("location").getValue();
-//                System.out.println("WARNING: REPONSE LINK "+ site);
+//                System.out.println("LOG: REPONSE LINK "+ site);
                 List<GoogleImage> imagesUrl = parseResponse(Jsoup.connect(site).get());
                 if(imagesUrl==null || imagesUrl.isEmpty()){
                     System.out.println("WARNING: NO IMAGES FOUND");
@@ -132,7 +131,7 @@ public class GoogleTask implements Task {
         if(responseLink==null){ //no images found
             return null;
         }
-//        System.out.println("WARNING: RESPONSE IMAGES LINK "+responseLink);
+//        System.out.println("LOG: RESPONSE IMAGES LINK "+responseLink);
 
         //GET IMAGE LINKS
         List<GoogleImage> imagesUrl = new ArrayList<>();
@@ -147,10 +146,10 @@ public class GoogleTask implements Task {
                             .replaceAll(SUB_RESPONSE_CLEAR_LINK_REGEX, "")
                             .split(SUB_RESPONSE_SPLIT_LINK_MARKER);
                     if(info.length == 3){
-//                        System.out.println("WARNING: LINK " + info[0]);
+//                        System.out.println("LOG: LINK " + info[0]);
                         imagesUrl.add(new GoogleImage(info[0], info[1], info[2]));
                     }/*else{
-                        System.out.println("WARNING: DISCARDED LINK "+Arrays.asList(info));
+                        System.out.println("LOG: DISCARDED LINK "+Arrays.asList(info));
                     }*/
                     
                 }
@@ -172,14 +171,14 @@ public class GoogleTask implements Task {
         if(biggest == null){
             return;
         }
-        System.out.println("WARNING: BIGGER IMAGE FOUND IN "+biggest.url);
+        System.out.println("LOG: BIGGER IMAGE FOUND IN "+biggest.url);
         
         //SAVE FILE
         File file = Utils.generateFile(destination, biggest.getFilename(), biggest.getExtension());
         try{
             Utils.saveFileFromURL(biggest.url, file);
             if(file.length() < (size*MIN_FILESIZE_RATIO)){
-                System.out.println("ERROR: FILE SAVED WITH ERRORS ["+file.length()+"] vs ["+size+"]");
+                System.out.println("ERROR: FILE ["+file.getAbsolutePath()+"] SAVED WITH ERRORS ["+file.length()+"] vs ["+size+"]");
                 throw new IOException();
             }
         }catch(IOException ex){

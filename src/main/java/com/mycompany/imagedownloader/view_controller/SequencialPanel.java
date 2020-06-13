@@ -10,7 +10,6 @@ import javax.swing.JOptionPane;
 
 /** References:
  * https://stackoverflow.com/questions/26848647/custom-bean-class-for-gui-component-in-netbeans
- * @author Morus
  */
 public class SequencialPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
