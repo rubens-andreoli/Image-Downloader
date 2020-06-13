@@ -110,8 +110,9 @@ public class GoogleTask implements Task {
                 List<GoogleImage> googleImages = parseResponse(Jsoup.connect(site).get());
                 if(googleImages!=null && !googleImages.isEmpty()){
                     downloadLargest(googleImages, width, height, size);
+                } else {
+                    System.out.println("WARNING: NO IMAGES FOUND");
                 }
-                System.out.println("WARNING: NO IMAGES FOUND");
             }catch(IOException ex){
                 System.err.println("ERROR: FAILED CONNECTING/UPLOADING FILE "+file);
             }
@@ -144,7 +145,7 @@ public class GoogleTask implements Task {
             if(script.startsWith(SUB_RESPONSE_SCRIPT_DATA_TOKEN)){
                 Matcher m = p.matcher(script);
                 while(m.find()) {
-                    String[] info = m.group(0)
+                    String[] info = m.group(0) //first group of the pattern regex
                             .replaceAll(SUB_RESPONSE_CLEAR_LINK_REGEX, "")
                             .split(SUB_RESPONSE_SPLIT_LINK_TOKEN);
                     if(info.length == 3){
