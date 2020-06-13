@@ -15,7 +15,6 @@ public class Utils {
     public static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
     public static final String FILENAME_MASK = "%s/%s%s";
     public static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
-    public static final String FAILED_DOWNLOAD_MSG_MASK = "Failed downloading and saving: %s";
     
     private Utils(){}
     
@@ -35,7 +34,7 @@ public class Utils {
         try{
             FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
         }catch(IOException ex){
-            System.err.println(String.format(FAILED_DOWNLOAD_MSG_MASK, url));
+            System.err.println("ERROR: FAILED DOWNLOADING/SAVING FILE FROM "+ url);
             throw ex;
         }
     }
@@ -75,8 +74,6 @@ public class Utils {
     public static String getFilename(String path){
 //        System.out.println("getFilename: "+path);
         String filename = getFile(path);
-        try{
-        
         int extIndex = filename.lastIndexOf(".");
         if(extIndex != -1){
             filename = filename.substring(0, extIndex);
@@ -84,9 +81,6 @@ public class Utils {
 
         filename = filename.replaceAll(FILENAME_REGEX, "");
 //        System.out.println("getFilename: "+filename);
-        }catch(RuntimeException ex){
-            System.out.println(ex.getMessage());
-        }
         return filename;
     }
     

@@ -11,10 +11,6 @@ public class GoogleImage{
         this.width = Utils.parseInteger(width);
         this.height = Utils.parseInteger(height);
         this.url = url;
-        
-//        filename = Utils.getFilename(url);
-//        extension = Utils.getExtension(url);
-//        System.out.println("FILENAME: "+filename+"; EXTENSION: "+extension);
     }
 
     public String getFilename() {

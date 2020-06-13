@@ -76,7 +76,7 @@ public class GoogleTask implements Task {
             try {
                 searchWithFile(images.get(i));
             } catch (Exception ex) {
-                System.err.println("FAILED READING FILE: "+images.get(i));
+                System.err.println("ERROR: FAILED READING/UPLOADING FILE: "+images.get(i));
             }
         }
         return true;
@@ -93,7 +93,7 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream((imageBytes)));
             int height = image.getHeight();
             int width = image.getWidth();
-            System.out.println("IMAGE: "+file+" -> "+width+":"+height+" ["+size+"]");
+            System.out.println("WARNING: LOADING IMAGE "+file+" -> "+width+":"+height+" ["+size+"]");
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -105,15 +105,15 @@ public class GoogleTask implements Task {
             try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
                 HttpResponse response = client.execute(post);
                 String site = response.getFirstHeader("location").getValue();
-//                System.out.println("REPONSE LINK: "+ site);
+//                System.out.println("WARNING: REPONSE LINK "+ site);
                 List<GoogleImage> imagesUrl = parseResponse(Jsoup.connect(site).get());
                 if(imagesUrl==null || imagesUrl.isEmpty()){
-                    System.out.println("NO IMAGES FOUND");
+                    System.out.println("WARNING: NO IMAGES FOUND");
                     return;
                 }
                 downloadLargest(imagesUrl, width, height, size);
             }catch(IOException ex){
-                throw new IOException(String.format(CONNECTION_FAILED_MASK, file));
+                throw new IOException(String.format(CONNECTION_FAILED_MASK, file)); //not used
             }
         }
     }
@@ -132,7 +132,7 @@ public class GoogleTask implements Task {
         if(responseLink==null){ //no images found
             return null;
         }
-//        System.out.println("IMAGES LINK: "+responseLink);
+//        System.out.println("WARNING: RESPONSE IMAGES LINK "+responseLink);
 
         //GET IMAGE LINKS
         List<GoogleImage> imagesUrl = new ArrayList<>();
@@ -147,10 +147,10 @@ public class GoogleTask implements Task {
                             .replaceAll(SUB_RESPONSE_CLEAR_LINK_REGEX, "")
                             .split(SUB_RESPONSE_SPLIT_LINK_MARKER);
                     if(info.length == 3){
-//                        System.out.println("LINK: " + info[0]);
+//                        System.out.println("WARNING: LINK " + info[0]);
                         imagesUrl.add(new GoogleImage(info[0], info[1], info[2]));
                     }/*else{
-                        System.out.println("DISCARDED: "+Arrays.asList(info));
+                        System.out.println("WARNING: DISCARDED LINK "+Arrays.asList(info));
                     }*/
                     
                 }
@@ -164,7 +164,7 @@ public class GoogleTask implements Task {
         GoogleImage biggest = null;
         for (GoogleImage image : images) {
             if(image.width>width && image.height>height){
-                if(biggest==null || (image.width>biggest.width && image.height>image.height)){
+                if(biggest==null || (image.width>biggest.width && image.height>biggest.height)){
                     biggest = image;
                 }
             }
@@ -172,20 +172,17 @@ public class GoogleTask implements Task {
         if(biggest == null){
             return;
         }
+        System.out.println("WARNING: BIGGER IMAGE FOUND IN "+biggest.url);
         
-        //GENERATE FILENAME
-        File file = Utils.generateFile(destination, biggest.getFilename(), biggest.getExtension());
-        System.out.println("BIGGER IMAGE FOUND: "+file.getAbsolutePath());
         //SAVE FILE
+        File file = Utils.generateFile(destination, biggest.getFilename(), biggest.getExtension());
         try{
             Utils.saveFileFromURL(biggest.url, file);
-//            FileUtils.copyURLToFile(new URL(biggest.url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
             if(file.length() < (size*MIN_FILESIZE_RATIO)){
-                System.out.println("FILE SAVED WITH ERRORS ["+file.length()+"] vs ["+size+"]");
+                System.out.println("ERROR: FILE SAVED WITH ERRORS ["+file.length()+"] vs ["+size+"]");
                 throw new IOException();
             }
         }catch(IOException ex){
-//            System.err.println("Failed downloading and saving: "+ biggest.url);
             images.remove(biggest);
             if(!images.isEmpty()){
                 downloadLargest(images, width, height, size);
@@ -199,10 +196,9 @@ public class GoogleTask implements Task {
         if(!Files.exists(f) || !Files.isDirectory(f)){
             throw new IOException(String.format(MISSING_SOURCE_MSG_MASK, folder));
         }
-        try(DirectoryStream<Path> contents = Files.newDirectoryStream(f, IMAGE_SUPPORTED_GLOB)){ //TODO: ordered?
+        try(DirectoryStream<Path> contents = Files.newDirectoryStream(f, IMAGE_SUPPORTED_GLOB)){
             List<Path> paths = new ArrayList<>();
             for (Path file : contents) {
-//                System.out.println(file.getFileName());
                 paths.add(file);
             }
             if(paths.isEmpty()){
@@ -234,7 +230,7 @@ public class GoogleTask implements Task {
         return images==null?0:images.size();
     }
 
-    public String getDestination() {
+    public String getDestination() { //not used
         return destination;
     }
 
