@@ -29,13 +29,13 @@ public class GooglePanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
-        txfDest = new javax.swing.JTextField();
         btnFolder = new javax.swing.JButton();
-        txfUrl = new javax.swing.JTextField();
         btnAdd = new javax.swing.JButton();
         pnlScroll = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
+        txfUrl = new FileField(45);
+        txfDest = new FileField(65);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -48,17 +48,12 @@ public class GooglePanel extends TaskPanel {
             }
         });
 
-        txfDest.setEditable(false);
-
         btnFolder.setText("Folder");
         btnFolder.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnFolderActionPerformed(evt);
             }
         });
-
-        txfUrl.setEditable(false);
-        txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -76,6 +71,8 @@ public class GooglePanel extends TaskPanel {
         txfNumber.setText("0");
         txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
 
+        txfUrl.setPreferredSize(new java.awt.Dimension(256, 22));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -83,20 +80,20 @@ public class GooglePanel extends TaskPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pnlScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 495, Short.MAX_VALUE)
+                    .addComponent(pnlScroll)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(btnFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txfDest)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 256, Short.MAX_VALUE)
+                                .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -108,10 +105,10 @@ public class GooglePanel extends TaskPanel {
                     .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnAdd)
                     .addComponent(btnFolder)
-                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(pnlScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
                 .addContainerGap())
@@ -119,12 +116,12 @@ public class GooglePanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(flcFolder.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-	    String dest = flcFolder.getSelectedFile().getAbsolutePath();
-            if(dest.isBlank()) return;
+        String folder = null;
+        if((folder = txfDest.setFolder(this)) != null && !folder.isBlank()){
+            if(folder.isBlank()) return;
             try {
-                task.setDestination(dest);
-                txfDest.setText(dest);
+                task.setDestination(folder);
+                txfDest.setText(folder);
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(
                     this, 
@@ -154,11 +151,11 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFolderActionPerformed
-        if(flcFolder.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-	    String source = flcFolder.getSelectedFile().getAbsolutePath();
+        String folder = null;
+        if((folder = txfUrl.setFolder(this)) != null && !folder.isBlank()){
             try {
-                task.setSource(source);
-                txfUrl.setText(source);
+                task.setSource(folder);
+                txfUrl.setText(folder);
                 txfNumber.setMaxValue(task.getImageCount());
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(
@@ -178,9 +175,9 @@ public class GooglePanel extends TaskPanel {
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane pnlScroll;
     private javax.swing.JTextArea txaTasks;
-    private javax.swing.JTextField txfDest;
+    private com.mycompany.imagedownloader.view_controller.FileField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
-    private javax.swing.JTextField txfUrl;
+    private com.mycompany.imagedownloader.view_controller.FileField txfUrl;
     // End of variables declaration//GEN-END:variables
 
     private void appendTaskDescription(String taskDescription){

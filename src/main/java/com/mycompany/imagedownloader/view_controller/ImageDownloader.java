@@ -71,8 +71,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             }
         });
 
-        pgbTasks.setStringPainted(true);
-
         pnlTab.setPreferredSize(new java.awt.Dimension(510, 270));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
