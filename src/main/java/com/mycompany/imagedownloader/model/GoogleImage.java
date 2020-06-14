@@ -35,9 +35,7 @@ public class GoogleImage{
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 61 * hash + Objects.hashCode(this.url);
-        return hash;
+        return 61 + Objects.hashCode(this.url);
     }
 
     @Override
@@ -51,11 +49,7 @@ public class GoogleImage{
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final GoogleImage other = (GoogleImage) obj;
-        if (!Objects.equals(this.url, other.url)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.url, ((GoogleImage) obj).url);
     }
 
 }

@@ -11,7 +11,7 @@ public class Utils {
     public static final int CONNECTION_TIMEOUT = 2000; //ms
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
     public static final String EXTENSION_REGEX = "^.[a-z]{3,}$";
-    public static final String FILENAME_REGEX = "[\\/\\\\:\\*?\\\"<\\>|]";
+    public static final String FILENAME_INVALID_REGEX = "[\\/\\\\:\\*?\\\"<\\>|]";
     public static final String DEFAULT_IMAGE_EXTENSION = ".jpg";
     public static final String FILENAME_MASK = "%s/%s%s";
     public static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
@@ -41,7 +41,7 @@ public class Utils {
     
     public static String getFile(String path){
         int index = path.lastIndexOf('/');
-        String filename = path;new File("").getName();
+        String filename = path; //new File("").getName();
         if(index != -1){
             if(index+1 >= path.length()){
                 filename = path.substring(0, index);
@@ -79,7 +79,7 @@ public class Utils {
             filename = filename.substring(0, extIndex);
         }
 
-        filename = filename.replaceAll(FILENAME_REGEX, "");
+        filename = filename.replaceAll(FILENAME_INVALID_REGEX, "");
 //        System.out.println("getFilename: "+filename);
         return filename;
     }

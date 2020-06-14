@@ -35,13 +35,14 @@ import org.jsoup.nodes.Element;
  * https://javapapers.com/java/glob-with-java-nio/
  * https://stackoverflow.com/questions/5923817/how-to-clone-an-inputstream/5924132
  * https://stackoverflow.com/questions/12107049/how-can-i-make-a-copy-of-a-bufferedreader
+ * https://stackoverflow.com/questions/3850074/regex-until-but-not-including
  */
 public class GoogleTask implements Task {
 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
-    private static final int SEARCH_MAX_TIMEOUT = 2000; //ms
-    private static final int SEARCH_MIN_TIMEOUT = 1000; //ms
+    private static final int SEARCH_MAX_TIMEOUT = 1750; //ms
+    private static final int SEARCH_MIN_TIMEOUT = 750; //ms
     private static final double MIN_FILESIZE_RATIO = 0.25;
     
     private static final String RESPONSE_LINK_PREFIX_TOKEN = "/search?tbs=simg:";
@@ -184,6 +185,13 @@ public class GoogleTask implements Task {
                 throw new IOException();  //try other image
             }
         }catch(IOException ex){
+            if(biggest.url.contains("?")){ //rarely solves the problem
+                googleImages.add(new GoogleImage(
+                        biggest.url.substring(0, biggest.url.lastIndexOf("?")), 
+                        biggest.width, 
+                        biggest.height)
+                );
+            }
             googleImages.remove(biggest);
             if(!googleImages.isEmpty()){
                 downloadLargest(googleImages, width, height, size);

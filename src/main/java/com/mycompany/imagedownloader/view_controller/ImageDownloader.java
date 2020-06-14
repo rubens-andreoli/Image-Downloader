@@ -11,6 +11,9 @@ import javax.net.ssl.X509TrustManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
+/** References:
+ * http://www.java2s.com/Code/Java/Swing-JFC/DisplayingthePercentageDoneonaJProgressBarComponent.htm
+ */
 public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener{
     private static final long serialVersionUID = 1L;
 
@@ -67,6 +70,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 btnStartActionPerformed(evt);
             }
         });
+
+        pgbTasks.setStringPainted(true);
 
         pnlTab.setPreferredSize(new java.awt.Dimension(510, 270));
 
