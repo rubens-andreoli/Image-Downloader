@@ -81,7 +81,7 @@ public class SequencialTask implements Task{
     }
 
     @Override
-    public boolean perform(ProgressListener listener){
+    public boolean start(ProgressListener listener){
 //        int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
             listener.progress();
@@ -103,6 +103,11 @@ public class SequencialTask implements Task{
 //            if(fails>=FAILED_ATTEMPTS) break;
         }
         return true;
+    }
+    
+    @Override
+    public void stop() {
+        
     }
 
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 

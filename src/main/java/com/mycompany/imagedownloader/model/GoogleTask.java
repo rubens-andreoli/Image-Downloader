@@ -63,14 +63,17 @@ public class GoogleTask implements Task {
     private List<Path> images;
     private String destination;
     private int startIndex;
+    private boolean running;
     
     @Override
-    public boolean perform(ProgressListener listener) {
+    public boolean start(ProgressListener listener) {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
             return false;
         }
+        running = true;
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
+            if(!running) break;
             listener.progress();
             try {
                 Thread.sleep((int) ((random.nextDouble()*(SEARCH_MAX_TIMEOUT-SEARCH_MIN_TIMEOUT))+SEARCH_MIN_TIMEOUT));
@@ -81,7 +84,13 @@ public class GoogleTask implements Task {
                 System.err.println("ERROR: UNEXPECTED EXCEPTION "+ex.getMessage());
             }
         }
+        running = false; //not really needed
         return true;
+    }
+    
+    @Override
+    public void stop() {
+        running = false;
     }
     
     private void searchWithFile(Path file) throws Exception{

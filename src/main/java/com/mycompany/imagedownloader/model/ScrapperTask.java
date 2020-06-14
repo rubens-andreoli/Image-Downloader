@@ -51,7 +51,7 @@ public class ScrapperTask implements Task{
     }
     
     @Override
-    public boolean perform(ProgressListener listener) {
+    public boolean start(ProgressListener listener) {
         listener.progress();
         try {
             download(path);
@@ -59,6 +59,11 @@ public class ScrapperTask implements Task{
             return false;
         }
         return true;
+    }
+    
+    @Override
+    public void stop() {
+        
     }
     
     private void download(String url) throws IOException{

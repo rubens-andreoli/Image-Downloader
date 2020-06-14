@@ -19,6 +19,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
     private List<Task> tasks = new ArrayList<>();
     private List<TaskPanel> taskPanels = new ArrayList<>();
+    private Task currentTask;
+    private boolean running;
     
     public ImageDownloader() {
 	initComponents();
@@ -57,6 +59,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         btnStart = new javax.swing.JButton();
         pgbTasks = new javax.swing.JProgressBar();
         pnlTab = new javax.swing.JTabbedPane();
+        btnStop = new javax.swing.JButton();
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -73,6 +76,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
         pnlTab.setPreferredSize(new java.awt.Dimension(510, 270));
 
+        btnStop.setText("Stop");
+        btnStop.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnStopActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -84,6 +94,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnStop)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnStart)))
                 .addContainerGap())
         );
@@ -94,7 +106,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(btnStart)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(btnStart)
+                        .addComponent(btnStop))
                     .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -116,8 +130,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             
             @Override
             protected Boolean doInBackground() throws Exception {
-		for (Task task : tasks) {
-                    task.perform(() -> {
+		running = true;
+                for (Task task : tasks) {
+                    if(!running) break;
+                    currentTask = task;
+                    task.start(() -> {
                         publish(counter++);
                     });
                 }
@@ -141,6 +158,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                         "Tasks Completed",
                         JOptionPane.INFORMATION_MESSAGE
                 );
+                currentTask = null;
                 unlockUI();
             }
             
@@ -148,8 +166,16 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         worker.execute();
     }//GEN-LAST:event_btnStartActionPerformed
 
+    private void btnStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
+        if(currentTask != null){
+            currentTask.stop();
+            btnStop.setEnabled(false);
+        }
+    }//GEN-LAST:event_btnStopActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnStart;
+    private javax.swing.JButton btnStop;
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JProgressBar pgbTasks;
     private javax.swing.JTabbedPane pnlTab;
@@ -170,6 +196,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setValue(0);
         tasks = new ArrayList<>();
         btnStart.setEnabled(true);
+        btnStop.setEnabled(true);
         taskPanels.forEach(p -> p.reset());
     }
     
