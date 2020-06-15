@@ -66,7 +66,7 @@ public class GoogleTask implements Task {
     private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\n";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file\n";
     private static final String NO_BIGGER_LOG = "No bigger images were found\n";
-    private static final String BIGGER_FOUND_LOG_MASK = "Bigger image found %s\n"; //url
+    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions %s\n"; //url
     private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%d bytes] %s\n"; //size, path
     private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\n";
     private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another bigger image\n";
@@ -74,6 +74,9 @@ public class GoogleTask implements Task {
     private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\n"; //url
     private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\n"; //exception message
     private static final String DELETING_FILE_LOG = "Deleting corrupted file\n";
+    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\n";
+    private static final String BIGGER_SIZE_LOG = "Image found has a bigger file size also\n";
+    private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
     // </editor-fold>
        
     private final Random random = new Random();
@@ -81,10 +84,11 @@ public class GoogleTask implements Task {
     private String source;
     private List<Path> images;
     private String destination;
+    private int startIndex;
+    private boolean biggerSizeOnly;
     
     private ProgressListener listener;
     private boolean running;
-    private int startIndex;
     private ProgressLog log;
     
     @SuppressWarnings({"SleepWhileInLoop","UseSpecificCatch"})
@@ -127,7 +131,7 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             int height = image.getHeight();
             int width = image.getWidth();
-            log.appendToLog(String.format(LOADING_IMAGE_LOG_MASK, file, width, height, size), Status.MSG);
+            log.appendToLog(String.format(LOADING_IMAGE_LOG_MASK, file, width, height, size), Status.INFO);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -205,24 +209,35 @@ public class GoogleTask implements Task {
             }
         }
         if(biggest == null){
-            log.appendToLog(NO_BIGGER_LOG, Status.MSG);
+            log.appendToLog(NO_BIGGER_LOG, Status.INFO);
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.url), Status.MSG);
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.url), Status.INFO);
 
         //SAVE FILE AND CHECK SIZE
         File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
         try{
             long imgSize = Utils.downloadToFile(biggest.url, file);
-            if(imgSize < MIN_FILESIZE){
-                log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.ERROR);
-                if(imgSize < (size*MIN_FILESIZE_RATIO)){
-                    log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
+            if(biggerSizeOnly){
+                if(imgSize < size){
+                    log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
                     try {file.delete();} catch (SecurityException ex){}
+                    removeRetry(biggest, googleImages, width, height, size);
+                }else{
+                    log.appendToLog(BIGGER_SIZE_LOG, Status.INFO);
                 }
-                if(biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN) && resolveTumblr(biggest)) return;
-                removeRetry(biggest, googleImages, width, height, size);
+            }else{
+                if(imgSize < MIN_FILESIZE){ //check if corrupted
+                    log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.ERROR);
+                    if(imgSize < (size*MIN_FILESIZE_RATIO)){ //delete only if small file size is really small (compare to original)
+                        log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
+                        try {file.delete();} catch (SecurityException ex){}
+                    }
+                    if(biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN) && resolveTumblr(biggest)) return;
+                    removeRetry(biggest, googleImages, width, height, size);
+                }
             }
+            
         }catch(IOException ex){
             log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
             if(biggest.url.contains("?")){ //rarely solves the problem
@@ -239,8 +254,10 @@ public class GoogleTask implements Task {
     private void removeRetry(GoogleImage failed, List<GoogleImage> googleImages, int width, int height, int size){
         googleImages.remove(failed);
         if(!googleImages.isEmpty()){
-            log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.MSG);
+            log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
             downloadLargest(googleImages, width, height, size);
+        }else{
+            log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
         }
     }
 
@@ -260,7 +277,7 @@ public class GoogleTask implements Task {
             log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.url), Status.ERROR);
             return false;
         }
-        log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.MSG);
+        log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.INFO);
         return true;
     }
 
@@ -301,6 +318,10 @@ public class GoogleTask implements Task {
     @Override
     public void setProgressListener(ProgressListener listener) {
         this.listener = listener;
+    }
+
+    public void setBiggerSizeOnly(boolean b) {
+        if(!running) biggerSizeOnly = b;
     }
     // </editor-fold>
     

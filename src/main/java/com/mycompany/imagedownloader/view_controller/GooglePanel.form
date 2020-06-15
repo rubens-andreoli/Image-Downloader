@@ -43,10 +43,13 @@
                               <Component id="txfUrl" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="txfNumber" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                              <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
                           </Group>
                           <Component id="txfDest" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="btnAdd" pref="87" max="32767" attributes="0"/>
+                          <Component id="chbSize" max="32767" attributes="0"/>
                       </Group>
                   </Group>
               </Group>
@@ -61,6 +64,7 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="btnDest" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="txfDest" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="chbSize" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -70,7 +74,7 @@
                   <Component id="txfUrl" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="sclTasks" max="32767" attributes="0"/>
+              <Component id="sclTasks" pref="202" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -85,13 +89,50 @@
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnDestActionPerformed"/>
       </Events>
     </Component>
+    <Component class="com.mycompany.imagedownloader.view_controller.FileField" name="txfDest">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new FileField(65)"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="chbSize">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Check size..."/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Should an image  be considered bigger&lt;br&gt;&#xa;&lt;b&gt;only&lt;/b&gt; if the file size is also bigger?&lt;/html&gt;"/>
+        <Property name="iconTextGap" type="int" value="6"/>
+        <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+          <Insets value="[2, 0, 2, 0]"/>
+        </Property>
+      </Properties>
+      <Events>
+        <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="chbSizeItemStateChanged"/>
+      </Events>
+    </Component>
     <Component class="javax.swing.JButton" name="btnFolder">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Folder"/>
+        <Property name="text" type="java.lang.String" value="Source"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnFolderActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="com.mycompany.imagedownloader.view_controller.FileField" name="txfUrl">
+      <Properties>
+        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[256, 22]"/>
+        </Property>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new FileField(45)"/>
+      </AuxValues>
+    </Component>
+    <Component class="com.mycompany.imagedownloader.view_controller.NumberField" name="txfNumber">
+      <Properties>
+        <Property name="horizontalAlignment" type="int" value="0"/>
+        <Property name="text" type="java.lang.String" value="0"/>
+        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+          <Dimension value="[35, 22]"/>
+        </Property>
+      </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="btnAdd">
       <Properties>
@@ -117,29 +158,5 @@
         </Component>
       </SubComponents>
     </Container>
-    <Component class="com.mycompany.imagedownloader.view_controller.NumberField" name="txfNumber">
-      <Properties>
-        <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" value="0"/>
-        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[35, 22]"/>
-        </Property>
-      </Properties>
-    </Component>
-    <Component class="com.mycompany.imagedownloader.view_controller.FileField" name="txfUrl">
-      <Properties>
-        <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[256, 22]"/>
-        </Property>
-      </Properties>
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new FileField(45)"/>
-      </AuxValues>
-    </Component>
-    <Component class="com.mycompany.imagedownloader.view_controller.FileField" name="txfDest">
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new FileField(65)"/>
-      </AuxValues>
-    </Component>
   </SubComponents>
 </Form>

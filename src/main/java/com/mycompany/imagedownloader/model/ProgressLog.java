@@ -3,7 +3,7 @@ package com.mycompany.imagedownloader.model;
 public class ProgressLog {
     
     public enum Status{
-        MSG, WARNING, ERROR, CRITICAL;
+        INFO, WARNING, ERROR, CRITICAL;
 
         @Override
         public String toString() {
@@ -12,7 +12,7 @@ public class ProgressLog {
         
     }
     
-    private static final String DEFAULT_MASK = "[%d]\n%s";
+    private static final String DEFAULT_ID_MASK = "[%d]\n%s";
 
     private final int id;
     private StringBuilder log;
@@ -45,7 +45,7 @@ public class ProgressLog {
     }
     
     public String getLogWithID(){
-        return getLogWithID(DEFAULT_MASK);
+        return getLogWithID(DEFAULT_ID_MASK);
     }
     
     public String getLogWithID(String mask){

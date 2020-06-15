@@ -3,7 +3,6 @@ package com.mycompany.imagedownloader.model;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.regex.Matcher;
 import org.apache.commons.io.FileUtils;
 
 /** References:

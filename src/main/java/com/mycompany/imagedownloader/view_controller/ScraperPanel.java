@@ -1,29 +1,29 @@
 package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
-import com.mycompany.imagedownloader.model.ScrapperTask;
-import static com.mycompany.imagedownloader.model.ScrapperTask.DEPTH_LIMIT;
+import com.mycompany.imagedownloader.model.ScraperTask;
+import static com.mycompany.imagedownloader.model.ScraperTask.DEPTH_LIMIT;
 import com.mycompany.imagedownloader.model.Task;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
-public class ScrapperPanel extends TaskPanel {
+public class ScraperPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String TITLE = "Scrapper";
+    private static final String TITLE = "Scraper";
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_DEPTH_TITLE = "Invalid Depth";
-    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit: "+ScrapperTask.DEPTH_LIMIT+"\n";
+    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit: "+ScraperTask.DEPTH_LIMIT+"\n";
     private static final String INVALID_URL_TITLE = "Malformed URL";
     private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
     private static final String DESCRIPTION_MASK = "%s [%d] -> %s"; //source, depth, destination
     // </editor-fold>
     
-    public ScrapperPanel() {
+    public ScraperPanel() {
         super(TITLE);
         initComponents();
     }
@@ -116,7 +116,7 @@ public class ScrapperPanel extends TaskPanel {
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if(listener == null) return;
         try{
-            ScrapperTask task = new ScrapperTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
+            ScraperTask task = new ScraperTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
             listener.taskCreated(task);
             appendTaskDescription(

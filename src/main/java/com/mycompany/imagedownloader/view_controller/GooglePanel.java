@@ -7,12 +7,17 @@ package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
 import com.mycompany.imagedownloader.model.GoogleTask;
+import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+/** References:
+ * https://www.codejava.net/java-se/swing/jcheckbox-basic-tutorial-and-examples
+ * https://stackoverflow.com/questions/9882845/jcheckbox-actionlistener-and-itemlistener/17576273
+ */
 public class GooglePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
     
@@ -40,13 +45,14 @@ public class GooglePanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
+        txfDest = new FileField(65);
+        chbSize = new javax.swing.JCheckBox();
         btnFolder = new javax.swing.JButton();
+        txfUrl = new FileField(45);
+        txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
         btnAdd = new javax.swing.JButton();
         sclTasks = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
-        txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
-        txfUrl = new FileField(45);
-        txfDest = new FileField(65);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -59,12 +65,28 @@ public class GooglePanel extends TaskPanel {
             }
         });
 
-        btnFolder.setText("Folder");
+        chbSize.setText("Check size...");
+        chbSize.setToolTipText("<html>Should an image  be considered bigger<br>\n<b>only</b> if the file size is also bigger?</html>");
+        chbSize.setIconTextGap(6);
+        chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
+        chbSize.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                chbSizeItemStateChanged(evt);
+            }
+        });
+
+        btnFolder.setText("Source");
         btnFolder.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnFolderActionPerformed(evt);
             }
         });
+
+        txfUrl.setPreferredSize(new java.awt.Dimension(256, 22));
+
+        txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txfNumber.setText("0");
+        txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -77,12 +99,6 @@ public class GooglePanel extends TaskPanel {
         txaTasks.setColumns(20);
         txaTasks.setRows(2);
         sclTasks.setViewportView(txaTasks);
-
-        txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfNumber.setText("0");
-        txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
-
-        txfUrl.setPreferredSize(new java.awt.Dimension(256, 22));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -101,10 +117,12 @@ public class GooglePanel extends TaskPanel {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                                .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(btnAdd, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
+                            .addComponent(chbSize, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -113,7 +131,8 @@ public class GooglePanel extends TaskPanel {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnDest)
-                    .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(chbSize))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnAdd)
@@ -121,7 +140,7 @@ public class GooglePanel extends TaskPanel {
                     .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(sclTasks)
+                .addComponent(sclTasks, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -156,6 +175,7 @@ public class GooglePanel extends TaskPanel {
                             task.getImageCount(), 
                             task.getDestination()
                     ));
+            task = new GoogleTask();
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(
                 this, 
@@ -182,10 +202,15 @@ public class GooglePanel extends TaskPanel {
 	}
     }//GEN-LAST:event_btnFolderActionPerformed
 
+    private void chbSizeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_chbSizeItemStateChanged
+        task.setBiggerSizeOnly(evt.getStateChange() == ItemEvent.SELECTED);
+    }//GEN-LAST:event_chbSizeItemStateChanged
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
     private javax.swing.JButton btnFolder;
+    private javax.swing.JCheckBox chbSize;
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane sclTasks;
     private javax.swing.JTextArea txaTasks;
@@ -211,7 +236,7 @@ public class GooglePanel extends TaskPanel {
         try {
             task.setDestination(txfDest.getText());
         } catch (IOException ex) {
-            System.err.println("ERROR: Failed creating new task with old destination. ["+txfDest.getText()+"]");
+            System.err.println("ERROR: Failed setting new task with old destination. ["+txfDest.getText()+"]");
             txfDest.clear();
         }
     }

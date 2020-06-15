@@ -10,7 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-public class ScrapperTask implements Task{
+public class ScraperTask implements Task{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     public static final int DEPTH_LIMIT = 3;
@@ -34,7 +34,7 @@ public class ScrapperTask implements Task{
     private ProgressListener listener;
     private boolean running;
 
-    public ScrapperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {
+    public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {
         if(depth < 0 || depth > DEPTH_LIMIT){
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
@@ -68,7 +68,7 @@ public class ScrapperTask implements Task{
         if(!running) return;
         
         log = new ProgressLog(progress);
-        log.appendToLog(String.format(CONNECTING_LOG_MASK, url), Status.MSG);
+        log.appendToLog(String.format(CONNECTING_LOG_MASK, url), Status.INFO);
         
         Document doc = null;
         try{
@@ -85,7 +85,7 @@ public class ScrapperTask implements Task{
 
         //PARSING IMAGES
         Elements images = doc.getElementsByTag("img");
-        log.appendToLog(String.format(IMAGE_COUNT_LOG_MASK, images.size()), Status.MSG);
+        log.appendToLog(String.format(IMAGE_COUNT_LOG_MASK, images.size()), Status.INFO);
         for (int i = 0; i < images.size(); i++) {
             
             //GET SRC URL

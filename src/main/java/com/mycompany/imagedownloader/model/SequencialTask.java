@@ -4,15 +4,10 @@ import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.io.FileUtils;
 
 public class SequencialTask implements Task{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final int CONNECTION_TIMEOUT = 2000; //ms
 //    public static final int FAILED_ATTEMPTS = 5;
     
     private static final String URL_MASK = "%s%s%s";
@@ -23,7 +18,7 @@ public class SequencialTask implements Task{
     private static final String URL_MARKER_REGEX = "^[^\\{\\}]+"+MARKER_REGEX+"[^\\{\\}\\/]+";
     
     private static final String INVALID_URL_MSG = "Invalid image URL.";
-    private static final String MISSING_MARKERS_MSG = "Image URL missing markers '{_}'.";
+    private static final String MISSING_MARKERS_MSG = "Image URL missing markers '"+LOWER_MARKER+"_"+UPPER_MARKER+"'.";
     private static final String MISSING_DESTINATION_MSG = "Detination folder not found.";
     private static final String INVALID_BOUNDS_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     
@@ -100,10 +95,10 @@ public class SequencialTask implements Task{
             
             //DOWNLOAD TO FILE
             String url = String.format(URL_MASK, path, formatedFilename, extension);
-            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), Status.MSG);
+            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), Status.INFO);
             try {
                 Utils.downloadToFile(url, file);
-                log.appendToLog(DOWNLOADED_LOG, Status.MSG);
+                log.appendToLog(DOWNLOADED_LOG, Status.INFO);
             } catch (IOException ex) {
                 log.appendToLog(String.format(DOWNLOAD_FAILED_LOG_MASK, url), Status.ERROR);
 //                fails++;

@@ -114,7 +114,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(pnlTab, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(btnStart)
@@ -122,7 +122,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(sclLog, javax.swing.GroupLayout.DEFAULT_SIZE, 210, Short.MAX_VALUE)
-                .addContainerGap())
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pnlTab.getAccessibleContext().setAccessibleName("Tabs");
@@ -192,7 +192,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private javax.swing.JButton btnStart;
     private javax.swing.JButton btnStop;
     private javax.swing.JFileChooser flcFolder;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JProgressBar pgbTasks;
     private javax.swing.JTabbedPane pnlTab;
     private javax.swing.JScrollPane sclLog;
