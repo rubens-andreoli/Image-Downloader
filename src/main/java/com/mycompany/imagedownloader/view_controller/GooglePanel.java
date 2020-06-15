@@ -15,11 +15,20 @@ import javax.swing.JOptionPane;
 
 public class GooglePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
+    
+    private static final String TITLE = "Google";
+    private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
+    private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
+    private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
+    private static final String INVALID_NUMBER_MSG = "Please verify if file index is not negative and it is lower than the number of images in the source folder.\n";
+    private static final String INVALID_SOURCE_TITLE = "Invalid/Empty Folder";
+    private static final String INVALID_SOURCE_MSG = "Please verify if the source folder is valid and contain supported images.\n";
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s";
 
     private GoogleTask task = new GoogleTask();
     
     public GooglePanel() {
-        super("Google");
+        super(TITLE);
         initComponents();
     }
     
@@ -31,7 +40,7 @@ public class GooglePanel extends TaskPanel {
         btnDest = new javax.swing.JButton();
         btnFolder = new javax.swing.JButton();
         btnAdd = new javax.swing.JButton();
-        pnlScroll = new javax.swing.JScrollPane();
+        sclTasks = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
         txfUrl = new FileField(45);
@@ -65,7 +74,7 @@ public class GooglePanel extends TaskPanel {
         txaTasks.setEditable(false);
         txaTasks.setColumns(20);
         txaTasks.setRows(5);
-        pnlScroll.setViewportView(txaTasks);
+        sclTasks.setViewportView(txaTasks);
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("0");
@@ -80,7 +89,7 @@ public class GooglePanel extends TaskPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pnlScroll)
+                    .addComponent(sclTasks)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(btnFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -110,23 +119,20 @@ public class GooglePanel extends TaskPanel {
                     .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pnlScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
+                .addComponent(sclTasks)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        String folder = null;
-        if((folder = txfDest.setFolder(this)) != null && !folder.isBlank()){
-            if(folder.isBlank()) return;
+        if(txfDest.setFolder(this)){
             try {
-                task.setDestination(folder);
-                txfDest.setText(folder);
+                task.setDestination(txfDest.getText());
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(
                     this, 
-                    ex.getMessage()+"\nPlease verify if the destination folder is valid.", 
-                    "Invalid Folder", 
+                    INVALID_DESTINATION_MSG+ex.getMessage(), 
+                    INVALID_DESTINATION_TITLE, 
                     JOptionPane.ERROR_MESSAGE
                 );
             }   
@@ -137,31 +143,37 @@ public class GooglePanel extends TaskPanel {
         if(listener == null) return;
         try {
             task.setStartIndex(txfNumber.getInt());
-            txfUrl.setText("");
+            txfUrl.clear();
+            txfNumber.clear();
             listener.taskCreated(task);
-            appendTaskDescription(task.getSource()+" ["+task.getStartIndex()+":"+task.getImageCount()+"] -> "+task.getDestination());
+            appendTaskDescription(
+                    String.format(
+                            DESCRIPTION_MASK, 
+                            task.getSource(), 
+                            task.getStartIndex(), 
+                            task.getImageCount(), 
+                            task.getDestination()
+                    ));
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if file index is not negative and it is lower than the number of images in the source folder.", 
-                "Invalid Numbering Bounds",
+                INVALID_NUMBER_MSG+ex.getMessage(), 
+                INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
         }
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFolderActionPerformed
-        String folder = null;
-        if((folder = txfUrl.setFolder(this)) != null && !folder.isBlank()){
+        if(txfUrl.setFolder(this)){
             try {
-                task.setSource(folder);
-                txfUrl.setText(folder);
+                task.setSource(txfUrl.getText());
                 txfNumber.setMaxValue(task.getImageCount());
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(
                     this, 
-                    ex.getMessage()+"\nPlease verify if the source folder is valid and contain supported images.", 
-                    "Invalid/Empty Folder", 
+                    INVALID_SOURCE_MSG+ex.getMessage(), 
+                    INVALID_SOURCE_TITLE, 
                     JOptionPane.ERROR_MESSAGE
                 );
             } 
@@ -173,7 +185,7 @@ public class GooglePanel extends TaskPanel {
     private javax.swing.JButton btnDest;
     private javax.swing.JButton btnFolder;
     private javax.swing.JFileChooser flcFolder;
-    private javax.swing.JScrollPane pnlScroll;
+    private javax.swing.JScrollPane sclTasks;
     private javax.swing.JTextArea txaTasks;
     private com.mycompany.imagedownloader.view_controller.FileField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
@@ -197,7 +209,8 @@ public class GooglePanel extends TaskPanel {
         try {
             task.setDestination(txfDest.getText());
         } catch (IOException ex) {
-            txfDest.setText("");
+            System.err.println("ERROR: Failed creating new task with old destination. ["+txfDest.getText()+"]");
+            txfDest.clear();
         }
     }
     

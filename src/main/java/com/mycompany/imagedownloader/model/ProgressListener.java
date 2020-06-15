@@ -1,6 +1,6 @@
 package com.mycompany.imagedownloader.model;
 
-public interface ProgressListener {
+public interface ProgressListener<T> {
     
-    void progress();
+    void progress(ProgressMessage message);
 }

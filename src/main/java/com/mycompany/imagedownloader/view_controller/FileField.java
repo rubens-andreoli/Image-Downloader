@@ -92,21 +92,24 @@ public class FileField extends JTextField{
         super.setText(formatText());
     }
     
-    public String setFile(Component parent, int mode){
+    public boolean setFile(Component parent, int mode){
         if (chooser == null) chooser = new JFileChooser();
         chooser.setFileSelectionMode(mode);
         if(chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION){
-            file = chooser.getSelectedFile().getAbsolutePath();
-            return file;
+            String selected = chooser.getSelectedFile().getAbsolutePath();
+            if(!selected.isBlank()){
+                setText(selected);
+                return true;
+            }
         }
-        return null;
+        return false;
     }
     
-    public String setFolder(Component parent){
+    public boolean setFolder(Component parent){
         return setFile(parent, JFileChooser.DIRECTORIES_ONLY);
     }
     
-    public String setFile(Component parent){
+    public boolean setFile(Component parent){
         return setFile(parent, JFileChooser.FILES_ONLY);
     }
       

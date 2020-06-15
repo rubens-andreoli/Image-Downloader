@@ -65,6 +65,8 @@ public class GoogleTask implements Task {
     private int startIndex;
     private boolean running;
     
+    private ProgressMessage currentMsg;
+    
     @Override
     public boolean start(ProgressListener listener) {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
@@ -74,7 +76,7 @@ public class GoogleTask implements Task {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
             if(!running) break;
-            listener.progress();
+            currentMsg = new ProgressMessage(i);
             try {
                 Thread.sleep((int) ((random.nextDouble()*(SEARCH_MAX_TIMEOUT-SEARCH_MIN_TIMEOUT))+SEARCH_MIN_TIMEOUT));
             } catch (Exception ex) {}
@@ -83,6 +85,7 @@ public class GoogleTask implements Task {
             } catch (Exception ex) {
                 System.err.println("ERROR: UNEXPECTED EXCEPTION "+ex.getMessage());
             }
+            listener.progress(currentMsg);
         }
         running = false; //not really needed
         return true;
@@ -104,7 +107,7 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             int height = image.getHeight();
             int width = image.getWidth();
-            System.out.println("LOG: LOADING IMAGE "+file+" -> "+width+":"+height+" ["+size+"]");
+            currentMsg.appendToText("MSG: Loading image "+file+" -> "+width+":"+height+" ["+size+" bytes]\n");
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -121,13 +124,13 @@ public class GoogleTask implements Task {
                 if(googleImages!=null && !googleImages.isEmpty()){
                     downloadLargest(googleImages, width, height, size);
                 } else {
-                    System.out.println("WARNING: NO IMAGES FOUND");
+                    currentMsg.appendToText("WARNING: No similar images were found\n");
                 }
             }catch(IOException ex){
-                System.err.println("ERROR: FAILED CONNECTING/UPLOADING FILE "+file);
+                currentMsg.appendToText("ERROR: Failed connecting/uploading file\n");
             }
         }catch(IOException ex){
-            System.err.println("ERROR: FAILED READING FILE "+file);
+            currentMsg.appendToText("ERROR: failed reading file\n");
         }
     }
     
@@ -181,19 +184,23 @@ public class GoogleTask implements Task {
                 }
             }
         }
-        if(biggest == null) return;
-        System.out.println("LOG: BIGGER IMAGE FOUND "+biggest.url);
+        if(biggest == null){
+            currentMsg.appendToText("MSG: No bigger images were found\n");
+            return;
+        }
+        currentMsg.appendToText("MSG: Bigger image found "+biggest.url+"\n");
 
         //SAVE FILE AND CHECK SIZE
         File file = Utils.generateFile(destination, biggest.getFilename(), biggest.getExtension());
         try{
             Utils.saveFileFromURL(biggest.url, file);
             if(file.length() < (size*MIN_FILESIZE_RATIO)){
-                System.out.println("ERROR: FILE ["+file.getAbsolutePath()+"] SAVED WITH ERRORS ["+file.length()+"] vs ["+size+"]");
+                currentMsg.appendToText("ERROR: File ["+file.getAbsolutePath()+"] may be corrupted ["+file.length()+"]\n");
                 if(biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN) && resolveTumblr(biggest)) return;
-                throw new IOException();  //try other image
+                removeRetry(biggest, googleImages, width, height, size);
             }
         }catch(IOException ex){
+            currentMsg.appendToText("ERROR: Failed downloading/saving file\n");
             if(biggest.url.contains("?")){ //rarely solves the problem
                 googleImages.add(new GoogleImage(
                         biggest.url.substring(0, biggest.url.lastIndexOf("?")), 
@@ -201,10 +208,20 @@ public class GoogleTask implements Task {
                         biggest.height)
                 );
             }
-            googleImages.remove(biggest);
-            if(!googleImages.isEmpty()){
-                downloadLargest(googleImages, width, height, size);
-            }
+            removeRetry(biggest, googleImages, width, height, size);
+//            googleImages.remove(biggest);
+//            if(!googleImages.isEmpty()){
+//                currentMsg.appendToText("MSG: Attempting to find another bigger image\n");
+//                downloadLargest(googleImages, width, height, size);
+//            }
+        }
+    }
+    
+    private void removeRetry(GoogleImage failed, List<GoogleImage> googleImages, int width, int height, int size){
+        googleImages.remove(failed);
+        if(!googleImages.isEmpty()){
+            currentMsg.appendToText("MSG: Attempting to find another bigger image\n");
+            downloadLargest(googleImages, width, height, size);
         }
     }
 
@@ -221,9 +238,10 @@ public class GoogleTask implements Task {
             Path filepath = Path.of(Utils.generateFilepath(destination, image.getFilename(), image.getExtension()));
             Files.write(filepath, bytes);
         } catch (IOException ex) {
-            System.out.println("ERROR: FAILED TO CONNECT/DOWNLOAD TUMBLR IMAGE "+image.url);
+            currentMsg.appendToText("ERROR: Failed resolving Tumblr image "+image.url+"\n");
             return false;
         }
+        currentMsg.appendToText("MSG: Successed resolving Tumblr image "+image.url+"\n");
         return true;
     }
 

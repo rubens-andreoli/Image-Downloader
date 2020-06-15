@@ -48,13 +48,8 @@ public class Utils {
     }
     
     public static void saveFileFromURL(String url, File file) throws IOException{
-        try{
-            FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
-        }catch(IOException ex){
-            System.err.println("ERROR: FAILED DOWNLOADING/SAVING FILE FROM "+ url);
-            throw ex;
-        }
-    }
+        FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
+      }
     
     public static String getFile(String path){
         int index = path.lastIndexOf('/');

@@ -1,7 +1,7 @@
 package com.mycompany.imagedownloader.view_controller;
 
+import com.mycompany.imagedownloader.model.ProgressMessage;
 import com.mycompany.imagedownloader.model.Task;
-import java.awt.ComponentOrientation;
 import java.util.ArrayList;
 import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
@@ -60,6 +60,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks = new javax.swing.JProgressBar();
         pnlTab = new javax.swing.JTabbedPane();
         btnStop = new javax.swing.JButton();
+        sclLog = new javax.swing.JScrollPane();
+        txaLog = new com.mycompany.imagedownloader.view_controller.RecycledTextArea();
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -83,6 +85,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             }
         });
 
+        sclLog.setBorder(javax.swing.BorderFactory.createTitledBorder("LOG Messages"));
+
+        txaLog.setColumns(20);
+        txaLog.setRows(5);
+        txaLog.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        sclLog.setViewportView(txaLog);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -90,6 +99,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(sclLog)
                     .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -103,13 +113,15 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(pnlTab, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(btnStart)
                         .addComponent(btnStop))
                     .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(sclLog, javax.swing.GroupLayout.DEFAULT_SIZE, 210, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -124,7 +136,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         lockUI();
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
-        SwingWorker<Boolean, Integer> worker = new SwingWorker<>() {
+        SwingWorker<Boolean, ProgressMessage> worker = new SwingWorker<>() {
             
             private int counter;
             
@@ -134,16 +146,18 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 for (Task task : tasks) {
                     if(!running) break;
                     currentTask = task;
-                    task.start(() -> {
-                        publish(counter++);
+                    task.start(m -> {
+                        publish(m);
+                        counter++;
                     });
                 }
                 return true;
             }
 
             @Override
-            protected void process(List<Integer> chunks) {
-                pgbTasks.setValue(chunks.get(chunks.size()-1));
+            protected void process(List<ProgressMessage> chunks) {
+                chunks.forEach(m -> txaLog.addText(m.getTextWithID()));
+                pgbTasks.setValue(counter);
                 pgbTasks.setToolTipText(pgbTasks.getValue()+"/"+pgbTasks.getMaximum());
             }
 
@@ -177,8 +191,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private javax.swing.JButton btnStart;
     private javax.swing.JButton btnStop;
     private javax.swing.JFileChooser flcFolder;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JProgressBar pgbTasks;
     private javax.swing.JTabbedPane pnlTab;
+    private javax.swing.JScrollPane sclLog;
+    private com.mycompany.imagedownloader.view_controller.RecycledTextArea txaLog;
     // End of variables declaration//GEN-END:variables
 
     private void lockUI(){
@@ -210,4 +227,5 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         panel.setTaskListener(this);
         pnlTab.addTab(panel.getTitle(), panel);
     }
+    
 }

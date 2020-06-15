@@ -47,6 +47,10 @@ public final class NumberField extends JTextField{
             }
         });
     }
+    
+    public void clear(){
+        setText(String.valueOf(DEFAULT_VALUE));
+    }
 
     public void setMaxValue(int maxValue) {
         this.maxValue = maxValue>=0? maxValue:0;

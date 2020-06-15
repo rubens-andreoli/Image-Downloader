@@ -52,7 +52,7 @@ public class ScrapperTask implements Task{
     
     @Override
     public boolean start(ProgressListener listener) {
-        listener.progress();
+        listener.progress(null); //TODO: Fix
         try {
             download(path);
         } catch (IOException ex) {

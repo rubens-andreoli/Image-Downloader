@@ -84,7 +84,7 @@ public class SequencialTask implements Task{
     public boolean start(ProgressListener listener){
 //        int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
-            listener.progress();
+            listener.progress(null); //TODO: Fix
             //OUTPUT FILE
             String formatedFilename = String.format(filename, i);
             File file = new File(String.format(FILENAME_MASK, destination,formatedFilename,extension));
