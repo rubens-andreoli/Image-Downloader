@@ -12,8 +12,19 @@ import javax.swing.JOptionPane;
 public class ScrapperPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
 
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
+    private static final String TITLE = "Scrapper";
+    private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
+    private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
+    private static final String INVALID_DEPTH_TITLE = "Invalid Depth";
+    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit: "+ScrapperTask.DEPTH_LIMIT+"\n";
+    private static final String INVALID_URL_TITLE = "Malformed URL";
+    private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
+    private static final String DESCRIPTION_MASK = "%s [%d] -> %s"; //source, depth, destination
+    // </editor-fold>
+    
     public ScrapperPanel() {
-        super("Scrapper");
+        super(TITLE);
         initComponents();
     }
     
@@ -23,13 +34,13 @@ public class ScrapperPanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
-        txfDest = new javax.swing.JTextField();
         txfUrl = new javax.swing.JTextField();
         btnAdd = new javax.swing.JButton();
         pnlScroll = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
         txfNumber.setMaxValue(DEPTH_LIMIT);
+        txfDest = new com.mycompany.imagedownloader.view_controller.FileField();
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -41,8 +52,6 @@ public class ScrapperPanel extends TaskPanel {
                 btnDestActionPerformed(evt);
             }
         });
-
-        txfDest.setEditable(false);
 
         txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
@@ -71,8 +80,8 @@ public class ScrapperPanel extends TaskPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnDest)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(txfDest))
+                        .addGap(12, 12, 12)
+                        .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -101,40 +110,40 @@ public class ScrapperPanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(flcFolder.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-	    txfDest.setText(flcFolder.getSelectedFile().getAbsolutePath());
-	}
+        txfDest.selectFolder(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if(listener == null) return;
-        String url = txfUrl.getText();
-	String dest = txfDest.getText();
-        int val = txfNumber.getInt();
         try{
-            ScrapperTask t = new ScrapperTask(url, dest, val);
+            ScrapperTask task = new ScrapperTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
-            listener.taskCreated(t);
-            appendTaskDescription(url, val, dest);
+            listener.taskCreated(task);
+            appendTaskDescription(
+                    String.format(
+                            DESCRIPTION_MASK, 
+                            task.getPath(),
+                            task.getDepth(),
+                            task.getDestination()
+                    ));
         } catch (MalformedURLException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the link provided is valid.", 
-                "Malformed URL", 
+                INVALID_URL_MSG+ex.getMessage(), 
+                INVALID_URL_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the destination folder is valid.", 
-                "Invalid Folder", 
+                INVALID_DESTINATION_MSG+ex.getMessage(), 
+                INVALID_DESTINATION_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
         } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                ex.getMessage()+"\nPlease verify if the depth set is lower then the limit: "+ScrapperTask.DEPTH_LIMIT, 
-                "Invalid Depth",
+            JOptionPane.showMessageDialog(this, 
+                INVALID_DEPTH_MSG+ex.getMessage(), 
+                INVALID_DEPTH_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
         }
@@ -147,15 +156,13 @@ public class ScrapperPanel extends TaskPanel {
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane pnlScroll;
     private javax.swing.JTextArea txaTasks;
-    private javax.swing.JTextField txfDest;
+    private com.mycompany.imagedownloader.view_controller.FileField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
-    private void appendTaskDescription(String url, int val, String destination){
-        StringBuilder sb = new StringBuilder(txaTasks.getText());
-        sb.append(url).append(" [").append(val).append("] -> ").append(destination).append("\n");
-        txaTasks.setText(sb.toString());
+    private void appendTaskDescription(String taskDescription){
+        txaTasks.setText(txaTasks.getText()+taskDescription);
     }
     
     @Override

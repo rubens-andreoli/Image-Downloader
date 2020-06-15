@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 public class GooglePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
     
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String TITLE = "Google";
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
@@ -23,7 +24,8 @@ public class GooglePanel extends TaskPanel {
     private static final String INVALID_NUMBER_MSG = "Please verify if file index is not negative and it is lower than the number of images in the source folder.\n";
     private static final String INVALID_SOURCE_TITLE = "Invalid/Empty Folder";
     private static final String INVALID_SOURCE_MSG = "Please verify if the source folder is valid and contain supported images.\n";
-    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s";
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s"; //source, start, end, destination
+    // </editor-fold>
 
     private GoogleTask task = new GoogleTask();
     
@@ -73,7 +75,7 @@ public class GooglePanel extends TaskPanel {
 
         txaTasks.setEditable(false);
         txaTasks.setColumns(20);
-        txaTasks.setRows(5);
+        txaTasks.setRows(2);
         sclTasks.setViewportView(txaTasks);
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
@@ -125,7 +127,7 @@ public class GooglePanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(txfDest.setFolder(this)){
+        if(txfDest.selectFolder(this)){
             try {
                 task.setDestination(txfDest.getText());
             } catch (IOException ex) {
@@ -165,7 +167,7 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFolderActionPerformed
-        if(txfUrl.setFolder(this)){
+        if(txfUrl.selectFolder(this)){
             try {
                 task.setSource(txfUrl.getText());
                 txfNumber.setMaxValue(task.getImageCount());
@@ -197,8 +199,8 @@ public class GooglePanel extends TaskPanel {
     }
     
     @Override
-    public void setEditable(boolean isOpen) {
-        btnAdd.setEnabled(isOpen);
+    public void setEditable(boolean b) {
+        btnAdd.setEnabled(b);
     }
 
     @Override

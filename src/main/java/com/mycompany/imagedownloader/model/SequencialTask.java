@@ -1,20 +1,21 @@
 package com.mycompany.imagedownloader.model;
 
+import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 
 public class SequencialTask implements Task{
-	
+
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final int CONNECTION_TIMEOUT = 2000; //ms
 //    public static final int FAILED_ATTEMPTS = 5;
     
-    private static final String FILENAME_MASK = "%s/%s%s";
-    private static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
     private static final String URL_MASK = "%s%s%s";
-    private static final String EXTENSION_REGEX = "^.[a-z]{3,4}$";
     private static final String URL_REGEX = "^(https*:\\/\\/)(.*\\/)(.*\\.)([a-z]{3,})$"; //Complete URL: ^http(s|):\/\/(([^\{\}\/]+\/)+)[^\{\}]+(\{\d+\})[^\{\}\/]+\.([a-z]{3,})$
     private static final String LOWER_MARKER = "{";
     private static final String UPPER_MARKER = "}";
@@ -26,12 +27,20 @@ public class SequencialTask implements Task{
     private static final String MISSING_DESTINATION_MSG = "Detination folder not found.";
     private static final String INVALID_BOUNDS_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     
+    private static final String DOWNLOADING_LOG_MASK = "Downloading %s\n"; //file
+    private static final String DOWNLOADED_LOG = "Download complete\n";
+    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s\n"; //url
+    // </editor-fold>
+    
     private String path; //with separator at the end
-    private String filename; //with %d where number is suposed to be
+    private String maskedFilename; //with %d where number is supposed to be
     private int lowerBound;
     private int upperBound;
     private String extension; //with dot at start
     private String destination;
+    
+    private ProgressListener listener;
+    private boolean running;
 
     public SequencialTask(String url, String dest, int upperBound) throws MalformedURLException, IOException, BoundsException{
         //PARAMETERS TESTS
@@ -49,80 +58,72 @@ public class SequencialTask implements Task{
         //URL PATH
         int fileIndex = url.lastIndexOf('/');
         path = url.substring(0, fileIndex+1);
-//        System.out.println(path);
         
         //NUMBER POSITION
-        String tempFilename = url.substring(fileIndex+1);
-        int numberIndex = tempFilename.indexOf(LOWER_MARKER)+1;
-        int numberLenght = tempFilename.indexOf(UPPER_MARKER) - numberIndex;
-        lowerBound = Integer.parseInt(tempFilename.substring(numberIndex, numberIndex+numberLenght));
         this.upperBound = upperBound;
-        String numberMask = "%d";
-        if(tempFilename.charAt(numberIndex) == '0'){
-            numberMask = "%0"+numberLenght+"d";
-        }
-        tempFilename = tempFilename.replaceAll(MARKER_REGEX, numberMask);
-        if(upperBound <= lowerBound){
-            throw new BoundsException(INVALID_BOUNDS_MSG);
-        }
+        String tempFilename = parseNumber(url.substring(fileIndex+1));
         
         //FILENAME AND EXTENSION
-        int dotIndex = tempFilename.indexOf(".");
-        filename = tempFilename.substring(0, dotIndex);
-        extension = tempFilename.substring(dotIndex);
-        for(int i=extension.length(); i>4 && !extension.matches(EXTENSION_REGEX); i=extension.length()){  //crop end until it matches or minimal lenght
-            extension = extension.substring(0, i-1);
-        }
-//        System.out.println(filename);
-//        System.out.println(extension);
+        maskedFilename = Utils.parseFilename(tempFilename, false);
+        extension = Utils.parseExtension(tempFilename);
         
         //DESTINATION FOLDER
         destination = dest;
     }
+    
+    private String parseNumber(String filename) throws BoundsException{
+        int numberIndex = filename.indexOf(LOWER_MARKER)+1;
+        int numberLenght = filename.indexOf(UPPER_MARKER) - numberIndex;
+        
+        lowerBound = Integer.parseInt(filename.substring(numberIndex, numberIndex+numberLenght));
+        if(upperBound <= lowerBound){
+            throw new BoundsException(INVALID_BOUNDS_MSG);
+        }
+        
+        String numberMask = "%d";
+        if(filename.charAt(numberIndex) == '0'){
+            numberMask = "%0"+numberLenght+"d";
+        }
+        return filename.replaceAll(MARKER_REGEX, numberMask);
+    }
 
     @Override
-    public boolean start(ProgressListener listener){
+    public void start(){
+        running = true;
 //        int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
-            listener.progress(null); //TODO: Fix
+            if(!running) break;
+            var log = new ProgressLog(i);
             //OUTPUT FILE
-            String formatedFilename = String.format(filename, i);
-            File file = new File(String.format(FILENAME_MASK, destination,formatedFilename,extension));
-            for(int n=1; file.exists(); n++){
-                file = new File(String.format(DUPLICATED_FILENAME_MASK, destination,formatedFilename,n,extension));
-            }
+            String formatedFilename = String.format(maskedFilename, i);
+            File file = Utils.createValidFile(destination, formatedFilename, extension);
             
             //DOWNLOAD TO FILE
-            String url = String.format(URL_MASK, path,formatedFilename,extension);
+            String url = String.format(URL_MASK, path, formatedFilename, extension);
+            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), Status.MSG);
             try {
-                FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
+                Utils.downloadToFile(url, file);
+                log.appendToLog(DOWNLOADED_LOG, Status.MSG);
             } catch (IOException ex) {
-                System.err.println("Failed downloading and saving: "+ url);
+                log.appendToLog(String.format(DOWNLOAD_FAILED_LOG_MASK, url), Status.ERROR);
 //                fails++;
             }
+            if(listener != null) listener.progress(log);
 //            if(fails>=FAILED_ATTEMPTS) break;
         }
-        return true;
+        running = false; //not really needed
     }
     
     @Override
     public void stop() {
-        
+        running = false;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public String getPath() {
         return path;
     }
-    
-    public String getFilename() {
-        return filename;
-    }
-    
-    public String getExtension() {
-        return extension;
-    }
-    
+
     public String getDestiantion() {
         return destination;
     }
@@ -131,7 +132,21 @@ public class SequencialTask implements Task{
     public int getProcessesCount() {
         return upperBound-lowerBound;
     }
+
+    public int getLowerBound() {
+        return lowerBound;
+    }
+
+    public int getUpperBound() {
+        return upperBound;
+    }
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
+    @Override
+    public void setProgressListener(ProgressListener listener) {
+        this.listener = listener;
+    }
+    // </editor-fold>
 
 }

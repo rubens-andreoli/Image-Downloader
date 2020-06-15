@@ -1,5 +1,6 @@
 package com.mycompany.imagedownloader.model;
 
+import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import static com.mycompany.imagedownloader.model.Utils.USER_AGENT;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -39,56 +40,75 @@ import org.jsoup.nodes.Element;
  */
 public class GoogleTask implements Task {
 
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
     private static final int SEARCH_MAX_TIMEOUT = 1750; //ms
     private static final int SEARCH_MIN_TIMEOUT = 750; //ms
-    private static final double MIN_FILESIZE_RATIO = 0.25;
+    private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
+    private static final int MIN_FILESIZE = 25600; //bytes
     
     private static final String RESPONSE_LINK_PREFIX_TOKEN = "/search?tbs=simg:";
-    private static final String RESPONSE_LINK_TEXT_TOKEN = "Todos os tamanhos";
-    private static final String SUB_RESPONSE_SCRIPT_DATA_TOKEN = "AF_initDataCallback";
+    private static final String RESPONSE_LINK_TEXT_TOKEN = "Todos os tamanhos"; //pt-br
     private static final String TUMBLR_IMAGE_START_TOKEN = "tumblr_";
+    private static final String SUB_RESPONSE_SCRIPT_DATA_TOKEN = "AF_initDataCallback";
     private static final String SUB_RESPONSE_SPLIT_LINK_TOKEN = ",";
     private static final String SUB_RESPONSE_CLEAR_LINK_REGEX = "[\\[\\]\\\"\\\"]";
-    private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])"; //"(\\[\"http.*])"
+    private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
     private static final String MISSING_DESTINATION_MSG_MASK = "Detination folder [%s] not found.";
     private static final String MISSING_SOURCE_MSG_MASK = "Source folder [%s] not found.";
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
+    
+    private static final String LOADING_IMAGE_LOG_MASK = "Loading image %s -> %d:%d [%d bytes]\n"; //path, width, height, size
+    private static final String NO_SIMILAR_LOG = "No similar images were found\n";
+    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\n";
+    private static final String FAILED_READING_FILE_LOG = "Failed reading file\n";
+    private static final String NO_BIGGER_LOG = "No bigger images were found\n";
+    private static final String BIGGER_FOUND_LOG_MASK = "Bigger image found %s\n"; //url
+    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%d bytes] %s\n"; //size, path
+    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\n";
+    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another bigger image\n";
+    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\n"; //url
+    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\n"; //url
+    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\n"; //exception message
+    private static final String DELETING_FILE_LOG = "Deleting corrupted file\n";
+    // </editor-fold>
        
-    private Random random = new Random();
+    private final Random random = new Random();
+    
     private String source;
     private List<Path> images;
     private String destination;
-    private int startIndex;
+    
+    private ProgressListener listener;
     private boolean running;
+    private int startIndex;
+    private ProgressLog log;
     
-    private ProgressMessage currentMsg;
-    
+    @SuppressWarnings({"SleepWhileInLoop","UseSpecificCatch"})
     @Override
-    public boolean start(ProgressListener listener) {
+    public void start() {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
-            return false;
+            return;
         }
         running = true;
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
             if(!running) break;
-            currentMsg = new ProgressMessage(i);
+            log = new ProgressLog(i);
             try {
                 Thread.sleep((int) ((random.nextDouble()*(SEARCH_MAX_TIMEOUT-SEARCH_MIN_TIMEOUT))+SEARCH_MIN_TIMEOUT));
             } catch (Exception ex) {}
             try {
                 searchWithFile(images.get(i));
             } catch (Exception ex) {
-                System.err.println("ERROR: UNEXPECTED EXCEPTION "+ex.getMessage());
+                log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
             }
-            listener.progress(currentMsg);
+            if(listener!= null) listener.progress(log);
         }
         running = false; //not really needed
-        return true;
     }
     
     @Override
@@ -107,7 +127,7 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             int height = image.getHeight();
             int width = image.getWidth();
-            currentMsg.appendToText("MSG: Loading image "+file+" -> "+width+":"+height+" ["+size+" bytes]\n");
+            log.appendToLog(String.format(LOADING_IMAGE_LOG_MASK, file, width, height, size), Status.MSG);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -124,13 +144,13 @@ public class GoogleTask implements Task {
                 if(googleImages!=null && !googleImages.isEmpty()){
                     downloadLargest(googleImages, width, height, size);
                 } else {
-                    currentMsg.appendToText("WARNING: No similar images were found\n");
+                    log.appendToLog(NO_SIMILAR_LOG, Status.WARNING);
                 }
             }catch(IOException ex){
-                currentMsg.appendToText("ERROR: Failed connecting/uploading file\n");
+                log.appendToLog(FAILED_UPLOADING_LOG, Status.ERROR);
             }
         }catch(IOException ex){
-            currentMsg.appendToText("ERROR: failed reading file\n");
+            log.appendToLog(FAILED_READING_FILE_LOG, Status.ERROR);
         }
     }
     
@@ -185,22 +205,26 @@ public class GoogleTask implements Task {
             }
         }
         if(biggest == null){
-            currentMsg.appendToText("MSG: No bigger images were found\n");
+            log.appendToLog(NO_BIGGER_LOG, Status.MSG);
             return;
         }
-        currentMsg.appendToText("MSG: Bigger image found "+biggest.url+"\n");
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.url), Status.MSG);
 
         //SAVE FILE AND CHECK SIZE
-        File file = Utils.generateFile(destination, biggest.getFilename(), biggest.getExtension());
+        File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
         try{
-            Utils.saveFileFromURL(biggest.url, file);
-            if(file.length() < (size*MIN_FILESIZE_RATIO)){
-                currentMsg.appendToText("ERROR: File ["+file.getAbsolutePath()+"] may be corrupted ["+file.length()+"]\n");
+            long imgSize = Utils.downloadToFile(biggest.url, file);
+            if(imgSize < MIN_FILESIZE){
+                log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.ERROR);
+                if(imgSize < (size*MIN_FILESIZE_RATIO)){
+                    log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
+                    try {file.delete();} catch (SecurityException ex){}
+                }
                 if(biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN) && resolveTumblr(biggest)) return;
                 removeRetry(biggest, googleImages, width, height, size);
             }
         }catch(IOException ex){
-            currentMsg.appendToText("ERROR: Failed downloading/saving file\n");
+            log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
             if(biggest.url.contains("?")){ //rarely solves the problem
                 googleImages.add(new GoogleImage(
                         biggest.url.substring(0, biggest.url.lastIndexOf("?")), 
@@ -209,18 +233,13 @@ public class GoogleTask implements Task {
                 );
             }
             removeRetry(biggest, googleImages, width, height, size);
-//            googleImages.remove(biggest);
-//            if(!googleImages.isEmpty()){
-//                currentMsg.appendToText("MSG: Attempting to find another bigger image\n");
-//                downloadLargest(googleImages, width, height, size);
-//            }
         }
     }
     
     private void removeRetry(GoogleImage failed, List<GoogleImage> googleImages, int width, int height, int size){
         googleImages.remove(failed);
         if(!googleImages.isEmpty()){
-            currentMsg.appendToText("MSG: Attempting to find another bigger image\n");
+            log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.MSG);
             downloadLargest(googleImages, width, height, size);
         }
     }
@@ -235,13 +254,13 @@ public class GoogleTask implements Task {
 //            requisicao.addHeader("sec-fetch-site", "same-origin");
             HttpResponse resposta = client.execute(requisicao);
             byte[] bytes = EntityUtils.toByteArray(resposta.getEntity());
-            Path filepath = Path.of(Utils.generateFilepath(destination, image.getFilename(), image.getExtension()));
+            Path filepath = Path.of(Utils.createValidFilepath(destination, image.getFilename(), image.getExtension()));
             Files.write(filepath, bytes);
         } catch (IOException ex) {
-            currentMsg.appendToText("ERROR: Failed resolving Tumblr image "+image.url+"\n");
+            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.url), Status.ERROR);
             return false;
         }
-        currentMsg.appendToText("MSG: Successed resolving Tumblr image "+image.url+"\n");
+        log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.MSG);
         return true;
     }
 
@@ -277,6 +296,11 @@ public class GoogleTask implements Task {
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
         this.startIndex = startIndex;
+    }
+    
+    @Override
+    public void setProgressListener(ProgressListener listener) {
+        this.listener = listener;
     }
     // </editor-fold>
     

@@ -24,12 +24,12 @@ public class GoogleImage{
     }
 
     public String getFilename() {
-        if(filename == null) filename = Utils.getFilename(url);
+        if(filename == null) filename = Utils.parseFilename(url);
         return filename;
     }
 
     public String getExtension() {
-        if(extension == null) extension = Utils.getExtension(url);
+        if(extension == null) extension = Utils.parseExtension(url);
         return extension;
     }
 

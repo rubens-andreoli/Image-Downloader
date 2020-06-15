@@ -10,12 +10,24 @@ import javax.swing.JOptionPane;
 
 /** References:
  * https://stackoverflow.com/questions/26848647/custom-bean-class-for-gui-component-in-netbeans
+ * https://docs.oracle.com/javase/tutorial/uiswing/components/textarea.html
  */
 public class SequencialPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
 
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
+    private static final String TITLE = "Sequencial";
+    private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
+    private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
+    private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
+    private static final String INVALID_NUMBER_MSG = "Please verify if the marked file number is lower than the target set.\n";
+    private static final String INVALID_URL_TITLE = "Malformed URL";
+    private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s"; //source, start, end, destination
+    // </editor-fold>
+    
     public SequencialPanel() {
-        super("Sequencial");
+        super(TITLE);
         initComponents();
     }
     
@@ -25,12 +37,12 @@ public class SequencialPanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
-        txfDest = new javax.swing.JTextField();
         txfUrl = new javax.swing.JTextField();
         btnAdd = new javax.swing.JButton();
         pnlScroll = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
+        txfDest = new com.mycompany.imagedownloader.view_controller.FileField();
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -42,8 +54,6 @@ public class SequencialPanel extends TaskPanel {
                 btnDestActionPerformed(evt);
             }
         });
-
-        txfDest.setEditable(false);
 
         txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
@@ -72,8 +82,8 @@ public class SequencialPanel extends TaskPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnDest)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(txfDest))
+                        .addGap(12, 12, 12)
+                        .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -102,37 +112,40 @@ public class SequencialPanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(flcFolder.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-	    txfDest.setText(flcFolder.getSelectedFile().getAbsolutePath());
-	}
+        txfDest.selectFolder(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if(listener == null) return;
         try {
-            SequencialTask t = new SequencialTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
+            SequencialTask task = new SequencialTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
-            listener.taskCreated(t);
-            appendTaskDescription(t.getPath(), t.getDestiantion());
+            listener.taskCreated(task);
+            appendTaskDescription(String.format(DESCRIPTION_MASK, 
+                            task.getPath(), 
+                            task.getLowerBound(), 
+                            task.getUpperBound(), 
+                            task.getDestiantion()
+                    ));
         } catch (MalformedURLException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the link provided is valid.", 
-                "Malformed URL", 
+                INVALID_URL_MSG+ex.getMessage(), 
+                INVALID_URL_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the destination folder is valid.", 
-                "Invalid Folder", 
+                INVALID_DESTINATION_MSG+ex.getMessage(), 
+                INVALID_DESTINATION_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(
                 this, 
-                ex.getMessage()+"\nPlease verify if the marked file number is lower than the target set.", 
-                "Invalid Numbering Bounds",
+                INVALID_NUMBER_MSG+ex.getMessage(), 
+                INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
         }
@@ -144,20 +157,18 @@ public class SequencialPanel extends TaskPanel {
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane pnlScroll;
     private javax.swing.JTextArea txaTasks;
-    private javax.swing.JTextField txfDest;
+    private com.mycompany.imagedownloader.view_controller.FileField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
-    private void appendTaskDescription(String url, String destination){
-        StringBuilder sb = new StringBuilder(txaTasks.getText());
-        sb.append(url).append(" -> ").append(destination).append("\n");
-        txaTasks.setText(sb.toString());
+    private void appendTaskDescription(String taskDescription){
+        txaTasks.setText(txaTasks.getText()+taskDescription);
     }
     
     @Override
-    public void setEditable(boolean isOpen) {
-        btnAdd.setEnabled(isOpen);
+    public void setEditable(boolean b) {
+        btnAdd.setEnabled(b);
     }
 
     @Override

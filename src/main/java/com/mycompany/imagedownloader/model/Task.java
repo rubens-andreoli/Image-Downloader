@@ -2,7 +2,8 @@ package com.mycompany.imagedownloader.model;
 
 public interface Task {
     
-    boolean start(ProgressListener listener);
+    void setProgressListener(ProgressListener listener);
+    void start();
     void stop();
     
     default int getProcessesCount(){

@@ -1,6 +1,6 @@
 package com.mycompany.imagedownloader.view_controller;
 
-import com.mycompany.imagedownloader.model.ProgressMessage;
+import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
 import java.util.ArrayList;
 import java.util.List;
@@ -136,7 +136,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         lockUI();
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
-        SwingWorker<Boolean, ProgressMessage> worker = new SwingWorker<>() {
+        SwingWorker<Boolean, ProgressLog> worker = new SwingWorker<>() {
             
             private int counter;
             
@@ -146,17 +146,18 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 for (Task task : tasks) {
                     if(!running) break;
                     currentTask = task;
-                    task.start(m -> {
+                    task.setProgressListener((m, b) -> {
                         publish(m);
-                        counter++;
+                        if(!b) counter++;
                     });
+                    task.start();
                 }
                 return true;
             }
 
             @Override
-            protected void process(List<ProgressMessage> chunks) {
-                chunks.forEach(m -> txaLog.addText(m.getTextWithID()));
+            protected void process(List<ProgressLog> chunks) {
+                chunks.forEach(m -> txaLog.addText(m.getLogWithID()));
                 pgbTasks.setValue(counter);
                 pgbTasks.setToolTipText(pgbTasks.getValue()+"/"+pgbTasks.getMaximum());
             }

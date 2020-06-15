@@ -3,6 +3,7 @@ package com.mycompany.imagedownloader.model;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.regex.Matcher;
 import org.apache.commons.io.FileUtils;
 
 /** References:
@@ -22,7 +23,7 @@ public class Utils {
     
     private Utils(){}
     
-    public static File generateFile(String folder, String filename, String extension){
+    public static File createValidFile(String folder, String filename, String extension){
         File file = new File(String.format(FILENAME_MASK, folder, filename, extension));
         
         //FIX FILEPATH LENGTH
@@ -43,34 +44,38 @@ public class Utils {
         return file;
     }
     
-    public static String generateFilepath(String folder, String filename, String extension){
-        return generateFile(folder, filename, extension).getAbsolutePath();
+    public static String createValidFilepath(String folder, String filename, String extension){
+        return createValidFile(folder, filename, extension).getAbsolutePath();
     }
     
-    public static void saveFileFromURL(String url, File file) throws IOException{
+    public static long downloadToFile(String url, File file) throws IOException{
         FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
+        try{
+            return file.length();
+        }catch(SecurityException ex){
+            return 0L;
+        }
       }
     
-    public static String getFile(String path){
-        int index = path.lastIndexOf('/');
-        String filename = path; //new File("").getName();
+    public static String parseFile(String path){
+        String file = path.replaceAll("[/\\\\]", "/");
+        int index = file.lastIndexOf('/');
         if(index != -1){
             if(index+1 >= path.length()){
-                filename = path.substring(0, index);
+                file = file.substring(0, index);
             }else{
-                filename = path.substring(index+1);
+                file = file.substring(index+1);
             }
         }
-        return filename;
+        return file;
     }
     
-    public static String getExtension(String path){
-//        System.out.println("getExtension: "+path);
-        String file = getFile(path);
+    public static String parseExtension(String path){
+        String file = parseFile(path);
         String ext = DEFAULT_IMAGE_EXTENSION;
         
         int extIndex = file.lastIndexOf(".");
-        if(extIndex > 0){ //_.
+        if(extIndex > 0){ //?.xxx
             String tempExt = file.substring(extIndex);
             while(!tempExt.isEmpty() && !tempExt.matches(EXTENSION_REGEX)){
                 tempExt = tempExt.substring(0, tempExt.length()-1);
@@ -79,20 +84,22 @@ public class Utils {
                 ext = tempExt;
             }
         }
-//        System.out.println("getExtension: "+ext);
         return ext;
     }
     
-    public static String getFilename(String path){ //TODO: fix if too big
-//        System.out.println("getFilename: "+path);
-        String filename = getFile(path);
+    public static String parseFilename(String path){
+        return parseFilename(path, true);
+    }
+    
+    public static String parseFilename(String path, boolean removeInvalid){ //TODO: fix if too big?
+        String filename = parseFile(path);
         int extIndex = filename.lastIndexOf(".");
         if(extIndex != -1){
             filename = filename.substring(0, extIndex);
         }
-
-        filename = filename.replaceAll(FILENAME_INVALID_REGEX, "");
-//        System.out.println("getFilename: "+filename);
+        if(removeInvalid){
+            filename = filename.replaceAll(FILENAME_INVALID_REGEX, "");
+        }
         return filename;
     }
     

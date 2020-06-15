@@ -10,7 +10,7 @@ import javax.swing.JTextArea;
 public class RecycledTextArea extends JTextArea{
     private static final long serialVersionUID = 1L;
     
-    private static final int DEFAULT_MAX_SIZE = 10;
+    private static final int DEFAULT_MAX_SIZE = 30;
     
     private LinkedList<String> texts;
     private int size;
@@ -19,8 +19,6 @@ public class RecycledTextArea extends JTextArea{
         texts = new LinkedList<>();
         this.size = size;
         setEditable(false);
-//        setColumns(20);
-//        setRows(5);
     }
 
     public RecycledTextArea() {
@@ -47,7 +45,5 @@ public class RecycledTextArea extends JTextArea{
         texts.add(text);
         printTexts();
     }
-    
-    
-    
+       
 }
