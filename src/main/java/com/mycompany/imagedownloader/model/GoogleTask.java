@@ -47,6 +47,8 @@ public class GoogleTask implements Task {
     private static final int SEARCH_MIN_TIMEOUT = 750; //ms
     private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
     private static final int MIN_FILESIZE = 25600; //bytes
+    private static final String SUBFOLDER_SMALL = "small";
+    private static final String SUBFOLDER_CORRUPT = "corrupt";
     
     private static final String RESPONSE_LINK_PREFIX_TOKEN = "/search?tbs=simg:";
     private static final String RESPONSE_LINK_TEXT_TOKEN = "Todos os tamanhos"; //pt-br
@@ -85,7 +87,7 @@ public class GoogleTask implements Task {
     private List<Path> images;
     private String destination;
     private int startIndex;
-    private boolean biggerSizeOnly;
+    private boolean retryFilesize;
     
     private ProgressListener listener;
     private boolean running;
@@ -198,11 +200,11 @@ public class GoogleTask implements Task {
         return googleImages; //if empty: failed finding images urls
     }
     
-    private void downloadLargest(List<GoogleImage> googleImages, int width, int height, int size) {    
-        //LOOK FOR IMAGE BIGGER THAN SOURCE IMAGE AND GOOGLE IMAGES
+    private void downloadLargest(List<GoogleImage> googleImages, int sourceWidth, int sourceHeight, int sourceSize) {    
+        //LOOK FOR BIGGEST GOOGLE IMAGE BIGGER THAN SOURCE
         GoogleImage biggest = null;
-        for (GoogleImage image : googleImages) {
-            if(image.width>width && image.height>height){
+        for (GoogleImage image : googleImages) { //TODO: should I sort list by size before?
+            if(image.width>sourceWidth && image.height>sourceHeight){
                 if(biggest==null || (image.width>biggest.width && image.height>biggest.height)){
                     biggest = image;
                 }
@@ -213,72 +215,111 @@ public class GoogleTask implements Task {
             return;
         }
         log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.url), Status.INFO);
-
-        //SAVE FILE AND CHECK SIZE
-        File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
+        
+        boolean failed = false;
         try{
+            //SAVE FILE
+            File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
             long imgSize = Utils.downloadToFile(biggest.url, file);
-            if(biggerSizeOnly){
-                if(imgSize < size){
-                    log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
-                    try {file.delete();} catch (SecurityException ex){}
-                    removeRetry(biggest, googleImages, width, height, size);
-                }else{
-                    log.appendToLog(BIGGER_SIZE_LOG, Status.INFO);
-                }
-            }else{
-                if(imgSize < MIN_FILESIZE){ //check if corrupted
-                    log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.ERROR);
-                    if(imgSize < (size*MIN_FILESIZE_RATIO)){ //delete only if small file size is really small (compare to original)
-                        log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
-                        try {file.delete();} catch (SecurityException ex){}
-                    }
-                    if(biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN) && resolveTumblr(biggest)) return;
-                    removeRetry(biggest, googleImages, width, height, size);
+            
+            //TESTS
+            boolean corrupt = reviseCorrupt(file, imgSize, sourceSize);
+            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN)){
+                File tmp = resolveTumblr(biggest, sourceSize);
+                if(tmp != null){
+                    file = tmp;
+                    corrupt = false;
                 }
             }
+            boolean small = (retryFilesize && !corrupt)? reviseSmall(file, imgSize, sourceSize):false;
+            if(corrupt || small) failed = true;
             
         }catch(IOException ex){
             log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
-            if(biggest.url.contains("?")){ //rarely solves the problem
+            //LAST RESORT (rarely solves the problem if failed because of url)
+            if(biggest.url.contains("?")){ 
                 googleImages.add(new GoogleImage(
                         biggest.url.substring(0, biggest.url.lastIndexOf("?")), 
                         biggest.width, 
                         biggest.height)
                 );
             }
-            removeRetry(biggest, googleImages, width, height, size);
+            failed = true;
+        }
+        
+        //RETRY
+        if(failed){
+            googleImages.remove(biggest);
+            if(!googleImages.isEmpty()){
+                log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
+                downloadLargest(googleImages, sourceWidth, sourceHeight, sourceSize);
+            }else{
+                log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
+            }
         }
     }
     
-    private void removeRetry(GoogleImage failed, List<GoogleImage> googleImages, int width, int height, int size){
-        googleImages.remove(failed);
-        if(!googleImages.isEmpty()){
-            log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
-            downloadLargest(googleImages, width, height, size);
-        }else{
-            log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
+    private boolean reviseSmall(File file, long size, long sourceSize){
+        if(size < sourceSize){
+            log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
+            if(!Utils.moveFileToChild(file, SUBFOLDER_SMALL)){
+                System.err.println("ERROR: Failed moving file "+file.getAbsolutePath());
+            }
+            return true; //even if it failed to move, try other images
         }
+        log.appendToLog(BIGGER_SIZE_LOG, Status.INFO);
+        return false;
+    }
+    
+    private boolean reviseCorrupt(File file, long size, long sourceSize){
+        //BELOW FILESIZE THRESHOLD
+        if(size < MIN_FILESIZE){
+            if(Utils.deleteFile(file)){
+               log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
+            }else{
+                System.err.println("ERROR: Failed deleting file "+file.getAbsolutePath());
+            }
+            return true;
+        }
+        //TOO SMALL COMPARED TO SOURCE
+        if (size < (sourceSize*MIN_FILESIZE_RATIO)){
+            log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
+            if(!Utils.moveFileToChild(file, SUBFOLDER_CORRUPT)){
+                System.err.println("ERROR: Failed moving file "+file.getAbsolutePath());
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    private boolean reviseCorrupt(File file, long sourceSize){
+        return GoogleTask.this.reviseCorrupt(file, Utils.getFileSize(file), sourceSize);
     }
 
-    private boolean resolveTumblr(GoogleImage image){
+    private File resolveTumblr(GoogleImage image, long sourceSize){
+        File file = null;
         try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
+            //REQUEST
             HttpGet requisicao = new HttpGet(image.url);
             requisicao.addHeader("Accept", "image/webp,image/apng,*/*");
             requisicao.addHeader("referer", image.url);
-//            requisicao.addHeader("sec-fetch-dest", "image");
-//            requisicao.addHeader("sec-fetch-mode", "no-cors");
-//            requisicao.addHeader("sec-fetch-site", "same-origin");
-            HttpResponse resposta = client.execute(requisicao);
-            byte[] bytes = EntityUtils.toByteArray(resposta.getEntity());
+            HttpResponse response = client.execute(requisicao);
+            //SAVE BYTES
+            byte[] bytes = EntityUtils.toByteArray(response.getEntity());
             Path filepath = Path.of(Utils.createValidFilepath(destination, image.getFilename(), image.getExtension()));
             Files.write(filepath, bytes);
+            file = filepath.toFile();
         } catch (IOException ex) {
-            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.url), Status.ERROR);
-            return false;
+            System.err.println("ERROR: Failed connecting Tumblr "+ex.getMessage());
         }
-        log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.INFO);
-        return true;
+        
+        //TEST IF CORRUPT AND LOG
+        if(file != null && !reviseCorrupt(file, sourceSize)){
+            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.INFO);
+        }else{
+            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.url), Status.ERROR);
+        }
+        return file;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
@@ -320,8 +361,8 @@ public class GoogleTask implements Task {
         this.listener = listener;
     }
 
-    public void setBiggerSizeOnly(boolean b) {
-        if(!running) biggerSizeOnly = b;
+    public void setRetryFilesize(boolean b) {
+        if(!running) retryFilesize = b;
     }
     // </editor-fold>
     

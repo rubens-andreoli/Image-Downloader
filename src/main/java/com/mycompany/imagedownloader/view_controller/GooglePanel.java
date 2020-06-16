@@ -65,15 +65,11 @@ public class GooglePanel extends TaskPanel {
             }
         });
 
+        chbSize.setSelected(true);
         chbSize.setText("Check size...");
-        chbSize.setToolTipText("<html>Should an image  be considered bigger<br>\n<b>only</b> if the file size is also bigger?</html>");
+        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.</html>");
         chbSize.setIconTextGap(6);
         chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
-        chbSize.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                chbSizeItemStateChanged(evt);
-            }
-        });
 
         btnFolder.setText("Source");
         btnFolder.addActionListener(new java.awt.event.ActionListener() {
@@ -164,6 +160,7 @@ public class GooglePanel extends TaskPanel {
         if(listener == null) return;
         try {
             task.setStartIndex(txfNumber.getInt());
+            task.setRetryFilesize(chbSize.isSelected());
             txfUrl.clear();
             txfNumber.clear();
             listener.taskCreated(task);
@@ -201,10 +198,6 @@ public class GooglePanel extends TaskPanel {
             } 
 	}
     }//GEN-LAST:event_btnFolderActionPerformed
-
-    private void chbSizeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_chbSizeItemStateChanged
-        task.setBiggerSizeOnly(evt.getStateChange() == ItemEvent.SELECTED);
-    }//GEN-LAST:event_chbSizeItemStateChanged
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
