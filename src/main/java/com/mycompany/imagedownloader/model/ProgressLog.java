@@ -32,7 +32,7 @@ public class ProgressLog {
     }
     
     public ProgressLog(int id, boolean isPartial){
-        this(String.valueOf(id), false);
+        this(String.valueOf(id), isPartial);
     }
     
     public ProgressLog(int id) {

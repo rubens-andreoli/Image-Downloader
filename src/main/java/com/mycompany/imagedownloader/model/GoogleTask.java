@@ -62,21 +62,21 @@ public class GoogleTask implements Task {
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
     
-    private static final String LOADING_IMAGE_LOG_MASK = "Loading image %s -> %d:%d [%d bytes]\n"; //path, width, height, size
+    private static final String LOADING_IMAGE_LOG = "Loading image...\n";
     private static final String NO_SIMILAR_LOG = "No similar images were found\n";
     private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\n";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file\n";
-    private static final String NO_BIGGER_LOG = "No bigger images were found\n";
-    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions %s\n"; //url
+    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)\n"; //image count
+    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]...\n"; //width, height, source width, source height
     private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%d bytes] %s\n"; //size, path
     private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\n";
-    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another bigger image\n";
+    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image\n";
     private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\n"; //url
     private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\n"; //url
     private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\n"; //exception message
     private static final String DELETING_FILE_LOG = "Deleting corrupted file\n";
     private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\n";
-    private static final String BIGGER_SIZE_LOG = "Image found has a bigger file size also\n";
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%d bytes] > [%d bytes]\n";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
     // </editor-fold>
        
@@ -132,7 +132,8 @@ public class GoogleTask implements Task {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
             int height = image.getHeight();
             int width = image.getWidth();
-            log.appendToLog(String.format(LOADING_IMAGE_LOG_MASK, file, width, height, size), Status.INFO);
+            log.appendToLog(LOADING_IMAGE_LOG, Status.INFO);
+            log.appendToLog(file.toString()+"\n", Status.INFO);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -188,7 +189,7 @@ public class GoogleTask implements Task {
                             .split(RESPONSE_SPLIT_LINK_DELIMITER);
                     if(info.length == 3){
 //                        System.out.println("LOG: LINK " + info[0]);
-                        googleImages.add(new GoogleImage(info[0], info[1], info[2]));
+                        googleImages.add(new GoogleImage(info[0], info[2], info[1]));
                     }/*else{
                         System.out.println("LOG: DISCARDED LINK "+Arrays.asList(info));
                     }*/
@@ -210,10 +211,11 @@ public class GoogleTask implements Task {
             }
         }
         if(biggest == null){
-            log.appendToLog(NO_BIGGER_LOG, Status.INFO);
+            log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), Status.INFO);
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.url), Status.INFO);
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.width, biggest.height, sourceWidth, sourceHeight), Status.INFO);
+        log.appendToLog(biggest.url+"\n", Status.INFO);
         
         boolean failed = false;
         try{
@@ -264,7 +266,7 @@ public class GoogleTask implements Task {
             Utils.moveFileToChild(file, SUBFOLDER_SMALL);
             return true; //even if it failed to move, try other images
         }
-        log.appendToLog(BIGGER_SIZE_LOG, Status.INFO);
+        log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), Status.INFO);
         return false;
     }
     
