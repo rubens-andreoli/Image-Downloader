@@ -1,5 +1,8 @@
 package com.mycompany.imagedownloader.model;
 
+/** References:
+ * https://howtodoinjava.com/java/string/4-ways-to-split-tokenize-strings-in-java/
+ */
 public class ProgressLog {
     
     public enum Status{
@@ -7,39 +10,68 @@ public class ProgressLog {
 
         @Override
         public String toString() {
-            return this.name()+": ";
+            return this.name()+TAG_DELIMITER+" ";
         }
-        
     }
     
-    private static final String DEFAULT_ID_MASK = "[%d]\n%s";
+    private static final String DEFAULT_ID_MASK = "[%s]\n%s";
+    private static final char TAG_DELIMITER = ':';
 
-    private final int id;
+    private String id;
+    private boolean partial;
     private StringBuilder log;
 
-    public ProgressLog(final int id) {
+    public ProgressLog(String id, boolean isPartial){
         this.id = id;
+        this.partial = isPartial;
         log = new StringBuilder();
     }
     
+    public ProgressLog(String id){
+        this(id, false);
+    }
+    
+    public ProgressLog(int id, boolean isPartial){
+        this(String.valueOf(id), false);
+    }
+    
+    public ProgressLog(int id) {
+        this(String.valueOf(id), false);
+    }
+    
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void appendToLog(String message){
+        int i = message.indexOf(TAG_DELIMITER);
+        if(i != -1){
+            int tag = Utils.parseInteger(message.substring(0, i));
+            log.append((Status.values()[tag]).toString());
+            log.append(message.substring(i+1));
+        }
         log.append(message);
+
+    }
+    
+    public void setLog(String log){
+        this.log = new StringBuilder();
+        appendToLog(log);
     }
     
     public void appendToLog(String message, Status tag){
         log.append(tag.toString());
-        appendToLog(message);
-    }
-    
-    public void setLog(String log){
-        setLog(log, null);
+        log.append(message);
     }
     
     public void setLog(String log, Status tag){
-        this.log = new StringBuilder(tag!=null? tag.toString():"");
-        appendToLog(log);
+        this.log = new StringBuilder();
+        appendToLog(log, tag);
     }
+
+    public void setPartial(boolean b) {
+        this.partial = b;
+    }
+    // </editor-fold>
     
+    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public String getLog(){
         return log.toString();
     }
@@ -52,8 +84,13 @@ public class ProgressLog {
         return String.format(mask, id, getLog());
     }
     
-    public int getId(){
+    public String getId(){
         return id;
     }
-       
+
+    public boolean isPartial() {
+        return partial;
+    }
+    // </editor-fold>
+
 }

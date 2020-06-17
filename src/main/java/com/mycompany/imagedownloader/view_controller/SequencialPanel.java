@@ -23,7 +23,7 @@ public class SequencialPanel extends TaskPanel {
     private static final String INVALID_NUMBER_MSG = "Please verify if the marked file number is lower than the target set.\n";
     private static final String INVALID_URL_TITLE = "Malformed URL";
     private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
-    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s"; //source, start, end, destination
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     // </editor-fold>
     
     public SequencialPanel() {

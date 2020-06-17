@@ -29,7 +29,7 @@ public class GooglePanel extends TaskPanel {
     private static final String INVALID_NUMBER_MSG = "Please verify if file index is not negative and it is lower than the number of images in the source folder.\n";
     private static final String INVALID_SOURCE_TITLE = "Invalid/Empty Folder";
     private static final String INVALID_SOURCE_MSG = "Please verify if the source folder is valid and contain supported images.\n";
-    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s"; //source, start, end, destination
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     // </editor-fold>
 
     private GoogleTask task = new GoogleTask();
@@ -67,7 +67,7 @@ public class GooglePanel extends TaskPanel {
 
         chbSize.setSelected(true);
         chbSize.setText("Check size...");
-        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.</html>");
+        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>May generate a lot of copies of the same image</i></html>");
         chbSize.setIconTextGap(6);
         chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
 

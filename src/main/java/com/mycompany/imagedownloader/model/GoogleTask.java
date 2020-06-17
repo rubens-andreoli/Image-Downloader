@@ -48,14 +48,13 @@ public class GoogleTask implements Task {
     private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
     private static final int MIN_FILESIZE = 25600; //bytes
     private static final String SUBFOLDER_SMALL = "small";
-    private static final String SUBFOLDER_CORRUPT = "corrupt";
     
-    private static final String RESPONSE_LINK_PREFIX_TOKEN = "/search?tbs=simg:";
-    private static final String RESPONSE_LINK_TEXT_TOKEN = "Todos os tamanhos"; //pt-br
-    private static final String TUMBLR_IMAGE_START_TOKEN = "tumblr_";
-    private static final String SUB_RESPONSE_SCRIPT_DATA_TOKEN = "AF_initDataCallback";
-    private static final String SUB_RESPONSE_SPLIT_LINK_TOKEN = ",";
-    private static final String SUB_RESPONSE_CLEAR_LINK_REGEX = "[\\[\\]\\\"\\\"]";
+    private static final String RESPONSE_LINK_PREFIX_MARKER = "/search?tbs=simg:";
+    private static final String RESPONSE_LINK_TEXT_MARKER = "Todos os tamanhos"; //pt-br
+    private static final String RESPONSE_SCRIPT_DATA_MARKER = "AF_initDataCallback";
+    private static final String RESPONSE_SPLIT_LINK_DELIMITER = ",";
+    private static final String TUMBLR_IMAGE_START_MARKER = "tumblr_";
+    private static final String IMAGE_LINK_CLEAR_REGEX = "[\\[\\]\\\"\\\"]";
     private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
     private static final String MISSING_DESTINATION_MSG_MASK = "Detination folder [%s] not found.";
@@ -90,7 +89,7 @@ public class GoogleTask implements Task {
     private boolean retryFilesize;
     
     private ProgressListener listener;
-    private boolean running;
+    private volatile boolean running;
     private ProgressLog log;
     
     @SuppressWarnings({"SleepWhileInLoop","UseSpecificCatch"})
@@ -112,7 +111,7 @@ public class GoogleTask implements Task {
             } catch (Exception ex) {
                 log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
             }
-            if(listener!= null) listener.progress(log);
+            if(listener!= null) listener.progressed(log);
         }
         running = false; //not really needed
     }
@@ -165,7 +164,7 @@ public class GoogleTask implements Task {
         String responseLink = null;
         for (Element e : doc.getElementsByTag("a")) {
             String ref = e.attr("href");
-            if(ref.startsWith(RESPONSE_LINK_PREFIX_TOKEN) && e.text().equals(RESPONSE_LINK_TEXT_TOKEN)){
+            if(ref.startsWith(RESPONSE_LINK_PREFIX_MARKER) && e.text().equals(RESPONSE_LINK_TEXT_MARKER)){
                 responseLink = e.absUrl("href");
                 break; //just one
             }
@@ -181,12 +180,12 @@ public class GoogleTask implements Task {
         Document subdoc = Jsoup.connect(responseLink).get();
         subdoc.getElementsByTag("script").forEach(s -> {
             String script = s.data();
-            if(script.startsWith(SUB_RESPONSE_SCRIPT_DATA_TOKEN)){
+            if(script.startsWith(RESPONSE_SCRIPT_DATA_MARKER)){
                 Matcher m = p.matcher(script);
                 while(m.find()) {
                     String[] info = m.group(0) //first group of the pattern regex
-                            .replaceAll(SUB_RESPONSE_CLEAR_LINK_REGEX, "")
-                            .split(SUB_RESPONSE_SPLIT_LINK_TOKEN);
+                            .replaceAll(IMAGE_LINK_CLEAR_REGEX, "")
+                            .split(RESPONSE_SPLIT_LINK_DELIMITER);
                     if(info.length == 3){
 //                        System.out.println("LOG: LINK " + info[0]);
                         googleImages.add(new GoogleImage(info[0], info[1], info[2]));
@@ -224,7 +223,7 @@ public class GoogleTask implements Task {
             
             //TESTS
             boolean corrupt = reviseCorrupt(file, imgSize, sourceSize);
-            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_START_TOKEN)){
+            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_START_MARKER)){
                 File tmp = resolveTumblr(biggest, sourceSize);
                 if(tmp != null){
                     file = tmp;
@@ -262,9 +261,7 @@ public class GoogleTask implements Task {
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
             log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
-            if(!Utils.moveFileToChild(file, SUBFOLDER_SMALL)){
-                System.err.println("ERROR: Failed moving file "+file.getAbsolutePath());
-            }
+            Utils.moveFileToChild(file, SUBFOLDER_SMALL);
             return true; //even if it failed to move, try other images
         }
         log.appendToLog(BIGGER_SIZE_LOG, Status.INFO);
@@ -276,17 +273,13 @@ public class GoogleTask implements Task {
         if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
                log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
-            }else{
-                System.err.println("ERROR: Failed deleting file "+file.getAbsolutePath());
             }
             return true;
         }
         //TOO SMALL COMPARED TO SOURCE
-        if (size < (sourceSize*MIN_FILESIZE_RATIO)){
+        if (!retryFilesize && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
-            if(!Utils.moveFileToChild(file, SUBFOLDER_CORRUPT)){
-                System.err.println("ERROR: Failed moving file "+file.getAbsolutePath());
-            }
+            Utils.moveFileToChild(file, SUBFOLDER_SMALL);
             return true;
         }
         return false;
@@ -342,8 +335,8 @@ public class GoogleTask implements Task {
     }
  
     public void setDestination(String folder) throws IOException {
-        Path f = Paths.get(folder);
-        if(!Files.exists(f) || !Files.isDirectory(f)){
+        if(folder == null) return;
+        if(!Files.isDirectory(Paths.get(folder))){
             throw new IOException(String.format(MISSING_DESTINATION_MSG_MASK, folder));
         }
         this.destination = folder;

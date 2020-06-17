@@ -146,9 +146,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 for (Task task : tasks) {
                     if(!running) break;
                     currentTask = task;
-                    task.setProgressListener((m, b) -> {
+                    task.setProgressListener(m -> {
                         publish(m);
-                        if(!b) counter++;
+                        if(!m.isPartial()) counter++;
                     });
                     task.start();
                 }
@@ -157,7 +157,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
             @Override
             protected void process(List<ProgressLog> chunks) {
-                chunks.forEach(m -> txaLog.addText(m.getLogWithID()));
+                chunks.forEach(m -> {
+                    if(m.isPartial()){
+                        txaLog.addText(m.getLog());
+                    }else{
+                        txaLog.addText(m.getLogWithID());
+                    }
+                });
                 pgbTasks.setValue(counter);
                 pgbTasks.setToolTipText(pgbTasks.getValue()+"/"+pgbTasks.getMaximum());
             }

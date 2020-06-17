@@ -38,9 +38,12 @@ public class Utils {
      * @param removeInvalid {@code true} to remove invalid characters; {@code false} otherwise
      * @return valid {@code File} ready to be saved
      */
-    public static File createValidFile(String folder, String filename, String extension, boolean removeInvalid){
-        if(removeInvalid)filename = filename.replaceAll("[\\/\\\\:\\*?\\\"<\\>|]", "");
-        File file = new File(String.format(FILENAME_MASK, folder, filename, extension));
+    public static File createValidFile(File folder, String filename, String extension, boolean removeInvalid){
+        if(removeInvalid){
+            filename = filename.replaceAll("[\\/\\\\:\\*?\\\"<\\>|]", "");
+            extension = extension.replaceAll("[^a-z-A-Z\\.]", "");
+        }
+        File file = new File(folder, String.format("%s%s", filename, extension));
         
         //FIX FILEPATH LENGTH
         if(file.getAbsolutePath().length() > FILEPATH_MAX_LENGTH){
@@ -52,12 +55,17 @@ public class Utils {
                 //TODO: throw exception?
             }
         }
-      
+
         //FIX DUPLICATED NAME
         for(int n=1; file.exists(); n++){
             file = new File(String.format(DUPLICATED_FILENAME_MASK, folder, filename, n, extension));
         }
         return file;
+    }
+    
+    public static File createValidFile(String folder, String filename, String extension, boolean removeInvalid){
+        if(removeInvalid)folder = folder.replaceAll("[\\/\\\\:\\*?\\\"<\\>|]", "");
+        return createValidFile(new File(folder), filename, extension, removeInvalid);
     }
     
     /**
@@ -148,7 +156,7 @@ public class Utils {
     
     /**
      * Extracts the file from the abstract pathname and then returns a 
-     * {@code String} containing anything after a {@literal '.'} (Dot) 
+     * {@code String} containing anything after the first {@literal '.'} (dot) 
      * removing anything from the end of the {@Code String} until it matches
      * a common extension regex.
      * 
@@ -163,7 +171,7 @@ public class Utils {
         String file = parseFile(path);
         String ext = DEFAULT_EXTENSION;
         
-        int extIndex = file.lastIndexOf(".");
+        int extIndex = file.lastIndexOf("."); //indexOf()?
         if(extIndex > 0){ //?.xxx
             String tempExt = file.substring(extIndex);
             while(!tempExt.isEmpty() && !tempExt.matches(EXTENSION_REGEX)){
@@ -190,10 +198,10 @@ public class Utils {
     }
     
     /**
-     * Returns the name of the file (without extension) or directory denoted 
-     * by this abstract pathname. This is just the last name in the pathname's 
-     * name sequence. It can also remove any characters considered invalid 
-     * by Windows OS.
+     * Returns the name of the file until the first {@literal '.'} (dot) 
+     * (without extension) or directory denoted by this abstract pathname. 
+     * This is just the last name in the pathname's  name sequence. 
+     * It can also remove any characters considered invalid  by Windows OS.
      * 
      * @see Utils#parseFile(String) 
      * @see Utils#FILENAME_INVALID_CHARS_REGEX
@@ -204,7 +212,7 @@ public class Utils {
      */
     public static String parseFilename(String path, boolean removeInvalid){ //TODO: fix if too big?
         String filename = parseFile(path);
-        int extIndex = filename.lastIndexOf(".");
+        int extIndex = filename.lastIndexOf("."); //indexOf()?
         if(extIndex != -1){
             filename = filename.substring(0, extIndex);
         }
@@ -243,24 +251,26 @@ public class Utils {
      *         {@code false} otherwise
      */
     public static boolean moveFileToChild(File source, String subfolder){
+        if(!source.isFile()) return false;
+       
         boolean moved = false;
-        if(source.isFile()){
-            File folder = new File(source.getParent(), subfolder);
-            try{
-                folder.mkdir();
-                moved = source.renameTo(new File(folder, source.getName()));
-                if(!moved){ //costly method only if failed above
-                    File dest = createValidFile(
-                        folder.getPath()+"/", 
-                        parseFilename(source.getName()), 
-                        parseExtension(source.getName())
-                    );
-                    moved = source.renameTo(dest);
-                }
-            }catch(SecurityException ex){
-                System.err.println(ex.getMessage());
+        File folder = new File(source.getParent(), subfolder);
+        File dest = new File(folder, source.getName());
+        try{
+            folder.mkdir();
+            moved = source.renameTo(dest);
+            if(!moved){ //costly method only if failed above
+                dest = createValidFile(
+                    folder.getPath()+"/", 
+                    parseFilename(source.getName()), 
+                    parseExtension(source.getName())
+                );
+                moved = source.renameTo(dest);
             }
+        }catch(Exception ex){
+            System.err.println(ex.getMessage());
         }
+        if(!moved) System.err.println("ERROR: Failed moving "+source.getAbsolutePath()+" to "+dest.getAbsolutePath());
         return moved;
     }
     
@@ -278,6 +288,7 @@ public class Utils {
         try{
             removed = file.delete();
         }catch(SecurityException ex){}
+        if(!removed) System.err.println("ERROR: Failed removing "+file.getAbsolutePath());
         return removed;
     }
     
@@ -288,4 +299,5 @@ public class Utils {
         }catch(SecurityException ex){}
         return size;
     }
+    
 }

@@ -32,14 +32,13 @@ public class ScraperTask implements Task{
     
     private ProgressLog log;
     private ProgressListener listener;
-    private boolean running;
+    private volatile boolean running;
 
     public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {
         if(depth < 0 || depth > DEPTH_LIMIT){
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
-        File folder = new File(destination);
-        if(!folder.exists() || !folder.isDirectory()){
+        if(!(new File(destination)).isDirectory()){
             throw new IOException(MISSING_DESTINATION_MSG);
         }
         try {
@@ -67,7 +66,7 @@ public class ScraperTask implements Task{
     private void download(String url, int progress, boolean isPath){
         if(!running) return;
         
-        log = new ProgressLog(progress);
+        log = new ProgressLog(progress, !isPath);
         log.appendToLog(String.format(CONNECTING_LOG_MASK, url), Status.INFO);
         
         Document doc = null;
@@ -79,10 +78,10 @@ public class ScraperTask implements Task{
                     .get();
         }catch(IOException ex){
             log.appendToLog(CONNECTION_FAILED_LOG, isPath? Status.CRITICAL:Status.ERROR);
-            if(listener != null) listener.progress(log, isPath);
-            return;
+            if(listener != null) listener.progressed(log);
         }
-
+        if(doc == null) return;
+        
         //PARSING IMAGES
         Elements images = doc.getElementsByTag("img");
         log.appendToLog(String.format(IMAGE_COUNT_LOG_MASK, images.size()), Status.INFO);
@@ -106,7 +105,7 @@ public class ScraperTask implements Task{
             }
         }
         
-        if(listener != null) listener.progress(log, !isPath); //parcial log for each link
+        if(listener != null) listener.progressed(log); //parcial log for each link
 
         //PARSING LINKS
         if(depth > 0){

@@ -20,7 +20,7 @@ public class ScraperPanel extends TaskPanel {
     private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit: "+ScraperTask.DEPTH_LIMIT+"\n";
     private static final String INVALID_URL_TITLE = "Malformed URL";
     private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
-    private static final String DESCRIPTION_MASK = "%s [%d] -> %s"; //source, depth, destination
+    private static final String DESCRIPTION_MASK = "%s [%d] -> %s\n"; //source, depth, destination
     // </editor-fold>
     
     public ScraperPanel() {

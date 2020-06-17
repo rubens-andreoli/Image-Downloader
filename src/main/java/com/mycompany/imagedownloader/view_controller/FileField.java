@@ -78,7 +78,7 @@ public class FileField extends JTextField{
     
     @Override
     public String getText() {
-        return file;
+        return file!=null?file:"";
     }
     
     @Override
