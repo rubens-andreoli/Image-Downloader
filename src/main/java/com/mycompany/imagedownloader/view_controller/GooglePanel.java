@@ -45,11 +45,11 @@ public class GooglePanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
-        txfDest = new FileField(65);
+        txfDest = new PathField(PathField.DIRECTORIES_ONLY, 50);
         chbSize = new javax.swing.JCheckBox();
-        btnFolder = new javax.swing.JButton();
-        txfUrl = new FileField(45);
-        txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
+        btnSource = new javax.swing.JButton();
+        txfSource = new PathField(PathField.DIRECTORIES_ONLY, 45);
+        txfStart = new com.mycompany.imagedownloader.view_controller.NumberField();
         btnAdd = new javax.swing.JButton();
         sclTasks = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
@@ -65,24 +65,35 @@ public class GooglePanel extends TaskPanel {
             }
         });
 
+        txfDest.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txfDestActionPerformed(evt);
+            }
+        });
+
         chbSize.setSelected(true);
         chbSize.setText("Check size...");
         chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>May generate a lot of copies of the same image</i></html>");
         chbSize.setIconTextGap(6);
         chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
 
-        btnFolder.setText("Source");
-        btnFolder.addActionListener(new java.awt.event.ActionListener() {
+        btnSource.setText("Source");
+        btnSource.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnFolderActionPerformed(evt);
+                btnSourceActionPerformed(evt);
             }
         });
 
-        txfUrl.setPreferredSize(new java.awt.Dimension(256, 22));
+        txfSource.setPreferredSize(new java.awt.Dimension(256, 22));
+        txfSource.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txfSourceActionPerformed(evt);
+            }
+        });
 
-        txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfNumber.setText("0");
-        txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
+        txfStart.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txfStart.setText("0");
+        txfStart.setPreferredSize(new java.awt.Dimension(35, 22));
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -106,14 +117,14 @@ public class GooglePanel extends TaskPanel {
                     .addComponent(sclTasks)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(btnFolder, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(btnSource, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(btnDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(txfSource, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -132,9 +143,9 @@ public class GooglePanel extends TaskPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnAdd)
-                    .addComponent(btnFolder)
-                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(btnSource)
+                    .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txfSource, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(sclTasks, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
                 .addContainerGap())
@@ -142,27 +153,18 @@ public class GooglePanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(txfDest.selectFolder(this)){
-            try {
-                task.setDestination(txfDest.getText());
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(
-                    this, 
-                    INVALID_DESTINATION_MSG+ex.getMessage(), 
-                    INVALID_DESTINATION_TITLE, 
-                    JOptionPane.ERROR_MESSAGE
-                );
-            }   
+        if(txfDest.selector(this)){
+            setTaskDestination();
 	}
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if(listener == null) return;
         try {
-            task.setStartIndex(txfNumber.getInt());
+            task.setStartIndex(txfStart.getInt());
             task.setRetryFilesize(chbSize.isSelected());
-            txfUrl.clear();
-            txfNumber.clear();
+            txfSource.clear();
+            txfStart.clear();
             listener.taskCreated(task);
             appendTaskDescription(
                     String.format(
@@ -183,35 +185,60 @@ public class GooglePanel extends TaskPanel {
         }
     }//GEN-LAST:event_btnAddActionPerformed
 
-    private void btnFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFolderActionPerformed
-        if(txfUrl.selectFolder(this)){
-            try {
-                task.setSource(txfUrl.getText());
-                txfNumber.setMaxValue(task.getImageCount());
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(
-                    this, 
-                    INVALID_SOURCE_MSG+ex.getMessage(), 
-                    INVALID_SOURCE_TITLE, 
-                    JOptionPane.ERROR_MESSAGE
-                );
-            } 
+    private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
+        if(txfSource.selector(this)){
+            setTaskSource();
 	}
-    }//GEN-LAST:event_btnFolderActionPerformed
+    }//GEN-LAST:event_btnSourceActionPerformed
+    
+    private void txfDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfDestActionPerformed
+        setTaskDestination();
+    }//GEN-LAST:event_txfDestActionPerformed
+
+    private void txfSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfSourceActionPerformed
+        setTaskSource();
+    }//GEN-LAST:event_txfSourceActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
-    private javax.swing.JButton btnFolder;
+    private javax.swing.JButton btnSource;
     private javax.swing.JCheckBox chbSize;
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane sclTasks;
     private javax.swing.JTextArea txaTasks;
-    private com.mycompany.imagedownloader.view_controller.FileField txfDest;
-    private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
-    private com.mycompany.imagedownloader.view_controller.FileField txfUrl;
+    private com.mycompany.imagedownloader.view_controller.PathField txfDest;
+    private com.mycompany.imagedownloader.view_controller.PathField txfSource;
+    private com.mycompany.imagedownloader.view_controller.NumberField txfStart;
     // End of variables declaration//GEN-END:variables
 
+    private void setTaskDestination(){
+        try {
+            task.setDestination(txfDest.getText());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_DESTINATION_MSG+ex.getMessage(), 
+                INVALID_DESTINATION_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } 
+    }
+    
+    private void setTaskSource(){
+        try {
+            task.setSource(txfSource.getText());
+            txfStart.setMaxValue(task.getImageCount());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_SOURCE_MSG+ex.getMessage(), 
+                INVALID_SOURCE_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } 
+    }
+    
     private void appendTaskDescription(String taskDescription){
         txaTasks.setText(txaTasks.getText()+taskDescription);
     }

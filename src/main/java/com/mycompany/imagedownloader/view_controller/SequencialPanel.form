@@ -119,7 +119,10 @@
         </Property>
       </Properties>
     </Component>
-    <Component class="com.mycompany.imagedownloader.view_controller.FileField" name="txfDest">
+    <Component class="com.mycompany.imagedownloader.view_controller.PathField" name="txfDest">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 60)"/>
+      </AuxValues>
     </Component>
   </SubComponents>
 </Form>

@@ -43,11 +43,11 @@ public class GoogleTask implements Task {
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
-    private static final int SEARCH_MAX_TIMEOUT = 1750; //ms
-    private static final int SEARCH_MIN_TIMEOUT = 750; //ms
+    private static final int SEARCH_MAX_TIMEOUT = 1500; //ms
+    private static final int SEARCH_MIN_TIMEOUT = 500; //ms
     private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
     private static final int MIN_FILESIZE = 25600; //bytes
-    private static final String SUBFOLDER_SMALL = "small";
+    private static final String SUBFOLDER_SMALL = "low";
     
     private static final String RESPONSE_LINK_PREFIX_MARKER = "/search?tbs=simg:";
     private static final String RESPONSE_LINK_TEXT_MARKER = "Todos os tamanhos"; //pt-br
@@ -67,16 +67,16 @@ public class GoogleTask implements Task {
     private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\n";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file\n";
     private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)\n"; //image count
-    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]...\n"; //width, height, source width, source height
-    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%d bytes] %s\n"; //size, path
+    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]\n"; //width, height, source width, source height
+    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s\n"; //size, path
     private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\n";
     private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image\n";
     private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\n"; //url
     private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\n"; //url
     private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\n"; //exception message
-    private static final String DELETING_FILE_LOG = "Deleting corrupted file\n";
+    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]\n";
     private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\n";
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%d bytes] > [%d bytes]\n";
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]\n";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
     // </editor-fold>
        
@@ -274,7 +274,7 @@ public class GoogleTask implements Task {
         //BELOW FILESIZE THRESHOLD
         if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
-               log.appendToLog(DELETING_FILE_LOG, Status.WARNING);
+               log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), Status.WARNING);
             }
             return true;
         }

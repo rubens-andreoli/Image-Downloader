@@ -40,7 +40,7 @@ public class ScraperPanel extends TaskPanel {
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
         txfNumber.setMaxValue(DEPTH_LIMIT);
-        txfDest = new com.mycompany.imagedownloader.view_controller.FileField();
+        txfDest = new PathField(PathField.DIRECTORIES_ONLY, 60);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -110,7 +110,7 @@ public class ScraperPanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        txfDest.selectFolder(this);
+        txfDest.selector(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
@@ -156,7 +156,7 @@ public class ScraperPanel extends TaskPanel {
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane pnlScroll;
     private javax.swing.JTextArea txaTasks;
-    private com.mycompany.imagedownloader.view_controller.FileField txfDest;
+    private com.mycompany.imagedownloader.view_controller.PathField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
