@@ -72,7 +72,7 @@ public class PathField extends JTextField{
                         break;
                     }
                 } catch (UnsupportedFlavorException | IOException ex) {
-                    System.err.println(ex.getMessage());
+                    System.err.println("ERROR: drag and drop failed "+ex.getMessage());
                 }
             }
         });

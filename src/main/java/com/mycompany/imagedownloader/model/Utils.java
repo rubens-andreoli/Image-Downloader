@@ -300,4 +300,29 @@ public class Utils {
         return size;
     }
     
+    public static boolean sleepRandom(int min, int max){
+        try {
+            Thread.sleep(getRandomBetween(min, max));
+            return true;
+        } catch (InterruptedException ex) {
+            return false;
+        }
+    }
+    
+    public static int getRandomBetween(int min, int max){
+        return (int) (Math.random() * (max - min)) + min;
+    }
+    
+    
+    public static int getNthIndexOf(String str, String regex, int n){
+        String[] tokens = str.split(regex);
+        if(tokens.length <= n) return -1;
+        
+        int index = n-1; //regex previous occurances
+        for (String token : tokens) {
+            index += token.length(); 
+        }
+        return index;
+    }
+ 
 }

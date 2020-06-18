@@ -11,11 +11,9 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,7 +41,7 @@ public class GoogleTask implements Task {
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
-    private static final int SEARCH_MAX_TIMEOUT = 1500; //ms
+    private static final int SEARCH_MAX_TIMEOUT = 1000; //ms
     private static final int SEARCH_MIN_TIMEOUT = 500; //ms
     private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
     private static final int MIN_FILESIZE = 25600; //bytes
@@ -57,8 +55,9 @@ public class GoogleTask implements Task {
     private static final String IMAGE_LINK_CLEAR_REGEX = "[\\[\\]\\\"\\\"]";
     private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
-    private static final String MISSING_DESTINATION_MSG_MASK = "Detination folder [%s] not found.";
-    private static final String MISSING_SOURCE_MSG_MASK = "Source folder [%s] not found.";
+    private static final String NO_FOLDER_MSG = "No folder was selected.";
+    private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found.";
+    private static final String FOLDER_PERMISSION_MSG_MASK = "You don't have folder [%s] read/write permissions.";
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
     
@@ -79,20 +78,17 @@ public class GoogleTask implements Task {
     private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]\n";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
     // </editor-fold>
-       
-    private final Random random = new Random();
-    
+
     private String source;
     private List<Path> images;
-    private String destination;
     private int startIndex;
-    private boolean retryFilesize;
+    private String destination;
+    private boolean retrySmall;
     
     private ProgressListener listener;
     private volatile boolean running;
     private ProgressLog log;
     
-    @SuppressWarnings({"SleepWhileInLoop","UseSpecificCatch"})
     @Override
     public void start() {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
@@ -102,15 +98,9 @@ public class GoogleTask implements Task {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
             if(!running) break;
+            Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
             log = new ProgressLog(i);
-            try {
-                Thread.sleep((int) ((random.nextDouble()*(SEARCH_MAX_TIMEOUT-SEARCH_MIN_TIMEOUT))+SEARCH_MIN_TIMEOUT));
-            } catch (Exception ex) {}
-            try {
-                searchWithFile(images.get(i));
-            } catch (Exception ex) {
-                log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
-            }
+            searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
         }
         running = false; //not really needed
@@ -121,7 +111,7 @@ public class GoogleTask implements Task {
         running = false;
     }
     
-    private void searchWithFile(Path file) throws Exception{
+    private void searchWithFile(Path file){
         try(var fileStream = new BufferedInputStream(Files.newInputStream(file));  //TODO: test if splitting input stream instead of reading twice is more eficient
                 var cache = new ByteArrayOutputStream();){ //TODO: not sure if stream is needed here; use byte[] from fileStream directly?
             fileStream.transferTo(cache);
@@ -157,6 +147,8 @@ public class GoogleTask implements Task {
             }
         }catch(IOException ex){
             log.appendToLog(FAILED_READING_FILE_LOG, Status.ERROR);
+        } catch (Exception ex) {
+            log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
         }
     }
     
@@ -232,7 +224,7 @@ public class GoogleTask implements Task {
                     corrupt = false;
                 }
             }
-            boolean small = (retryFilesize && !corrupt)? reviseSmall(file, imgSize, sourceSize):false;
+            boolean small = (retrySmall && !corrupt)? reviseSmall(file, imgSize, sourceSize):false;
             if(corrupt || small) failed = true;
             
         }catch(IOException ex){
@@ -279,7 +271,7 @@ public class GoogleTask implements Task {
             return true;
         }
         //TOO SMALL COMPARED TO SOURCE
-        if (!retryFilesize && size < (sourceSize*MIN_FILESIZE_RATIO)){
+        if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
             Utils.moveFileToChild(file, SUBFOLDER_SMALL);
             return true;
@@ -319,11 +311,8 @@ public class GoogleTask implements Task {
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void setSource(String folder)throws IOException{
-        Path f = Paths.get(folder);
-        if(!Files.exists(f) || !Files.isDirectory(f)){
-            throw new IOException(String.format(MISSING_SOURCE_MSG_MASK, folder));
-        }
-        try(DirectoryStream<Path> contents = Files.newDirectoryStream(f, IMAGE_SUPPORTED_GLOB)){
+        Path path = getFolder(folder).toPath();
+        try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
             List<Path> paths = new ArrayList<>();
             for (Path file : contents) {
                 paths.add(file);
@@ -337,12 +326,23 @@ public class GoogleTask implements Task {
     }
  
     public void setDestination(String folder) throws IOException {
-        if(folder == null) return;
-        if(!Files.isDirectory(Paths.get(folder))){
-            throw new IOException(String.format(MISSING_DESTINATION_MSG_MASK, folder));
-        }
+        getFolder(folder);
         this.destination = folder;
     }
+    
+    private File getFolder(String folder) throws IOException{
+        if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
+        try{
+            File file = new File(folder);
+            if(file.isDirectory()){
+                return file;
+            }else{
+                throw new IOException(String.format(NOT_FOLDER_MSG_MASK, folder));
+            }
+        }catch(SecurityException ex){
+            throw new IOException(String.format(FOLDER_PERMISSION_MSG_MASK, folder));
+        }
+    } 
 
     public void setStartIndex(int startIndex) throws BoundsException {
         if(startIndex < 0 || (images!=null && startIndex>images.size())){
@@ -356,8 +356,8 @@ public class GoogleTask implements Task {
         this.listener = listener;
     }
 
-    public void setRetryFilesize(boolean b) {
-        if(!running) retryFilesize = b;
+    public void setRetrySmall(boolean b) {
+        if(!running) retrySmall = b;
     }
     // </editor-fold>
     

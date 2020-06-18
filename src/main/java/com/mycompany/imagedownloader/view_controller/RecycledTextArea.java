@@ -6,6 +6,8 @@ import javax.swing.JTextArea;
 
 /** References:
  * https://stackoverflow.com/questions/9580457/fifo-class-in-java
+ * https://stackoverflow.com/questions/19050211/why-linkedlist-doesnt-have-initialcapacity-in-java
+ * https://stackoverflow.com/questions/6961356/list-clear-vs-list-new-arraylistinteger
  */
 public class RecycledTextArea extends JTextArea{
     private static final long serialVersionUID = 1L;
@@ -41,7 +43,7 @@ public class RecycledTextArea extends JTextArea{
 
     @Override
     public void setText(String text) {
-        texts.clear();
+        texts = new LinkedList<>(); //texts.clear();
         texts.add(text);
         printTexts();
     }

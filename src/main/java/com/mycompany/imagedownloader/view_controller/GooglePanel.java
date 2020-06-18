@@ -7,11 +7,8 @@ package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
 import com.mycompany.imagedownloader.model.GoogleTask;
-import java.awt.event.ItemEvent;
+import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /** References:
@@ -32,8 +29,6 @@ public class GooglePanel extends TaskPanel {
     private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     // </editor-fold>
 
-    private GoogleTask task = new GoogleTask();
-    
     public GooglePanel() {
         super(TITLE);
         initComponents();
@@ -45,10 +40,10 @@ public class GooglePanel extends TaskPanel {
 
         flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
-        txfDest = new PathField(PathField.DIRECTORIES_ONLY, 50);
+        txfDest = new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 50);
         chbSize = new javax.swing.JCheckBox();
         btnSource = new javax.swing.JButton();
-        txfSource = new PathField(PathField.DIRECTORIES_ONLY, 45);
+        txfSource = new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 45);
         txfStart = new com.mycompany.imagedownloader.view_controller.NumberField();
         btnAdd = new javax.swing.JButton();
         sclTasks = new javax.swing.JScrollPane();
@@ -62,12 +57,6 @@ public class GooglePanel extends TaskPanel {
         btnDest.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnDestActionPerformed(evt);
-            }
-        });
-
-        txfDest.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txfDestActionPerformed(evt);
             }
         });
 
@@ -85,11 +74,6 @@ public class GooglePanel extends TaskPanel {
         });
 
         txfSource.setPreferredSize(new java.awt.Dimension(256, 22));
-        txfSource.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txfSourceActionPerformed(evt);
-            }
-        });
 
         txfStart.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfStart.setText("0");
@@ -153,28 +137,42 @@ public class GooglePanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        if(txfDest.selector(this)){
-            setTaskDestination();
-	}
+        txfDest.selector(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         if(listener == null) return;
+        GoogleTask task = new GoogleTask();
+        //SET DESTINATION
+        try {
+            task.setDestination(txfDest.getText());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_DESTINATION_MSG+ex.getMessage(), 
+                INVALID_DESTINATION_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        } 
+
+        //SET SOURCE
+        try {
+            task.setSource(txfSource.getText());
+            txfStart.setMaxValue(task.getImageCount());
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_SOURCE_MSG+ex.getMessage(), 
+                INVALID_SOURCE_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        } 
+
+        //SET START INDEX
         try {
             task.setStartIndex(txfStart.getInt());
-            task.setRetryFilesize(chbSize.isSelected());
-            txfSource.clear();
-            txfStart.clear();
-            listener.taskCreated(task);
-            appendTaskDescription(
-                    String.format(
-                            DESCRIPTION_MASK, 
-                            task.getSource(), 
-                            task.getStartIndex(), 
-                            task.getImageCount(), 
-                            task.getDestination()
-                    ));
-            task = new GoogleTask();
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(
                 this, 
@@ -182,23 +180,29 @@ public class GooglePanel extends TaskPanel {
                 INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         }
+
+        task.setRetrySmall(chbSize.isSelected());
+
+        //ALL VALID
+        txfSource.clear();
+        txfStart.clear();
+        appendTaskDescription(
+                String.format(
+                        DESCRIPTION_MASK, 
+                        task.getSource(), 
+                        task.getStartIndex(), 
+                        task.getImageCount(), 
+                        task.getDestination()
+                ));
+        listener.taskCreated(task);
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
-        if(txfSource.selector(this)){
-            setTaskSource();
-	}
+        txfSource.selector(this);
     }//GEN-LAST:event_btnSourceActionPerformed
     
-    private void txfDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfDestActionPerformed
-        setTaskDestination();
-    }//GEN-LAST:event_txfDestActionPerformed
-
-    private void txfSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txfSourceActionPerformed
-        setTaskSource();
-    }//GEN-LAST:event_txfSourceActionPerformed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
@@ -212,33 +216,6 @@ public class GooglePanel extends TaskPanel {
     private com.mycompany.imagedownloader.view_controller.NumberField txfStart;
     // End of variables declaration//GEN-END:variables
 
-    private void setTaskDestination(){
-        try {
-            task.setDestination(txfDest.getText());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_DESTINATION_MSG+ex.getMessage(), 
-                INVALID_DESTINATION_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-        } 
-    }
-    
-    private void setTaskSource(){
-        try {
-            task.setSource(txfSource.getText());
-            txfStart.setMaxValue(task.getImageCount());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_SOURCE_MSG+ex.getMessage(), 
-                INVALID_SOURCE_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-        } 
-    }
-    
     private void appendTaskDescription(String taskDescription){
         txaTasks.setText(txaTasks.getText()+taskDescription);
     }
@@ -252,13 +229,6 @@ public class GooglePanel extends TaskPanel {
     public void reset() {
         setEditable(true);
         txaTasks.setText("");
-        task = new GoogleTask();
-        try {
-            task.setDestination(txfDest.getText());
-        } catch (IOException ex) {
-            System.err.println("ERROR: Failed setting new task with old destination. ["+txfDest.getText()+"]");
-            txfDest.clear();
-        }
     }
     
 }
