@@ -1,5 +1,7 @@
 package com.mycompany.imagedownloader.view_controller;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.LinkedList;
 import javax.swing.JTextArea;
 
@@ -12,6 +14,7 @@ public class RecycledTextArea extends JTextArea{
     private static final long serialVersionUID = 1L;
     
     private static final int DEFAULT_MAX_SIZE = 30;
+    private static final String TOOLTIP = "Double click to clear.";
     
     private String title;
     private LinkedList<String> texts;
@@ -21,6 +24,15 @@ public class RecycledTextArea extends JTextArea{
         texts = new LinkedList<>();
         this.size = size;
         setEditable(false);
+        addMouseListener(new MouseAdapter(){
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(e.getClickCount() == 2){
+                    clear();
+                }
+            }
+        });
+        setToolTipText(TOOLTIP);
     }
 
     public RecycledTextArea() {

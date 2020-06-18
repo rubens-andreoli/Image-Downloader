@@ -36,7 +36,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private ScheduledExecutorService logger;
 
     public ImageDownloader() { 
-        initComponents(); //TODO: double click clear log area
+        initComponents();
         int minutes = Configs.values.get("log_timer", 10, 0);
         if(minutes != 0){
             logger = Executors.newSingleThreadScheduledExecutor();
@@ -218,7 +218,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 currentTask = null;
                 unlockUI();
                 if(!canceled && chkShutdown.isSelected()){
-                    shutdown();
+                    ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, 101));
                 }
             }
         };
@@ -267,11 +267,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             System.err.println("ERROR: Failed saving config file "+ex.getMessage());
         }
     }
-    
-    private void shutdown(){
-        this.formWindowClosing(new WindowEvent(this, 101));
-    }
-    
+
     private void lockUI(){
         taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
