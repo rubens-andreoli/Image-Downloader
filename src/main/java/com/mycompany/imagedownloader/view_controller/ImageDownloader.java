@@ -7,8 +7,12 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -19,6 +23,7 @@ import javax.swing.SwingWorker;
 /** References:
  * http://www.java2s.com/Code/Java/Swing-JFC/DisplayingthePercentageDoneonaJProgressBarComponent.htm
  * https://stackoverflow.com/questions/2973643/shutdown-windows-with-java
+ * https://stackoverflow.com/questions/32228345/run-java-function-every-hour
  */
 public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener{
     private static final long serialVersionUID = 1L;
@@ -27,17 +32,17 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private List<TaskPanel> taskPanels = new ArrayList<>();
     private Task currentTask;
     private boolean running;
-    private boolean loadedLog;
-    private boolean shutdown;
     
-//    private Configs config;
+    private ScheduledExecutorService logger;
 
     public ImageDownloader() { 
-        shutdown = Configs.values.get("shutdown");
-        initComponents();
-        var service = Executors.newScheduledThreadPool(1);
-        service.scheduleAtFixedRate(this::save, 10, 10, TimeUnit.MINUTES); //TODO: add to config
-//        pnlTab.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        initComponents(); //TODO: double click clear log area
+        int minutes = Configs.values.get("log_timer", 10, 0);
+        if(minutes != 0){
+            logger = Executors.newSingleThreadScheduledExecutor();
+            logger.scheduleAtFixedRate(this::save, minutes, minutes, TimeUnit.MINUTES);
+        }
+        
         // <editor-fold defaultstate="collapsed" desc=" SSL TRUST MANAGER "> 
 	// Create a new trust manager that trust all certificates
 	TrustManager[] trustAllCerts = new TrustManager[]{
@@ -75,7 +80,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         sclLog = new javax.swing.JScrollPane();
         txaLog = new com.mycompany.imagedownloader.view_controller.RecycledTextArea();
         chkShutdown = new javax.swing.JCheckBox();
-        chkShutdown.setSelected(shutdown);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -110,7 +114,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         txaLog.setRows(5);
         txaLog.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
         txaLog.setText(Configs.values.get("log_history", ""));
-        loadedLog = !txaLog.getText().isBlank();
         sclLog.setViewportView(txaLog);
 
         chkShutdown.setToolTipText("<html><b>Shutdown</b> after completion.<br>\n<i>Shutdown will occur automatically, <br>\nwithout any warning.</i></html>");
@@ -143,10 +146,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 .addComponent(pnlTab, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(btnStart)
-                        .addComponent(chkShutdown, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnStop))
+                    .addComponent(btnStart, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(chkShutdown, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnStop)
                     .addComponent(pgbTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(sclLog, javax.swing.GroupLayout.DEFAULT_SIZE, 210, Short.MAX_VALUE)
@@ -160,7 +162,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }// </editor-fold>//GEN-END:initComponents
     
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
-        if(tasks.isEmpty()) return;
+        if(tasks.isEmpty()) return; //TODO: warning no tasks
+        txaLog.clear();
         lockUI();
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
@@ -172,7 +175,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             protected Boolean doInBackground() throws Exception {
 		running = true;
                 for (Task task : tasks) {
-                    if(!running) break;
+                    if(!running) return false;
                     currentTask = task;
                     task.setProgressListener(m -> {
                         publish(m);
@@ -198,7 +201,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
             @Override
             protected void done() {
-//                get(); //get doInBackground return
+                boolean canceled = true;
+                try {
+                    canceled = !get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    System.err.println("ERROR: Failed getting worker result "+ex.getMessage());
+                }
                 pgbTasks.setValue(pgbTasks.getMaximum());
                 pgbTasks.setToolTipText(null);
                 JOptionPane.showMessageDialog(
@@ -209,7 +217,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 );
                 currentTask = null;
                 unlockUI();
-                if(shutdown){
+                if(!canceled && chkShutdown.isSelected()){
                     shutdown();
                 }
             }
@@ -226,6 +234,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         save();
+        if(logger != null) logger.shutdownNow();
         if(evt.getID() == 101){
             try {
                 Runtime.getRuntime().exec("shutdown -s -t10");
@@ -251,7 +260,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     // End of variables declaration//GEN-END:variables
 
     private void save(){
-        Configs.values.put("log_history", loadedLog? "":txaLog.getText());
+        Configs.values.put("log_history", txaLog.getText());
         try {
             Configs.values.save();
         } catch (IOException ex) {

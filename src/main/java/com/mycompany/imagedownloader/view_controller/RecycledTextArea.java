@@ -1,7 +1,6 @@
 package com.mycompany.imagedownloader.view_controller;
 
 import java.util.LinkedList;
-import java.util.Queue;
 import javax.swing.JTextArea;
 
 /** References:
@@ -35,19 +34,24 @@ public class RecycledTextArea extends JTextArea{
         texts.add(text);
         printTexts();
     }
+
+    @Override
+    public void setText(String text) {
+        clear();
+        texts.add(text);
+        printTexts();
+    }
+    
+    public void clear(){
+        texts = new LinkedList<>(); //texts.clear();
+        super.setText("");
+    }
     
     private void printTexts(){
         final StringBuilder sb = new StringBuilder();
         if(title != null) sb.append(title).append("\n");
         texts.forEach(t -> sb.append(t));
         super.setText(sb.toString());
-    }
-
-    @Override
-    public void setText(String text) {
-        texts = new LinkedList<>(); //texts.clear();
-        texts.add(text);
-        printTexts();
     }
     
     public void setTitle(String title) {

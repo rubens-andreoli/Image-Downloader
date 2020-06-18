@@ -11,7 +11,7 @@ import java.util.Properties;
 
 public class Configs {
     
-    private static final String COMMENT = "IMAGE DOWNLOADER";
+    private static final String COMMENT = "CONFIGURATIONS";
     private static final String FILENAME = "config.xml";
     
     public static final Configs values = new Configs(); //eager initialization;
@@ -46,15 +46,15 @@ public class Configs {
         }
     }
     
-    public Integer get(String key, int defaultValue, int lowerBound, int upperBound){
-        int v = get(key, defaultValue);
-        if(v<lowerBound || v>upperBound) v = defaultValue;
-        return v;
-    }
-    
     public Integer get(String key, int defaultValue, int lowerBound){
         int v = get(key, defaultValue);
         if(v<lowerBound) v = defaultValue;
+        return v;
+    }
+    
+    public Integer get(String key, int defaultValue, int lowerBound, int upperBound){
+        int v = get(key, defaultValue);
+        if(v<lowerBound || v>upperBound) v = defaultValue;
         return v;
     }
     
@@ -65,6 +65,12 @@ public class Configs {
         }catch(NumberFormatException ex){
             return defaultValue;
         }
+    }
+    
+    public Double get(String key, double defaultValue, double lowerBound){
+        double v = get(key, defaultValue);
+        if(v<lowerBound) v = defaultValue;
+        return v;
     }
     
     public Double get(String key, double defaultValue, double lowerBound, double upperBound){

@@ -1,8 +1,7 @@
 package com.mycompany.imagedownloader.model;
 
-import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import static com.mycompany.imagedownloader.model.Utils.USER_AGENT;
-import java.awt.image.BufferedImage;
+import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.imageio.ImageIO;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -77,6 +75,7 @@ public class GoogleTask implements Task {
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
     private static final int SEARCH_MAX_TIMEOUT; //ms
     private static final int SEARCH_MIN_TIMEOUT; //ms
+    private static final int DISCONNECTED_THREASHOLD;
     private static final double MIN_FILESIZE_RATIO; //to source image
     private static final int MIN_FILESIZE; //bytes
     private static final String RESPONSE_LINK_TEXT; //pt-br
@@ -84,6 +83,7 @@ public class GoogleTask implements Task {
     static{
         SEARCH_MIN_TIMEOUT = Configs.values.get("google:timout_min", 500);
         SEARCH_MAX_TIMEOUT = Configs.values.get("google:timeout_max", SEARCH_MIN_TIMEOUT+500, SEARCH_MIN_TIMEOUT);
+        DISCONNECTED_THREASHOLD = Configs.values.get("google:connection_max_retry", 10, 1);
         MIN_FILESIZE = Configs.values.get("google:filesize_min", 25600);
         MIN_FILESIZE_RATIO = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
         RESPONSE_LINK_TEXT = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
@@ -100,16 +100,14 @@ public class GoogleTask implements Task {
     private ProgressListener listener;
     private volatile boolean running;
     private ProgressLog log;
+    private int connectionFailed;
     
     @Override
     public void start() {
-        if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
-            return;
-        }
         running = true;
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
-            if(!running) break;
+            if(!running || connectionFailed >= DISCONNECTED_THREASHOLD) break;
             Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
             log = new ProgressLog(i);
             searchWithFile(images.get(i));
@@ -123,48 +121,45 @@ public class GoogleTask implements Task {
         running = false;
     }
     
-    private void searchWithFile(Path file){
-        try(var fileStream = new BufferedInputStream(Files.newInputStream(file));  //TODO: test if splitting input stream instead of reading twice is more eficient
+    private void searchWithFile(Path path){
+        try(var fileStream = new BufferedInputStream(Files.newInputStream(path));  //TODO: test if splitting input stream instead of reading twice is more eficient
                 var cache = new ByteArrayOutputStream();){ //TODO: not sure if stream is needed here; use byte[] from fileStream directly?
             fileStream.transferTo(cache);
             byte[] imageBytes = cache.toByteArray();
             
             //GET IMAGE INFO FOR COMPARISON
-            int size = imageBytes.length;
-            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
-            int height = image.getHeight();
-            int width = image.getWidth();
+            ImageInfo source = new ImageInfo(path.toString(), imageBytes);
             log.appendToLog(LOADING_IMAGE_LOG, Status.INFO);
-            log.appendToLog(file.toString()+"\n", Status.INFO);
+            log.appendToLog(path.toString()+"\n", Status.INFO);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
-            entity.addPart("encoded_image", new InputStreamBody(new ByteArrayInputStream(imageBytes), file.getFileName().toString()));
+            entity.addPart("encoded_image", new InputStreamBody(new ByteArrayInputStream(imageBytes), path.getFileName().toString()));
             HttpPost post = new HttpPost(GOOGLE_URL);
             post.setEntity(entity); 
             
             //POST
             try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
                 HttpResponse response = client.execute(post);
-                String site = response.getFirstHeader("location").getValue();
-//                System.out.println("LOG: REPONSE LINK "+ site);
-                List<GoogleImage> googleImages = parseResponse(Jsoup.connect(site).get());
+                String link = response.getFirstHeader("location").getValue();
+                List<ImageInfo> googleImages = parseResponse(Jsoup.connect(link).get());
                 if(googleImages!=null && !googleImages.isEmpty()){
-                    downloadLargest(googleImages, width, height, size);
+                    downloadLargest(googleImages, source);
                 } else {
                     log.appendToLog(NO_SIMILAR_LOG, Status.WARNING);
                 }
             }catch(IOException ex){
                 log.appendToLog(FAILED_UPLOADING_LOG, Status.ERROR);
+                connectionFailed++;
             }
         }catch(IOException ex){
             log.appendToLog(FAILED_READING_FILE_LOG, Status.ERROR);
-        } catch (Exception ex) {
+        }catch(Exception ex) {
             log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
         }
     }
     
-    private List<GoogleImage> parseResponse(Document doc) throws IOException{    
+    private List<ImageInfo> parseResponse(Document doc) throws IOException{    
         //FIND CORRECT LINK
         String responseLink = null;
         for (Element e : doc.getElementsByTag("a")) {
@@ -177,10 +172,9 @@ public class GoogleTask implements Task {
         if(responseLink==null){
             return null; //if null: no similar images found
         }
-//        System.out.println("LOG: RESPONSE IMAGES LINK "+responseLink);
 
         //GET IMAGE LINKS
-        List<GoogleImage> googleImages = new ArrayList<>();
+        List<ImageInfo> googleImages = new ArrayList<>();
         Pattern p = Pattern.compile(IMAGE_LINK_REGEX);
         Document subdoc = Jsoup.connect(responseLink).get();
         subdoc.getElementsByTag("script").forEach(s -> {
@@ -191,60 +185,54 @@ public class GoogleTask implements Task {
                     String[] info = m.group(0) //first group of the pattern regex
                             .replaceAll(IMAGE_LINK_CLEAR_REGEX, "")
                             .split(IMAGE_LINK_DELIMITER);
-                    if(info.length == 3){
-//                        System.out.println("LOG: LINK " + info[0]);
-                        googleImages.add(new GoogleImage(info[0], info[2], info[1]));
-                    }/*else{
-                        System.out.println("LOG: DISCARDED LINK "+Arrays.asList(info));
-                    }*/
-                    
+                    if(info.length == 3){ //contains width and height information
+                        googleImages.add(new ImageInfo(info[0], info[2], info[1]));
+                    }
                 }
             }
         });
         return googleImages; //if empty: failed finding images urls
     }
     
-    private void downloadLargest(List<GoogleImage> googleImages, int sourceWidth, int sourceHeight, int sourceSize) {    
-        //LOOK FOR BIGGEST GOOGLE IMAGE BIGGER THAN SOURCE
-        GoogleImage biggest = null;
-        for (GoogleImage image : googleImages) { //TODO: should I sort list by size before?
-            if(image.width>sourceWidth && image.height>sourceHeight){
-                if(biggest==null || (image.width>biggest.width && image.height>biggest.height)){
-                    biggest = image;
-                }
+    private void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {    
+        //LOOK FOR LARGEST GOOGLE IMAGE LARGER THAN SOURCE (not worth sorting list before)
+        ImageInfo biggest = null;
+        for (ImageInfo image : googleImages) {
+            if(image.largerThan(source) && (biggest==null || image.largerThan(biggest))){
+                biggest = image;
             }
         }
         if(biggest == null){
             log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), Status.INFO);
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.width, biggest.height, sourceWidth, sourceHeight), Status.INFO);
-        log.appendToLog(biggest.url+"\n", Status.INFO);
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.width, biggest.height, source.width, source.height), Status.INFO);
+        log.appendToLog(biggest.path+"\n", Status.INFO);
         
         boolean failed = false;
         try{
             //SAVE FILE
             File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
-            long imgSize = Utils.downloadToFile(biggest.url, file);
+            biggest.setSize(Utils.downloadToFile(biggest.path, file));
             
             //TESTS
-            boolean corrupt = reviseCorrupt(file, imgSize, sourceSize);
+            boolean corrupt = reviseCorrupt(file, biggest.getSize(), source.getSize());
             if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_PREFIX)){
-                File tmp = resolveTumblr(biggest, sourceSize);
+                File tmp = resolveTumblr(biggest, source.getSize());
                 if(tmp != null){
                     file = tmp;
                     corrupt = false;
                 }
             }
-            boolean small = (retrySmall && !corrupt)? reviseSmall(file, imgSize, sourceSize):false;
+            boolean small = (retrySmall && !corrupt)? reviseSmall(file, biggest.getSize(), source.getSize()):false;
             if(corrupt || small) failed = true;
             
         }catch(IOException ex){
             log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
-            //LAST RESORT (rarely solves the problem if failed because of url)
-            if(biggest.url.contains("?")){ 
-                googleImages.add(new GoogleImage(
-                        biggest.url.substring(0, biggest.url.lastIndexOf("?")), 
+            //LAST RESORT (rarely solves the problem if failed because of path)
+            if(biggest.path.contains("?")){ 
+                googleImages.add(new ImageInfo(
+                        biggest.path.substring(0, biggest.path.lastIndexOf("?")), 
                         biggest.width, 
                         biggest.height)
                 );
@@ -255,11 +243,11 @@ public class GoogleTask implements Task {
         //RETRY
         if(failed){
             googleImages.remove(biggest);
-            if(!googleImages.isEmpty()){
-                log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
-                downloadLargest(googleImages, sourceWidth, sourceHeight, sourceSize);
-            }else{
+            if(googleImages.isEmpty()){
                 log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
+            }else{
+                log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
+                downloadLargest(googleImages, source);
             }
         }
     }
@@ -282,6 +270,7 @@ public class GoogleTask implements Task {
             }
             return true;
         }
+        
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
@@ -292,16 +281,16 @@ public class GoogleTask implements Task {
     }
     
     private boolean reviseCorrupt(File file, long sourceSize){
-        return GoogleTask.this.reviseCorrupt(file, Utils.getFileSize(file), sourceSize);
+        return reviseCorrupt(file, Utils.getFileSize(file), sourceSize);
     }
 
-    private File resolveTumblr(GoogleImage image, long sourceSize){
+    private File resolveTumblr(ImageInfo image, long sourceSize){
         File file = null;
         try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
             //REQUEST
-            HttpGet requisicao = new HttpGet(image.url);
+            HttpGet requisicao = new HttpGet(image.path);
             requisicao.addHeader("Accept", "image/webp,image/apng,*/*");
-            requisicao.addHeader("referer", image.url);
+            requisicao.addHeader("referer", image.path);
             HttpResponse response = client.execute(requisicao);
             //SAVE BYTES
             byte[] bytes = EntityUtils.toByteArray(response.getEntity());
@@ -314,14 +303,28 @@ public class GoogleTask implements Task {
         
         //TEST IF CORRUPT AND LOG
         if(file != null && !reviseCorrupt(file, sourceSize)){
-            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.url), Status.INFO);
+            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.path), Status.INFO);
         }else{
-            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.url), Status.ERROR);
+            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.path), Status.ERROR);
         }
         return file;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
+    private File getFolder(String folder) throws IOException{
+        if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
+        try{
+            File file = new File(folder);
+            if(file.isDirectory()){
+                return file;
+            }else{
+                throw new IOException(String.format(NOT_FOLDER_MSG_MASK, folder));
+            }
+        }catch(SecurityException ex){
+            throw new IOException(String.format(FOLDER_PERMISSION_MSG_MASK, folder));
+        }
+    } 
+    
     public void setSource(String folder)throws IOException{
         Path path = getFolder(folder).toPath();
         try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
@@ -341,23 +344,9 @@ public class GoogleTask implements Task {
         getFolder(folder);
         this.destination = folder;
     }
-    
-    private File getFolder(String folder) throws IOException{
-        if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
-        try{
-            File file = new File(folder);
-            if(file.isDirectory()){
-                return file;
-            }else{
-                throw new IOException(String.format(NOT_FOLDER_MSG_MASK, folder));
-            }
-        }catch(SecurityException ex){
-            throw new IOException(String.format(FOLDER_PERMISSION_MSG_MASK, folder));
-        }
-    } 
 
     public void setStartIndex(int startIndex) throws BoundsException {
-        if(startIndex < 0 || (images!=null && startIndex>images.size())){
+        if(startIndex < 0 || (images!=null && startIndex>images.size())){ //TODO: check index condition
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
         this.startIndex = startIndex;
@@ -369,7 +358,7 @@ public class GoogleTask implements Task {
     }
 
     public void setRetrySmall(boolean b) {
-        if(!running) retrySmall = b;
+        retrySmall = b;
     }
     // </editor-fold>
     
@@ -378,20 +367,16 @@ public class GoogleTask implements Task {
         return images==null?0:images.size();
     }
 
-    public String getDestination() { //not used
+    public String getDestination() {
         return destination;
-    }
-
-    public Set<Path> getSourceImages(int fromIndex){
-        try{
-            return new HashSet<>(images.subList(fromIndex, images.size()));
-        }catch(RuntimeException ex){
-            return null;
-        }
     }
 
     public String getSource() {
         return source;
+    }
+
+    public Set<Path> getSourceImages(int fromIndex){
+        return new HashSet<>(images.subList(fromIndex, images.size()));
     }
 
     public int getStartIndex() {

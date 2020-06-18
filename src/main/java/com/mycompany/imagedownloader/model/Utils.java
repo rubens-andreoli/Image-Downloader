@@ -310,6 +310,7 @@ public class Utils {
     }
     
     public static int getRandomBetween(int min, int max){
+        if(max < min) max = min;
         return (int) (Math.random() * (max - min)) + min;
     }
     
