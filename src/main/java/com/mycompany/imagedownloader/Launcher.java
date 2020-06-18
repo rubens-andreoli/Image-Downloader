@@ -31,5 +31,5 @@ public class Launcher {
             view.setVisible(true);
         });
     }
-    
+
 }

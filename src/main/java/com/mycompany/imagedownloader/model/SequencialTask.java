@@ -133,6 +133,18 @@ public class SequencialTask implements Task{
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
+
+//    public void setPath(String path) {
+//        this.path = path;
+//    }
+//
+//    public void setDestination(String destination) throws IOException {
+//        if(!(new File(destination)).isDirectory()){
+//            throw new IOException(MISSING_DESTINATION_MSG);
+//        }
+//        this.destination = destination;
+//    }
+    
     @Override
     public void setProgressListener(ProgressListener listener) {
         this.listener = listener;

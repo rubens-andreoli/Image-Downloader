@@ -13,17 +13,17 @@ import org.jsoup.select.Elements;
 public class ScraperTask implements Task{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    public static final int DEPTH_LIMIT = 3;
-
     private static final String INVALID_URL_MSG = "Invalid URL.";
     private static final String MISSING_DESTINATION_MSG = "Detination folder not found.";
-    private static final String INVALID_BOUNDS_MSG = "Search depth has a limit of "+DEPTH_LIMIT;
     
+    private static final String INVALID_BOUNDS_MSG_MASK = "Search depth has a limit of %d";
     private static final String CONNECTING_LOG_MASK = "Connecting to %s\n"; //url
     private static final String CONNECTION_FAILED_LOG = "Connection failed";
     private static final String IMAGE_COUNT_LOG_MASK = "Found %d images\n"; //num images
     private static final String FAILED_DOWNLOAD_LOG_MASK = "Failed downloading/saving %s\n"; //image url
     // </editor-fold>
+    
+    public final int depthLimit;
     
     private String path;
     private String root;
@@ -35,8 +35,10 @@ public class ScraperTask implements Task{
     private volatile boolean running;
 
     public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {
-        if(depth < 0 || depth > DEPTH_LIMIT){
-            throw new BoundsException(INVALID_BOUNDS_MSG);
+        depthLimit = Configs.values.get("scraper:depth_limit", 3);
+        
+        if(depth < 0 || depth > depthLimit){
+            throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, depthLimit));
         }
         if(!(new File(destination)).isDirectory()){
             throw new IOException(MISSING_DESTINATION_MSG);

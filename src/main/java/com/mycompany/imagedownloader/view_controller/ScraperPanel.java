@@ -1,12 +1,10 @@
 package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
+import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ScraperTask;
-import static com.mycompany.imagedownloader.model.ScraperTask.DEPTH_LIMIT;
-import com.mycompany.imagedownloader.model.Task;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 public class ScraperPanel extends TaskPanel {
@@ -17,7 +15,7 @@ public class ScraperPanel extends TaskPanel {
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_DEPTH_TITLE = "Invalid Depth";
-    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit: "+ScraperTask.DEPTH_LIMIT+"\n";
+    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit.\n";
     private static final String INVALID_URL_TITLE = "Malformed URL";
     private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
     private static final String DESCRIPTION_MASK = "%s [%d] -> %s\n"; //source, depth, destination
@@ -26,6 +24,7 @@ public class ScraperPanel extends TaskPanel {
     public ScraperPanel() {
         super(TITLE);
         initComponents();
+        //TODO: txfNumber.setMaxValue(Configs.values.get("scraper:", HEIGHT));
     }
     
     @SuppressWarnings("unchecked")
@@ -39,8 +38,7 @@ public class ScraperPanel extends TaskPanel {
         pnlScroll = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
-        txfNumber.setMaxValue(DEPTH_LIMIT);
-        txfDest = new PathField(PathField.DIRECTORIES_ONLY, 60);
+        txfDest = new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 60);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 

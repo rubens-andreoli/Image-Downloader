@@ -118,9 +118,6 @@
           <Dimension value="[35, 22]"/>
         </Property>
       </Properties>
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodePost" type="java.lang.String" value="txfNumber.setMaxValue(DEPTH_LIMIT);"/>
-      </AuxValues>
     </Component>
     <Component class="com.mycompany.imagedownloader.view_controller.PathField" name="txfDest">
       <AuxValues>

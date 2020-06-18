@@ -8,40 +8,47 @@ import javax.swing.JTextField;
  * https://stackoverflow.com/questions/3622402/how-to-intercept-keyboard-strokes-going-to-java-swing-jtextfield
  * https://stackoverflow.com/questions/4863850/disable-input-some-symbols-to-jtextfield
  * https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
+ * https://stackoverflow.com/questions/4968323/java-parse-int-value-from-a-char
  */
 public final class NumberField extends JTextField{
     private static final long serialVersionUID = 1L;
     
-    public static final int DEFAULT_VALUE = 0;
+    public static final String DEFAULT_VALUE = "0";
     private int maxValue;
     
     public NumberField() {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
-                if(getText().isEmpty()){
-                    setText(String.valueOf(DEFAULT_VALUE));
+                
+                if(getText().isEmpty()){ //deleted value
+                    setText(DEFAULT_VALUE);
                     return;
                 }
+                
                 char c = e.getKeyChar();
-                if (!Character.isDigit(c)) {
+                if (!Character.isDigit(c)) { //typed is not a number
                     e.consume();
                     return;
                 }
-                if(maxValue > 0){
+                
+                if(getText().equals(DEFAULT_VALUE)){ //remove 0
+                    setText("");
+                }else if(maxValue > 0){
                     try{
                         int number = Integer.parseInt(getText());
-                        if(number == DEFAULT_VALUE){
-                            setText("");
-                        }
                         if(Integer.parseInt(number+""+c) > maxValue){
-                            e.consume();
+                            if((c - '0') > maxValue){
+                                e.consume();
+                            }else{
+                                setText("");
+                            }
 //                            setText(String.valueOf(maxValue));
-                            setText(String.valueOf(DEFAULT_VALUE));
+//                            setText(DEFAULT_VALUE);
                         }
                     }catch(NumberFormatException ex){
-                        System.err.println("Can't parse field value");
-                        setText(String.valueOf(DEFAULT_VALUE));
+                        System.err.println("Can't parse field value "+ ex.getMessage());
+                        setText(DEFAULT_VALUE);
                     }
                 }
             }
@@ -49,7 +56,7 @@ public final class NumberField extends JTextField{
     }
     
     public void clear(){
-        setText(String.valueOf(DEFAULT_VALUE));
+        setText(DEFAULT_VALUE);
     }
 
     public void setMaxValue(int maxValue) {

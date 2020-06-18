@@ -1,9 +1,14 @@
 package com.mycompany.imagedownloader.view_controller;
 
+import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -22,8 +27,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private Task currentTask;
     private boolean running;
     
-    public ImageDownloader() {
-	initComponents();
+//    private Configs config;
+
+    public ImageDownloader() { 
+        initComponents();
 
 //        pnlTab.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
         // <editor-fold defaultstate="collapsed" desc=" SSL TRUST MANAGER "> 
@@ -65,9 +72,14 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("Image Downloader");
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         btnStart.setText("Start");
         btnStart.addActionListener(new java.awt.event.ActionListener() {
@@ -90,6 +102,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         txaLog.setColumns(20);
         txaLog.setRows(5);
         txaLog.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        txaLog.setText(Configs.values.get("log_history", ""));
         sclLog.setViewportView(txaLog);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -181,8 +194,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 );
                 currentTask = null;
                 unlockUI();
+                if(Configs.values.get("shutdown")){
+                    shutdown();
+                }
             }
-            
         };
         worker.execute();
     }//GEN-LAST:event_btnStartActionPerformed
@@ -194,6 +209,23 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         }
     }//GEN-LAST:event_btnStopActionPerformed
 
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        Configs.values.put("log_history", txaLog.getText());
+        try {
+            Configs.values.save();
+        } catch (IOException ex) {
+            System.err.println("ERROR: Failed saving config file "+ex.getMessage());
+        }
+        dispose();
+        if(evt.getID() == 101){
+            try {
+                Runtime.getRuntime().exec("shutdown -s -t10");
+            } catch (IOException ex) {
+                System.err.println("ERROR: Failed to shutdown");
+            }
+        }
+    }//GEN-LAST:event_formWindowClosing
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnStart;
     private javax.swing.JButton btnStop;
@@ -204,6 +236,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private com.mycompany.imagedownloader.view_controller.RecycledTextArea txaLog;
     // End of variables declaration//GEN-END:variables
 
+    private void shutdown(){
+        this.formWindowClosing(new WindowEvent(this, 101));
+    }
+    
     private void lockUI(){
         taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
@@ -233,5 +269,5 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         panel.setTaskListener(this);
         pnlTab.addTab(panel.getTitle(), panel);
     }
-    
+     
 }

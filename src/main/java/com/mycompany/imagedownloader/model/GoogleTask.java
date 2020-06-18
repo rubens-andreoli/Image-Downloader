@@ -35,24 +35,19 @@ import org.jsoup.nodes.Element;
  * https://stackoverflow.com/questions/5923817/how-to-clone-an-inputstream/5924132
  * https://stackoverflow.com/questions/12107049/how-can-i-make-a-copy-of-a-bufferedreader
  * https://stackoverflow.com/questions/3850074/regex-until-but-not-including
+ * https://stackoverflow.com/questions/38581427/why-non-static-final-member-variables-are-not-required-to-follow-the-constant-na/38581517
  */
 public class GoogleTask implements Task {
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
-    private static final int SEARCH_MAX_TIMEOUT = 1000; //ms
-    private static final int SEARCH_MIN_TIMEOUT = 500; //ms
-    private static final double MIN_FILESIZE_RATIO = 0.25; //to source image
-    private static final int MIN_FILESIZE = 25600; //bytes
-    private static final String SUBFOLDER_SMALL = "low";
     
-    private static final String RESPONSE_LINK_PREFIX_MARKER = "/search?tbs=simg:";
-    private static final String RESPONSE_LINK_TEXT_MARKER = "Todos os tamanhos"; //pt-br
-    private static final String RESPONSE_SCRIPT_DATA_MARKER = "AF_initDataCallback";
-    private static final String RESPONSE_SPLIT_LINK_DELIMITER = ",";
-    private static final String TUMBLR_IMAGE_START_MARKER = "tumblr_";
+    private static final String RESPONSE_LINK_PREFIX = "/search?tbs=simg:";
+    private static final String RESPONSE_SCRIPT_PREFIX = "AF_initDataCallback";
+    private static final String TUMBLR_IMAGE_PREFIX = "tumblr_";
     private static final String IMAGE_LINK_CLEAR_REGEX = "[\\[\\]\\\"\\\"]";
+    private static final String IMAGE_LINK_DELIMITER = ",";
     private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
     private static final String NO_FOLDER_MSG = "No folder was selected.";
@@ -79,6 +74,15 @@ public class GoogleTask implements Task {
     private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
+    private final int searchMaxTimeout; //ms
+    private final int searchMinTimeout; //ms
+    private final double minFilesizeRatio; //to source image
+    private final int minFilesize; //bytes
+    private final String responseLinkText; //pt-br
+    private final String subfolder;
+    // </editor-fold>
+    
     private String source;
     private List<Path> images;
     private int startIndex;
@@ -89,6 +93,16 @@ public class GoogleTask implements Task {
     private volatile boolean running;
     private ProgressLog log;
     
+    public GoogleTask(){
+        searchMinTimeout = Configs.values.get("google:timout_min", 500);
+        int max = Configs.values.get("google:timeout_max", 1000);
+        searchMaxTimeout = max<searchMinTimeout? searchMinTimeout:max;
+        minFilesize = Configs.values.get("google:filesize_min", 25600);
+        minFilesizeRatio = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
+        responseLinkText = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
+        subfolder = Configs.values.get("google:subfolder_name", "low");
+    }
+    
     @Override
     public void start() {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
@@ -98,7 +112,7 @@ public class GoogleTask implements Task {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
             if(!running) break;
-            Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
+            Utils.sleepRandom(searchMinTimeout, searchMaxTimeout);
             log = new ProgressLog(i);
             searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
@@ -157,7 +171,7 @@ public class GoogleTask implements Task {
         String responseLink = null;
         for (Element e : doc.getElementsByTag("a")) {
             String ref = e.attr("href");
-            if(ref.startsWith(RESPONSE_LINK_PREFIX_MARKER) && e.text().equals(RESPONSE_LINK_TEXT_MARKER)){
+            if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(responseLinkText)){
                 responseLink = e.absUrl("href");
                 break; //just one
             }
@@ -173,12 +187,12 @@ public class GoogleTask implements Task {
         Document subdoc = Jsoup.connect(responseLink).get();
         subdoc.getElementsByTag("script").forEach(s -> {
             String script = s.data();
-            if(script.startsWith(RESPONSE_SCRIPT_DATA_MARKER)){
+            if(script.startsWith(RESPONSE_SCRIPT_PREFIX)){
                 Matcher m = p.matcher(script);
                 while(m.find()) {
                     String[] info = m.group(0) //first group of the pattern regex
                             .replaceAll(IMAGE_LINK_CLEAR_REGEX, "")
-                            .split(RESPONSE_SPLIT_LINK_DELIMITER);
+                            .split(IMAGE_LINK_DELIMITER);
                     if(info.length == 3){
 //                        System.out.println("LOG: LINK " + info[0]);
                         googleImages.add(new GoogleImage(info[0], info[2], info[1]));
@@ -217,7 +231,7 @@ public class GoogleTask implements Task {
             
             //TESTS
             boolean corrupt = reviseCorrupt(file, imgSize, sourceSize);
-            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_START_MARKER)){
+            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_PREFIX)){
                 File tmp = resolveTumblr(biggest, sourceSize);
                 if(tmp != null){
                     file = tmp;
@@ -255,7 +269,7 @@ public class GoogleTask implements Task {
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
             log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
-            Utils.moveFileToChild(file, SUBFOLDER_SMALL);
+            Utils.moveFileToChild(file, subfolder);
             return true; //even if it failed to move, try other images
         }
         log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), Status.INFO);
@@ -264,16 +278,16 @@ public class GoogleTask implements Task {
     
     private boolean reviseCorrupt(File file, long size, long sourceSize){
         //BELOW FILESIZE THRESHOLD
-        if(size < MIN_FILESIZE){
+        if(size < minFilesize){
             if(Utils.deleteFile(file)){
                log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), Status.WARNING);
             }
             return true;
         }
         //TOO SMALL COMPARED TO SOURCE
-        if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
+        if (!retrySmall && size < (sourceSize*minFilesizeRatio)){
             log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
-            Utils.moveFileToChild(file, SUBFOLDER_SMALL);
+            Utils.moveFileToChild(file, subfolder);
             return true;
         }
         return false;
