@@ -24,7 +24,6 @@ public class ScraperPanel extends TaskPanel {
     public ScraperPanel() {
         super(TITLE);
         initComponents();
-        //TODO: txfNumber.setMaxValue(Configs.values.get("scraper:", HEIGHT));
     }
     
     @SuppressWarnings("unchecked")
@@ -37,7 +36,7 @@ public class ScraperPanel extends TaskPanel {
         btnAdd = new javax.swing.JButton();
         pnlScroll = new javax.swing.JScrollPane();
         txaTasks = new javax.swing.JTextArea();
-        txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
+        txfNumber = new NumberField(ScraperTask.DEPTH_LIMIT);
         txfDest = new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 60);
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);

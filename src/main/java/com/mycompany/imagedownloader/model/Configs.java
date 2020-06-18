@@ -48,7 +48,13 @@ public class Configs {
     
     public Integer get(String key, int defaultValue, int lowerBound, int upperBound){
         int v = get(key, defaultValue);
-        if(v<=lowerBound || v>=upperBound) v = defaultValue;
+        if(v<lowerBound || v>upperBound) v = defaultValue;
+        return v;
+    }
+    
+    public Integer get(String key, int defaultValue, int lowerBound){
+        int v = get(key, defaultValue);
+        if(v<lowerBound) v = defaultValue;
         return v;
     }
     
@@ -63,7 +69,7 @@ public class Configs {
     
     public Double get(String key, double defaultValue, double lowerBound, double upperBound){
         double v = get(key, defaultValue);
-        if(v<=lowerBound || v>=upperBound) v = defaultValue;
+        if(v<lowerBound || v>upperBound) v = defaultValue;
         return v;
     }
     

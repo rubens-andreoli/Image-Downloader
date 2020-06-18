@@ -118,6 +118,9 @@
           <Dimension value="[35, 22]"/>
         </Property>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new NumberField(ScraperTask.DEPTH_LIMIT)"/>
+      </AuxValues>
     </Component>
     <Component class="com.mycompany.imagedownloader.view_controller.PathField" name="txfDest">
       <AuxValues>

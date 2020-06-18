@@ -75,12 +75,20 @@ public class GoogleTask implements Task {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    private final int searchMaxTimeout; //ms
-    private final int searchMinTimeout; //ms
-    private final double minFilesizeRatio; //to source image
-    private final int minFilesize; //bytes
-    private final String responseLinkText; //pt-br
-    private final String subfolder;
+    private static final int SEARCH_MAX_TIMEOUT; //ms
+    private static final int SEARCH_MIN_TIMEOUT; //ms
+    private static final double MIN_FILESIZE_RATIO; //to source image
+    private static final int MIN_FILESIZE; //bytes
+    private static final String RESPONSE_LINK_TEXT; //pt-br
+    private static final String SUBFOLDER;
+    static{
+        SEARCH_MIN_TIMEOUT = Configs.values.get("google:timout_min", 500);
+        SEARCH_MAX_TIMEOUT = Configs.values.get("google:timeout_max", SEARCH_MIN_TIMEOUT+500, SEARCH_MIN_TIMEOUT);
+        MIN_FILESIZE = Configs.values.get("google:filesize_min", 25600);
+        MIN_FILESIZE_RATIO = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
+        RESPONSE_LINK_TEXT = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
+        SUBFOLDER = Configs.values.get("google:subfolder_name", "low");
+    }
     // </editor-fold>
     
     private String source;
@@ -93,16 +101,6 @@ public class GoogleTask implements Task {
     private volatile boolean running;
     private ProgressLog log;
     
-    public GoogleTask(){
-        searchMinTimeout = Configs.values.get("google:timout_min", 500);
-        int max = Configs.values.get("google:timeout_max", 1000);
-        searchMaxTimeout = max<searchMinTimeout? searchMinTimeout:max;
-        minFilesize = Configs.values.get("google:filesize_min", 25600);
-        minFilesizeRatio = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
-        responseLinkText = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
-        subfolder = Configs.values.get("google:subfolder_name", "low");
-    }
-    
     @Override
     public void start() {
         if(images==null || destination==null || startIndex>images.size()){ //TODO: test last condition
@@ -112,7 +110,7 @@ public class GoogleTask implements Task {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
             if(!running) break;
-            Utils.sleepRandom(searchMinTimeout, searchMaxTimeout);
+            Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
             log = new ProgressLog(i);
             searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
@@ -171,7 +169,7 @@ public class GoogleTask implements Task {
         String responseLink = null;
         for (Element e : doc.getElementsByTag("a")) {
             String ref = e.attr("href");
-            if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(responseLinkText)){
+            if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(RESPONSE_LINK_TEXT)){
                 responseLink = e.absUrl("href");
                 break; //just one
             }
@@ -269,7 +267,7 @@ public class GoogleTask implements Task {
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
             log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
-            Utils.moveFileToChild(file, subfolder);
+            Utils.moveFileToChild(file, SUBFOLDER);
             return true; //even if it failed to move, try other images
         }
         log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), Status.INFO);
@@ -278,16 +276,16 @@ public class GoogleTask implements Task {
     
     private boolean reviseCorrupt(File file, long size, long sourceSize){
         //BELOW FILESIZE THRESHOLD
-        if(size < minFilesize){
+        if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
                log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), Status.WARNING);
             }
             return true;
         }
         //TOO SMALL COMPARED TO SOURCE
-        if (!retrySmall && size < (sourceSize*minFilesizeRatio)){
+        if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
-            Utils.moveFileToChild(file, subfolder);
+            Utils.moveFileToChild(file, SUBFOLDER);
             return true;
         }
         return false;

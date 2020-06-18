@@ -23,7 +23,13 @@ public class ScraperTask implements Task{
     private static final String FAILED_DOWNLOAD_LOG_MASK = "Failed downloading/saving %s\n"; //image url
     // </editor-fold>
     
-    public final int depthLimit;
+    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
+    public static final int DEPTH_LIMIT;
+    static{
+        DEPTH_LIMIT = Configs.values.get("scraper:depth_limit", 3);
+    }
+    // </editor-fold>
+    
     
     private String path;
     private String root;
@@ -34,11 +40,9 @@ public class ScraperTask implements Task{
     private ProgressListener listener;
     private volatile boolean running;
 
-    public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {
-        depthLimit = Configs.values.get("scraper:depth_limit", 3);
-        
-        if(depth < 0 || depth > depthLimit){
-            throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, depthLimit));
+    public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {       
+        if(depth < 0 || depth > DEPTH_LIMIT){
+            throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, DEPTH_LIMIT));
         }
         if(!(new File(destination)).isDirectory()){
             throw new IOException(MISSING_DESTINATION_MSG);

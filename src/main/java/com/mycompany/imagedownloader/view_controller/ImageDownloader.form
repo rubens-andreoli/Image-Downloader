@@ -40,12 +40,14 @@
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="sclLog" max="32767" attributes="0"/>
                   <Component id="pnlTab" max="32767" attributes="0"/>
-                  <Group type="102" attributes="0">
-                      <Component id="pgbTasks" max="32767" attributes="0"/>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="btnStop" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
+                  <Group type="102" alignment="1" attributes="0">
                       <Component id="btnStart" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="btnStop" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="pgbTasks" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="chkShutdown" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -60,7 +62,8 @@
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" max="-2" attributes="0">
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="btnStart" alignment="3" max="-2" attributes="0"/>
+                      <Component id="btnStart" alignment="1" max="-2" attributes="0"/>
+                      <Component id="chkShutdown" alignment="1" max="32767" attributes="0"/>
                       <Component id="btnStop" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <Component id="pgbTasks" max="32767" attributes="0"/>
@@ -123,10 +126,20 @@
             </Property>
           </Properties>
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="txaLog.setText(Configs.values.get(&quot;log_history&quot;, &quot;&quot;));"/>
+            <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="txaLog.setText(Configs.values.get(&quot;log_history&quot;, &quot;&quot;));&#xd;&#xa;loadedLog = !txaLog.getText().isBlank();"/>
           </AuxValues>
         </Component>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JCheckBox" name="chkShutdown">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&lt;b&gt;Shutdown&lt;/b&gt; after completion.&lt;br&gt;&#xa;&lt;i&gt;Shutdown will occur automatically, &lt;br&gt;&#xa;without any warning.&lt;/i&gt;&lt;/html&gt;"/>
+        <Property name="horizontalAlignment" type="int" value="11"/>
+        <Property name="horizontalTextPosition" type="int" value="10"/>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodePost" type="java.lang.String" value="chkShutdown.setSelected(shutdown);"/>
+      </AuxValues>
+    </Component>
   </SubComponents>
 </Form>

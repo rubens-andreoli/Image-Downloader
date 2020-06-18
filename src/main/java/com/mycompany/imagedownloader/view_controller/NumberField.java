@@ -32,9 +32,7 @@ public final class NumberField extends JTextField{
                     return;
                 }
                 
-                if(getText().equals(DEFAULT_VALUE)){ //remove 0
-                    setText("");
-                }else if(maxValue > 0){
+                if(maxValue > 0){
                     try{
                         int number = Integer.parseInt(getText());
                         if(Integer.parseInt(number+""+c) > maxValue){
@@ -43,16 +41,23 @@ public final class NumberField extends JTextField{
                             }else{
                                 setText("");
                             }
-//                            setText(String.valueOf(maxValue));
-//                            setText(DEFAULT_VALUE);
+                        }else if(getText().equals(DEFAULT_VALUE)){ //remove 0
+                            setText("");
                         }
                     }catch(NumberFormatException ex){
                         System.err.println("Can't parse field value "+ ex.getMessage());
-                        setText(DEFAULT_VALUE);
+//                        setText(DEFAULT_VALUE);
                     }
+                }else if(getText().equals(DEFAULT_VALUE)){ //remove 0
+                    setText("");
                 }
             }
         });
+    }
+    
+    public NumberField(int maxValue){
+        this();
+        setMaxValue(maxValue);
     }
     
     public void clear(){

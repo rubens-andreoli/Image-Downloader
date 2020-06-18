@@ -14,6 +14,7 @@ public class RecycledTextArea extends JTextArea{
     
     private static final int DEFAULT_MAX_SIZE = 30;
     
+    private String title;
     private LinkedList<String> texts;
     private int size;
 
@@ -37,6 +38,7 @@ public class RecycledTextArea extends JTextArea{
     
     private void printTexts(){
         final StringBuilder sb = new StringBuilder();
+        if(title != null) sb.append(title).append("\n");
         texts.forEach(t -> sb.append(t));
         super.setText(sb.toString());
     }
@@ -46,6 +48,10 @@ public class RecycledTextArea extends JTextArea{
         texts = new LinkedList<>(); //texts.clear();
         texts.add(text);
         printTexts();
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
     }
        
 }
