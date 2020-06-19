@@ -4,8 +4,20 @@ import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
 import java.awt.event.WindowEvent;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -25,34 +37,45 @@ import javax.swing.SwingWorker;
  * https://stackoverflow.com/questions/2973643/shutdown-windows-with-java
  * https://stackoverflow.com/questions/32228345/run-java-function-every-hour
  */
-public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener{
+public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener {
     private static final long serialVersionUID = 1L;
 
+    private static final String COMPLETE_TITLE = "Tasks Completed";
+    private static final String COMPLETE_MSG = "All available files were downloaded.";
+    private static final String LOG_FILE = "history.log";
+    private static final int SHUTDOWN_EVENT = 101;
+    private static final int SHUTDOWN_SECONDS = 10;
+    
     private List<Task> tasks = new ArrayList<>();
     private List<TaskPanel> taskPanels = new ArrayList<>();
+    private SwingWorker<Boolean, ProgressLog> worker;
     private Task currentTask;
     private boolean running;
-    
     private ScheduledExecutorService logger;
 
     public ImageDownloader() { 
         initComponents();
+        txaLog.setSize(Configs.values.get("log_size", RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE));
+        loadLog();
         int minutes = Configs.values.get("log_timer", 10, 0);
         if(minutes != 0){
             logger = Executors.newSingleThreadScheduledExecutor();
-            logger.scheduleAtFixedRate(this::save, minutes, minutes, TimeUnit.MINUTES);
+            logger.scheduleAtFixedRate(this::saveLog, minutes, minutes, TimeUnit.MINUTES);
         }
         
         // <editor-fold defaultstate="collapsed" desc=" SSL TRUST MANAGER "> 
 	// Create a new trust manager that trust all certificates
 	TrustManager[] trustAllCerts = new TrustManager[]{
 	    new X509TrustManager() {
+                @Override
 		public java.security.cert.X509Certificate[] getAcceptedIssuers() {
 		    return null;
 		}
+                @Override
 		public void checkClientTrusted(
 		    java.security.cert.X509Certificate[] certs, String authType) {
 		}
+                @Override
 		public void checkServerTrusted(
 		    java.security.cert.X509Certificate[] certs, String authType) {
 		}
@@ -113,7 +136,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         txaLog.setColumns(20);
         txaLog.setRows(5);
         txaLog.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
-        txaLog.setText(Configs.values.get("log_history", ""));
         sclLog.setViewportView(txaLog);
 
         chkShutdown.setToolTipText("<html><b>Shutdown</b> after completion.<br>\n<i>Shutdown will occur automatically, <br>\nwithout any warning.</i></html>");
@@ -167,7 +189,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         lockUI();
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
-        SwingWorker<Boolean, ProgressLog> worker = new SwingWorker<>() {
+        worker = new SwingWorker<>() {
             
             private int counter;
             
@@ -209,16 +231,17 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 }
                 pgbTasks.setValue(pgbTasks.getMaximum());
                 pgbTasks.setToolTipText(null);
+                saveLog();
                 JOptionPane.showMessageDialog(
                         ImageDownloader.this,
-                        "All available files were downloaded.",
-                        "Tasks Completed",
+                        COMPLETE_MSG,
+                        COMPLETE_TITLE,
                         JOptionPane.INFORMATION_MESSAGE
                 );
                 currentTask = null;
                 unlockUI();
                 if(!canceled && chkShutdown.isSelected()){
-                    ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, 101));
+                    ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, SHUTDOWN_EVENT));
                 }
             }
         };
@@ -233,19 +256,20 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }//GEN-LAST:event_btnStopActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        save();
+        if(worker != null) worker.cancel(true);
         if(logger != null) logger.shutdownNow();
-        if(evt.getID() == 101){
+        saveLog();
+        Configs.values.save();
+        if(evt.getID() == SHUTDOWN_EVENT){
             try {
-                Runtime.getRuntime().exec("shutdown -s -t10");
+                Runtime.getRuntime().exec("shutdown -s -t "+SHUTDOWN_SECONDS);
                 dispose();
             } catch (IOException ex) {
-                System.err.println("ERROR: Failed to shutdown");
+                System.err.println("ERROR: Failed to shutdown "+ex.getMessage());
             }
         }else{
             dispose();
         }
-        
     }//GEN-LAST:event_formWindowClosing
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -259,12 +283,19 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private com.mycompany.imagedownloader.view_controller.RecycledTextArea txaLog;
     // End of variables declaration//GEN-END:variables
 
-    private void save(){
-        Configs.values.put("log_history", txaLog.getText());
-        try {
-            Configs.values.save();
+    private void loadLog(){
+        try(var is = new ObjectInputStream(new BufferedInputStream(new FileInputStream(LOG_FILE)))){
+            txaLog.setTexts((LinkedList<String>) is.readObject());
+        } catch (IOException | ClassNotFoundException ex) {
+            System.err.println("ERROR: Failed loading log file "+ex.getMessage());
+        }
+    }
+    
+    private void saveLog(){
+        try(var os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(LOG_FILE)))){
+            os.writeObject(txaLog.getTexts());
         } catch (IOException ex) {
-            System.err.println("ERROR: Failed saving config file "+ex.getMessage());
+            System.err.println("ERROR: Failed saving log file "+ex.getMessage());
         }
     }
 

@@ -2,7 +2,9 @@ package com.mycompany.imagedownloader.view_controller;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import javax.swing.JTextArea;
 
 /** References:
@@ -13,10 +15,11 @@ import javax.swing.JTextArea;
 public class RecycledTextArea extends JTextArea{
     private static final long serialVersionUID = 1L;
     
-    private static final int DEFAULT_MAX_SIZE = 30;
+    public static final int DEFAULT_MAX_SIZE = 30;
+    public static final int MIN_SIZE = 1;
     private static final String TOOLTIP = "Double click to clear.";
     
-    private String title;
+//    private String title;
     private LinkedList<String> texts;
     private int size;
 
@@ -38,12 +41,16 @@ public class RecycledTextArea extends JTextArea{
     public RecycledTextArea() {
         this(DEFAULT_MAX_SIZE);
     }
-
-    public void addText(String text){
+    
+    private void addWithoutPrinting(String text){
         if(texts.size() > size){
             texts.removeFirst();
         }
         texts.add(text);
+    }
+
+    public void addText(String text){
+        addWithoutPrinting(text);
         printTexts();
     }
 
@@ -61,13 +68,29 @@ public class RecycledTextArea extends JTextArea{
     
     private void printTexts(){
         final StringBuilder sb = new StringBuilder();
-        if(title != null) sb.append(title).append("\n");
-        texts.forEach(t -> sb.append(t));
+//        if(title != null) sb.append(title).append("\r\n");
+        texts.forEach(sb::append); //t -> sb.append(t)
         super.setText(sb.toString());
     }
     
-    public void setTitle(String title) {
-        this.title = title;
+    public void setSize(int size){
+        this.size = size<MIN_SIZE? MIN_SIZE:size;
+        while(texts.size() > this.size){
+            texts.removeFirst();
+        }
     }
-       
+    
+//    public void setTitle(String title) {
+//        this.title = title;
+//    }
+
+    public LinkedList<String> getTexts() {
+        return texts;
+    }
+    
+    public void setTexts(Collection<String> texts){
+        texts.forEach(t -> addWithoutPrinting(t));
+        printTexts();
+    }
+   
 }

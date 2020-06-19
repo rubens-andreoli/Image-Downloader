@@ -87,9 +87,9 @@ public class ImageInfo implements Comparable<ImageInfo>{
     }
 
     @Override
-    public int compareTo(ImageInfo i) { //can't subtract one from the other because of images of diferent proportions
-        if(width < i.width || height < i.height) return -1;
-        return (width == i.width && height == i.height)? 0: 1;
+    public int compareTo(ImageInfo i) { //image is larger only if proportionally
+        if(width > i.width && height > i.height) return 1;
+        return (width == i.width && height == i.height)? 0: -1;
     }
 
 }

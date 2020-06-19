@@ -54,22 +54,22 @@ public class GoogleTask implements Task {
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
     
-    private static final String LOADING_IMAGE_LOG = "Loading image...\n";
-    private static final String NO_SIMILAR_LOG = "No similar images were found\n";
-    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\n";
-    private static final String FAILED_READING_FILE_LOG = "Failed reading file\n";
-    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)\n"; //image count
-    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]\n"; //width, height, source width, source height
-    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s\n"; //size, path
-    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\n";
-    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image\n";
-    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\n"; //url
-    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\n"; //url
-    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\n"; //exception message
-    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]\n";
-    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\n";
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]\n";
-    private static final String NO_NEW_IMAGES_LOG ="No new images were found\n";
+    private static final String LOADING_IMAGE_LOG = "Loading image...\r\n";
+    private static final String NO_SIMILAR_LOG = "No similar images were found\r\n";
+    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\r\n";
+    private static final String FAILED_READING_FILE_LOG = "Failed reading file\r\n";
+    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)\r\n"; //image count
+    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]\r\n"; //width, height, source width, source height
+    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s\r\n"; //size, path
+    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\r\n";
+    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image\r\n";
+    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\r\n"; //url
+    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\r\n"; //url
+    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\r\n"; //exception message
+    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]\r\n";
+    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\r\n";
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]\r\n";
+    private static final String NO_NEW_IMAGES_LOG ="No new images were found\r\n";
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
@@ -196,45 +196,45 @@ public class GoogleTask implements Task {
     
     private void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {    
         //LOOK FOR LARGEST GOOGLE IMAGE LARGER THAN SOURCE (not worth sorting list before)
-        ImageInfo biggest = null;
+        ImageInfo largest = null;
         for (ImageInfo image : googleImages) {
-            if(image.largerThan(source) && (biggest==null || image.largerThan(biggest))){
-                biggest = image;
+            if(image.largerThan(source) && (largest==null || image.largerThan(largest))){
+                largest = image;
             }
         }
-        if(biggest == null){
+        if(largest == null){
             log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), Status.INFO);
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, biggest.width, biggest.height, source.width, source.height), Status.INFO);
-        log.appendToLog(biggest.path+"\n", Status.INFO);
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height), Status.INFO);
+        log.appendToLog(largest.path+"\n", Status.INFO);
         
         boolean failed = false;
         try{
             //SAVE FILE
-            File file = Utils.createValidFile(destination, biggest.getFilename(), biggest.getExtension());
-            biggest.setSize(Utils.downloadToFile(biggest.path, file));
+            File file = Utils.createValidFile(destination, largest.getFilename(), largest.getExtension());
+            largest.setSize(Utils.downloadToFile(largest.path, file));
             
             //TESTS
-            boolean corrupt = reviseCorrupt(file, biggest.getSize(), source.getSize());
-            if(corrupt && biggest.getFilename().startsWith(TUMBLR_IMAGE_PREFIX)){
-                File tmp = resolveTumblr(biggest, source.getSize());
+            boolean corrupt = reviseCorrupt(file, largest.getSize(), source.getSize());
+            if(corrupt && largest.getFilename().startsWith(TUMBLR_IMAGE_PREFIX)){
+                File tmp = resolveTumblr(largest, source.getSize());
                 if(tmp != null){
                     file = tmp;
                     corrupt = false;
                 }
             }
-            boolean small = (retrySmall && !corrupt)? reviseSmall(file, biggest.getSize(), source.getSize()):false;
+            boolean small = (retrySmall && !corrupt)? reviseSmall(file, largest.getSize(), source.getSize()):false;
             if(corrupt || small) failed = true;
             
         }catch(IOException ex){
             log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
             //LAST RESORT (rarely solves the problem if failed because of path)
-            if(biggest.path.contains("?")){ 
+            if(largest.path.contains("?")){ 
                 googleImages.add(new ImageInfo(
-                        biggest.path.substring(0, biggest.path.lastIndexOf("?")), 
-                        biggest.width, 
-                        biggest.height)
+                        largest.path.substring(0, largest.path.lastIndexOf("?")), 
+                        largest.width, 
+                        largest.height)
                 );
             }
             failed = true;
@@ -242,7 +242,7 @@ public class GoogleTask implements Task {
         
         //RETRY
         if(failed){
-            googleImages.remove(biggest);
+            googleImages.remove(largest);
             if(googleImages.isEmpty()){
                 log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
             }else{

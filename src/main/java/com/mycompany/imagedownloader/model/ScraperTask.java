@@ -15,12 +15,12 @@ public class ScraperTask implements Task{
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String INVALID_URL_MSG = "Invalid URL.";
     private static final String MISSING_DESTINATION_MSG = "Detination folder not found.";
-    
     private static final String INVALID_BOUNDS_MSG_MASK = "Search depth has a limit of %d";
-    private static final String CONNECTING_LOG_MASK = "Connecting to %s\n"; //url
-    private static final String CONNECTION_FAILED_LOG = "Connection failed";
-    private static final String IMAGE_COUNT_LOG_MASK = "Found %d images\n"; //num images
-    private static final String FAILED_DOWNLOAD_LOG_MASK = "Failed downloading/saving %s\n"; //image url
+    
+    private static final String CONNECTING_LOG_MASK = "Connecting to %s\r\n"; //url
+    private static final String CONNECTION_FAILED_LOG = "Connection failed\r\n";
+    private static final String IMAGE_COUNT_LOG_MASK = "Found %d images\r\n"; //num images
+    private static final String FAILED_DOWNLOAD_LOG_MASK = "Failed downloading/saving %s\r\n"; //image url
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 

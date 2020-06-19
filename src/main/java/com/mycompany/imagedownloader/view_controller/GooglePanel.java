@@ -57,7 +57,7 @@ public class GooglePanel extends TaskPanel {
 
         chbSize.setSelected(true);
         chbSize.setText("Check size...");
-        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>May generate a lot of copies of the same image</i></html>");
+        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>Can generate a lot of copies of the same image</i></html>");
         chbSize.setIconTextGap(6);
         chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
 

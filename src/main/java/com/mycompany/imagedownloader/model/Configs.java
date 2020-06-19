@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -17,6 +16,7 @@ public class Configs {
     public static final Configs values = new Configs(); //eager initialization;
     
     private Properties p;
+    private boolean changed;
     
     private Configs(){
         p = new Properties();
@@ -31,7 +31,7 @@ public class Configs {
     public String get(String key, String defaultValue){
         String v = p.getProperty(key);
         if(v == null){
-            p.put(key, defaultValue);
+            put(key, defaultValue);
             v = defaultValue;
         }
         return v;
@@ -82,19 +82,30 @@ public class Configs {
     public Boolean get(String key){
         String v = p.getProperty(key);
         if(v == null){
-            p.put(key, false);
+            put(key, "false");
         }
         return Boolean.valueOf(v);
     }
     
     public void put(String key, String value) {
         p.put(key, value);
+        changed = true;
     }
 
-    public void save() throws FileNotFoundException, IOException {
-        try(var bos = new BufferedOutputStream(new FileOutputStream(new File(FILENAME)))){
-            p.storeToXML(bos, COMMENT);
+    public boolean save(){
+        if(changed){
+            try(var bos = new BufferedOutputStream(new FileOutputStream(new File(FILENAME)))){
+                p.storeToXML(bos, COMMENT);
+                return true;
+            } catch (IOException ex) {
+                System.err.println("ERROR: Failed saving config file "+ex.getMessage());
+            }
         }
-    }   
+        return false;
+    }
+    
+    public boolean hasChanged(){
+        return changed;
+    }
     
 }

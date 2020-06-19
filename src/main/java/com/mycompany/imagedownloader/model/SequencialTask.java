@@ -20,9 +20,9 @@ public class SequencialTask implements Task{
     private static final String MISSING_DESTINATION_MSG = "Destination folder not found.";
     private static final String INVALID_BOUNDS_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     
-    private static final String DOWNLOADING_LOG_MASK = "Downloading %s\n"; //file
-    private static final String DOWNLOADED_LOG = "Download complete\n";
-    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s\n"; //url
+    private static final String DOWNLOADING_LOG_MASK = "Downloading %s\r\n"; //file
+    private static final String DOWNLOADED_LOG = "Download complete\r\n";
+    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s\r\n"; //url
     // </editor-fold>
     
     private String path;

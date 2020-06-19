@@ -98,7 +98,7 @@
       <Properties>
         <Property name="selected" type="boolean" value="true"/>
         <Property name="text" type="java.lang.String" value="Check size..."/>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;If checked, images with bigger dimensions but&lt;br&gt;&#xa;&lt;b&gt;smaller filesize&lt;/b&gt; will be saved in a &lt;b&gt;subfolder&lt;/b&gt;,&lt;br&gt;&#xa;and another try is performed.&lt;br&gt;&#xa;&lt;i&gt;May generate a lot of copies of the same image&lt;/i&gt;&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;If checked, images with bigger dimensions but&lt;br&gt;&#xa;&lt;b&gt;smaller filesize&lt;/b&gt; will be saved in a &lt;b&gt;subfolder&lt;/b&gt;,&lt;br&gt;&#xa;and another try is performed.&lt;br&gt;&#xa;&lt;i&gt;Can generate a lot of copies of the same image&lt;/i&gt;&lt;/html&gt;"/>
         <Property name="iconTextGap" type="int" value="6"/>
         <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
           <Insets value="[2, 0, 2, 0]"/>
