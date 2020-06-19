@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Matcher;
 import javax.swing.JFileChooser;
-import javax.swing.JTextField;
 
 /** References:
  https://stackoverflow.com/questions/5931261/java-use-stringbuilder-to-insert-at-the-beginning
@@ -27,7 +26,7 @@ import javax.swing.JTextField;
  https://stackoverflow.com/questions/811248/how-can-i-use-drag-and-drop-in-swing-to-get-path-path
  * http://zetcode.com/tutorials/javaswingtutorial/draganddrop/
  */
-public class PathField extends JTextField{
+public class PathField extends javax.swing.JTextField{
     private static final long serialVersionUID = 1L;
     
     public static final int FILES_ONLY = JFileChooser.FILES_ONLY;

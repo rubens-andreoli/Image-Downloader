@@ -6,13 +6,8 @@ import com.mycompany.imagedownloader.model.Task;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -23,8 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -327,6 +320,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         taskPanels.add(panel);
         panel.setTaskListener(this);
         pnlTab.addTab(panel.getTitle(), panel);
+    }
+
+    @Override
+    public void taskDeleted(Task task) {
+        tasks.remove(task);
     }
      
 }

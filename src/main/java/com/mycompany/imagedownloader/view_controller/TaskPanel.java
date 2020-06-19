@@ -1,9 +1,8 @@
 package com.mycompany.imagedownloader.view_controller;
 
 import java.awt.Dimension;
-import javax.swing.JPanel;
 
-public abstract class TaskPanel extends JPanel {
+public abstract class TaskPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
 
     private final String title;

@@ -2,10 +2,8 @@ package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
 import com.mycompany.imagedownloader.model.SequencialTask;
-import com.mycompany.imagedownloader.model.Task;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /** References:

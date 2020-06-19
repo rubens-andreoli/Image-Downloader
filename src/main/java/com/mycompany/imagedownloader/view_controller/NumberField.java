@@ -2,7 +2,6 @@ package com.mycompany.imagedownloader.view_controller;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import javax.swing.JTextField;
 
 /** References:
  * https://stackoverflow.com/questions/3622402/how-to-intercept-keyboard-strokes-going-to-java-swing-jtextfield
@@ -10,7 +9,7 @@ import javax.swing.JTextField;
  * https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
  * https://stackoverflow.com/questions/4968323/java-parse-int-value-from-a-char
  */
-public final class NumberField extends JTextField{
+public final class NumberField extends javax.swing.JTextField{
     private static final long serialVersionUID = 1L;
     
     public static final String DEFAULT_VALUE = "0";

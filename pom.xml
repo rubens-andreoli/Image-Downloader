@@ -43,4 +43,33 @@
         </dependency>
     </dependencies>
     <name>Image Downloader</name>
+    <!--https://stackoverflow.com/questions/574594/how-can-i-create-an-executable-jar-with-dependencies-using-maven-->
+    <!--https://stackoverflow.com/questions/57032993/how-to-make-jar-file-with-all-dependencies-a-k-a-fat-jar-with-intellij-->
+    <!--https://stackoverflow.com/questions/9689793/cant-execute-jar-file-no-main-manifest-attribute-->
+    <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <archive>
+                <manifest>
+                  <addClasspath>true</addClasspath>
+                  <mainClass>com.mycompany.imagedownloader.Launcher</mainClass>
+                </manifest>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+            </configuration>
+          </plugin> 
+        </plugins>
+    </build>
 </project>

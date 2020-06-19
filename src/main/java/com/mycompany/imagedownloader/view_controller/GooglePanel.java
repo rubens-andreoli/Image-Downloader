@@ -2,16 +2,26 @@ package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.BoundsException;
 import com.mycompany.imagedownloader.model.GoogleTask;
-import java.io.File;
+import com.mycompany.imagedownloader.model.Task;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /** References:
  * https://www.codejava.net/java-se/swing/jcheckbox-basic-tutorial-and-examples
  * https://stackoverflow.com/questions/9882845/jcheckbox-actionlistener-and-itemlistener/17576273
+ * https://stackoverflow.com/questions/17858132/automatically-adjust-jtable-column-to-fit-content
+ * https://stackoverflow.com/questions/4577792/how-to-clear-jtable/4578501
+ * https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
+ * https://stackoverflow.com/questions/1019062/how-to-programmatically-deselect-the-currently-selected-row-in-a-jtable-swing
  */
 public class GooglePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
+    
+    private List<Task> tasks;
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String TITLE = "Google";
@@ -26,6 +36,7 @@ public class GooglePanel extends TaskPanel {
 
     public GooglePanel() {
         super(TITLE);
+        tasks = new LinkedList<>();
         initComponents();
     }
     
@@ -42,7 +53,7 @@ public class GooglePanel extends TaskPanel {
         txfStart = new com.mycompany.imagedownloader.view_controller.NumberField();
         btnAdd = new javax.swing.JButton();
         sclTasks = new javax.swing.JScrollPane();
-        txaTasks = new javax.swing.JTextArea();
+        tblTasks = new javax.swing.JTable();
 
         flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -81,10 +92,47 @@ public class GooglePanel extends TaskPanel {
             }
         });
 
-        txaTasks.setEditable(false);
-        txaTasks.setColumns(20);
-        txaTasks.setRows(2);
-        sclTasks.setViewportView(txaTasks);
+        tblTasks.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Source", "From", "To", "Destination"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tblTasks.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        tblTasks.getTableHeader().setReorderingAllowed(false);
+        tblTasks.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                tblTasksKeyPressed(evt);
+            }
+        });
+        sclTasks.setViewportView(tblTasks);
+        if (tblTasks.getColumnModel().getColumnCount() > 0) {
+            tblTasks.getColumnModel().getColumn(0).setMinWidth(50);
+            tblTasks.getColumnModel().getColumn(0).setPreferredWidth(210);
+            tblTasks.getColumnModel().getColumn(1).setMinWidth(35);
+            tblTasks.getColumnModel().getColumn(1).setPreferredWidth(35);
+            tblTasks.getColumnModel().getColumn(2).setMinWidth(35);
+            tblTasks.getColumnModel().getColumn(2).setPreferredWidth(35);
+            tblTasks.getColumnModel().getColumn(3).setMinWidth(50);
+            tblTasks.getColumnModel().getColumn(3).setPreferredWidth(210);
+        }
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -127,7 +175,7 @@ public class GooglePanel extends TaskPanel {
                     .addComponent(txfSource, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(sclTasks, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
-                .addContainerGap())
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -183,20 +231,31 @@ public class GooglePanel extends TaskPanel {
         //ALL VALID
         txfSource.clear();
         txfStart.clear();
-        appendTaskDescription(
-                String.format(
-                        DESCRIPTION_MASK, 
-                        task.getSource(), 
-                        task.getStartIndex(), 
-                        task.getImageCount(), 
-                        task.getDestination()
-                ));
+        tasks.add(task);
+        ((DefaultTableModel) tblTasks.getModel()).addRow(new Object[]{
+            task.getSource(), 
+            task.getStartIndex(), 
+            task.getImageCount(), 
+            task.getDestination()}
+        );
         listener.taskCreated(task);
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
         txfSource.selector(this);
     }//GEN-LAST:event_btnSourceActionPerformed
+
+    private void tblTasksKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tblTasksKeyPressed
+        if(listener == null) return;
+        if(evt.getKeyCode() == KeyEvent.VK_DELETE){
+            int[] rows = tblTasks.getSelectedRows();
+            for (int row : rows) {
+                listener.taskDeleted(tasks.get(row));
+                ((DefaultTableModel)tblTasks.getModel()).removeRow(row);
+            }
+            //if(rows.length > 0) resize
+         }
+    }//GEN-LAST:event_tblTasksKeyPressed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -205,25 +264,23 @@ public class GooglePanel extends TaskPanel {
     private javax.swing.JCheckBox chbSize;
     private javax.swing.JFileChooser flcFolder;
     private javax.swing.JScrollPane sclTasks;
-    private javax.swing.JTextArea txaTasks;
+    private javax.swing.JTable tblTasks;
     private com.mycompany.imagedownloader.view_controller.PathField txfDest;
     private com.mycompany.imagedownloader.view_controller.PathField txfSource;
     private com.mycompany.imagedownloader.view_controller.NumberField txfStart;
     // End of variables declaration//GEN-END:variables
 
-    private void appendTaskDescription(String taskDescription){
-        txaTasks.setText(txaTasks.getText()+taskDescription);
-    }
-    
     @Override
     public void setEditable(boolean b) {
         btnAdd.setEnabled(b);
+        tblTasks.setEnabled(b);
+        if(!b) tblTasks.clearSelection();
     }
 
     @Override
     public void reset() {
         setEditable(true);
-        txaTasks.setText("");
+        ((DefaultTableModel) tblTasks.getModel()).setRowCount(0);
     }
     
 }
