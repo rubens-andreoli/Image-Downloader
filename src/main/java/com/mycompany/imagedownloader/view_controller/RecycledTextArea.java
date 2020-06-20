@@ -15,7 +15,7 @@ public class RecycledTextArea extends javax.swing.JTextArea{
     
     public static final int DEFAULT_MAX_SIZE = 30;
     public static final int MIN_SIZE = 1;
-    private static final String TOOLTIP = "Double click to clear.";
+    private static final String TOOLTIP = "<html>Double click to <b>clear</b></html>.";
     
 //    private String title;
     private LinkedList<String> texts;

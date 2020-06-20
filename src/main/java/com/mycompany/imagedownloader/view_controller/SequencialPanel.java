@@ -33,18 +33,11 @@ public class SequencialPanel extends TaskPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        flcFolder = new javax.swing.JFileChooser();
         btnDest = new javax.swing.JButton();
         txfUrl = new javax.swing.JTextField();
         btnAdd = new javax.swing.JButton();
-        pnlScroll = new javax.swing.JScrollPane();
-        txaTasks = new javax.swing.JTextArea();
         txfNumber = new com.mycompany.imagedownloader.view_controller.NumberField();
-        txfDest = new PathField(PathField.DIRECTORIES_ONLY, 60);
-
-        flcFolder.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
-
-        setPreferredSize(new java.awt.Dimension(510, 270));
+        txfDest = new com.mycompany.imagedownloader.view_controller.PathField(com.mycompany.imagedownloader.view_controller.PathField.DIRECTORIES_ONLY, 60);
 
         btnDest.setText("Destination");
         btnDest.addActionListener(new java.awt.event.ActionListener() {
@@ -62,11 +55,6 @@ public class SequencialPanel extends TaskPanel {
             }
         });
 
-        txaTasks.setEditable(false);
-        txaTasks.setColumns(20);
-        txaTasks.setRows(5);
-        pnlScroll.setViewportView(txaTasks);
-
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("50");
         txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
@@ -80,32 +68,29 @@ public class SequencialPanel extends TaskPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnDest)
-                        .addGap(12, 12, 12)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(txfUrl, javax.swing.GroupLayout.DEFAULT_SIZE, 336, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(pnlScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 498, Short.MAX_VALUE))
+                        .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addGap(10, 10, 10)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnDest)
-                    .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnAdd)
-                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pnlScroll, javax.swing.GroupLayout.DEFAULT_SIZE, 202, Short.MAX_VALUE)
-                .addContainerGap())
+                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -118,8 +103,8 @@ public class SequencialPanel extends TaskPanel {
         try {
             SequencialTask task = new SequencialTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
-            listener.taskCreated(task);
-            appendTaskDescription(String.format(DESCRIPTION_MASK, 
+            listener.taskCreated(this, task, 
+                    String.format(DESCRIPTION_MASK, 
                             task.getPath(), 
                             task.getLowerBound(), 
                             task.getUpperBound(), 
@@ -152,27 +137,19 @@ public class SequencialPanel extends TaskPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
-    private javax.swing.JFileChooser flcFolder;
-    private javax.swing.JScrollPane pnlScroll;
-    private javax.swing.JTextArea txaTasks;
     private com.mycompany.imagedownloader.view_controller.PathField txfDest;
     private com.mycompany.imagedownloader.view_controller.NumberField txfNumber;
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
-    private void appendTaskDescription(String taskDescription){
-        txaTasks.setText(txaTasks.getText()+taskDescription);
-    }
-    
     @Override
-    public void setEditable(boolean b) {
+    public void setEnabled(boolean b) {
         btnAdd.setEnabled(b);
     }
 
     @Override
     public void reset() {
-        setEditable(true);
-        txaTasks.setText("");
+        setEnabled(true);
     }
 
 }

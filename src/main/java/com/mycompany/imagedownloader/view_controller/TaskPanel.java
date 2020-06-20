@@ -15,10 +15,12 @@ public abstract class TaskPanel extends javax.swing.JPanel {
     public TaskPanel(final String title, TaskPanelListener listener) {
         this.title = title;
         this.listener = listener;
-        setPreferredSize(new Dimension(510, 270));
+        Dimension min = new Dimension(488, 62);
+        setPreferredSize(min);
+        setMaximumSize(min);
     }
     
-    public abstract void setEditable(boolean b);
+    public abstract void setEnabled(boolean b);
     public abstract void reset();
 
     public void setTaskListener(TaskPanelListener listener) {
