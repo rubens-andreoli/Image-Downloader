@@ -12,6 +12,7 @@ public abstract class TaskPanel extends javax.swing.JPanel {
         this(title, null);
     }
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public TaskPanel(final String title, TaskPanelListener listener) {
         this.title = title;
         this.listener = listener;
@@ -20,8 +21,11 @@ public abstract class TaskPanel extends javax.swing.JPanel {
         setMaximumSize(min);
     }
     
-    public abstract void setEnabled(boolean b);
-    public abstract void reset();
+    public abstract void setEditable(boolean b);
+    
+    public void reset() {
+        setEditable(true);
+    }
 
     public void setTaskListener(TaskPanelListener listener) {
         this.listener = listener;
@@ -30,4 +34,5 @@ public abstract class TaskPanel extends javax.swing.JPanel {
     public String getTitle() {
         return title;
     }
+    
 }

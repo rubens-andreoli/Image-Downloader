@@ -3,6 +3,7 @@ package com.mycompany.imagedownloader.view_controller;
 import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
+import java.awt.Cursor;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
@@ -45,18 +46,19 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private static final String LOG_TIMER_KEY = "log_timer";
     private static final int DEFAULT_LOG_TIMER_INTERVAL = 10; //minutes
     private static final String PROGRESSBAR_TOOLTIP_MASK = "%d/%d";
+    private static final String LOG_INVERT_KEY = "log_inverted";
     // </editor-fold>
     
     private List<Task> tasks = new LinkedList<>();
     private List<TaskPanel> taskPanels = new ArrayList<>();
-    private SwingWorker<Boolean, ProgressLog> worker;
+    private SwingWorker<Void, ProgressLog> worker;
     private Task currentTask;
-    private boolean interrupted;
     private ScheduledExecutorService logger;
 
     public ImageDownloader() { 
         initComponents();
         txaLogs.setSize(Configs.values.get(LOG_SIZE_KEY, RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE));
+        txaLogs.setInverted(Configs.values.get(LOG_INVERT_KEY));
         loadLog();
         int minutes = Configs.values.get(LOG_TIMER_KEY, DEFAULT_LOG_TIMER_INTERVAL, 0);
         if(minutes != 0){
@@ -206,7 +208,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         sclLogs.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, -1), javax.swing.BorderFactory.createTitledBorder("LOG Messages")));
 
         txaLogs.setColumns(20);
-        txaLogs.setRows(5);
         txaLogs.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
         sclLogs.setViewportView(txaLogs);
 
@@ -245,8 +246,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
         if(tasks.isEmpty()) return; //TODO: warning no tasks
-        txaLogs.clear();
-        lockUI();
+        prepare();
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
         worker = new SwingWorker<>() {
@@ -254,47 +254,31 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             private int counter; //TODO: remove this
             
             @Override
-            protected Boolean doInBackground() throws Exception { //return value not being used
-                interrupted = false;
+            protected Void doInBackground() throws Exception { //return value not being used
                 for (Task task : tasks) {
-                    if(interrupted) return false;
+                    if(isCancelled()) break;
                     currentTask = task;
-                    task.setProgressListener(m -> {
-                        publish(m);
-                        if(!m.isPartial()) counter++;
+                    task.setProgressListener(l -> {
+                        publish(l);
+                        if(!l.isPartial()) counter++;
                     });
                     task.start();
                 }
-                return true;
+                return null;
             }
 
             @Override
-            protected void process(List<ProgressLog> chunks) {
-                chunks.forEach(m -> {
-                    if(m.isPartial()){
-                        txaLogs.addText(m.getLog());
-                    }else{
-                        txaLogs.addText(m.getLogWithID());
-                    }
-                });
+            protected void process(List<ProgressLog> logs) {
+                logs.forEach(l -> txaLogs.addText(l.getLog()));
                 pgbTasks.setValue(counter);
                 pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
             }
 
             @Override
             protected void done() {
-                pgbTasks.setValue(pgbTasks.getMaximum());
-                pgbTasks.setToolTipText(null);
-                saveLog();
-                JOptionPane.showMessageDialog(
-                        ImageDownloader.this,
-                        COMPLETE_MSG,
-                        COMPLETE_TITLE,
-                        JOptionPane.INFORMATION_MESSAGE
-                );
                 currentTask = null;
-                unlockUI();
-                if(!interrupted && chkShutdown.isSelected()){
+                cleanup();
+                if(!isCancelled() && chkShutdown.isSelected()){
                     ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, SHUTDOWN_EVENT_CODE));
                 }
             }
@@ -303,16 +287,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }//GEN-LAST:event_btnStartActionPerformed
 
     private void btnStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
-        if(currentTask != null){
-            interrupted = true;
-            currentTask.stop();
-            btnStop.setEnabled(false);
-        }
+        stop(false);
     }//GEN-LAST:event_btnStopActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        if(worker != null) worker.cancel(true);
-        if(logger != null) logger.shutdownNow();
+        stop(true);
+        if(logger != null) logger.shutdownNow(); //logger is running even when not task is performed; ineficient
         saveLog();
         Configs.values.save();
         if(evt.getID() == SHUTDOWN_EVENT_CODE){
@@ -351,6 +331,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private com.mycompany.imagedownloader.view_controller.RecycledTextArea txaLogs;
     // End of variables declaration//GEN-END:variables
 
+    private void stop(boolean interrupt){
+        if(worker != null && currentTask != null){
+            currentTask.stop();
+            worker.cancel(interrupt);
+        }
+    }
+    
     private void loadLog(){
         try(var is = new ObjectInputStream(new BufferedInputStream(new FileInputStream(LOG_FILE)))){
             txaLogs.setTexts((LinkedList<String>) is.readObject());
@@ -367,20 +354,35 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         }
     }
 
-    private void lockUI(){
-        taskPanels.forEach(p -> p.setEnabled(false));
+    private void prepare(){
+        //CLEAR LOGS
+        txaLogs.clear();
+        //PREVENT CHANGE TO TASKS
+        taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
         tblTasks.clearSelection();
         tblTasks.setEnabled(false);
+        //SET PROGRESS BAR
         int processes = 0;
         for (Task task : tasks) {
             processes += task.getProcessesCount();
         }
         pgbTasks.setMaximum(processes);
         pgbTasks.setValue(0);
+        pgbTasks.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
     
-    private void unlockUI(){
+    private void cleanup(){
+        pgbTasks.setCursor(Cursor.getDefaultCursor());
+        pgbTasks.setValue(pgbTasks.getMaximum());
+        pgbTasks.setToolTipText(null);
+        saveLog();
+        JOptionPane.showMessageDialog( //TODO: diferent msg is cancelled is true
+                ImageDownloader.this,
+                COMPLETE_MSG,
+                COMPLETE_TITLE,
+                JOptionPane.INFORMATION_MESSAGE
+        );
         pgbTasks.setValue(0);
         tasks = new LinkedList<>();
         btnStart.setEnabled(true);
@@ -397,9 +399,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }
 
     @Override
-    public void taskCreated(TaskPanel panel, Task task, String description) {
+    public void taskCreated(TaskPanel source, Task task, String description) {
         tasks.add(task);
-        ((DefaultTableModel)tblTasks.getModel()).addRow(new Object[]{panel.getTitle(), description});
+        ((DefaultTableModel)tblTasks.getModel()).addRow(new Object[]{source.getTitle(), description});
+//        System.out.println(taskPanels.get(pnlTab.getSelectedIndex()).getTitle());
     }
      
 }

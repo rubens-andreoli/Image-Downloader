@@ -99,7 +99,6 @@ public class SequencialPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        if(listener == null) return;
         try {
             SequencialTask task = new SequencialTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
@@ -143,13 +142,8 @@ public class SequencialPanel extends TaskPanel {
     // End of variables declaration//GEN-END:variables
 
     @Override
-    public void setEnabled(boolean b) {
+    public void setEditable(boolean b) {
         btnAdd.setEnabled(b);
-    }
-
-    @Override
-    public void reset() {
-        setEnabled(true);
     }
 
 }

@@ -92,7 +92,6 @@ public class ScraperPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        if(listener == null) return;
         try{
             ScraperTask task = new ScraperTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
             txfUrl.setText("");
@@ -136,13 +135,8 @@ public class ScraperPanel extends TaskPanel {
     // End of variables declaration//GEN-END:variables
 
     @Override
-    public void setEnabled(boolean isOpen) {
+    public void setEditable(boolean isOpen) {
         btnAdd.setEnabled(isOpen);
     }
 
-    @Override
-    public void reset() {
-        setEnabled(true);
-    }
-    
 }

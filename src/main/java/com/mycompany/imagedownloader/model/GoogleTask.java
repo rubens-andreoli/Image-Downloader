@@ -109,7 +109,8 @@ public class GoogleTask implements Task {
         for (int i = startIndex; i < images.size(); i++) {
             if(!running || connectionFailed >= DISCONNECTED_THREASHOLD) break;
             Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
-            log = new ProgressLog(i);
+            log = new ProgressLog(i-startIndex);
+            log.appendToLog(String.format("[%s]\n", i));
             searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
         }

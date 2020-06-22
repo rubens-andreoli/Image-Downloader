@@ -119,7 +119,6 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        if(listener == null) return;
         GoogleTask task = new GoogleTask();
         //SET DESTINATION
         try {
@@ -191,13 +190,8 @@ public class GooglePanel extends TaskPanel {
     // End of variables declaration//GEN-END:variables
 
     @Override
-    public void setEnabled(boolean b) {
+    public void setEditable(boolean b) {
         btnAdd.setEnabled(b);
-    }
-
-    @Override
-    public void reset() {
-        setEnabled(true);
     }
     
 }

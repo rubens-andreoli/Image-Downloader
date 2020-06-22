@@ -2,13 +2,16 @@ package com.mycompany.imagedownloader.view_controller;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import javax.swing.text.DefaultCaret;
 
 /** References:
  * https://stackoverflow.com/questions/9580457/fifo-class-in-java
  * https://stackoverflow.com/questions/19050211/why-linkedlist-doesnt-have-initialcapacity-in-java
  * https://stackoverflow.com/questions/6961356/list-clear-vs-list-new-arraylistinteger
+ * https://www.baeldung.com/java-list-iterate-backwards
+ * https://stackoverflow.com/questions/2483572/making-a-jscrollpane-automatically-scroll-all-the-way-down
  */
 public class RecycledTextArea extends javax.swing.JTextArea{
     private static final long serialVersionUID = 1L;
@@ -20,10 +23,13 @@ public class RecycledTextArea extends javax.swing.JTextArea{
 //    private String title;
     private LinkedList<String> texts;
     private int size;
+    private boolean inverted;
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public RecycledTextArea(int size) {
         texts = new LinkedList<>();
         this.size = size;
+        setRows(1);
         setEditable(false);
         addMouseListener(new MouseAdapter(){
             @Override
@@ -67,7 +73,14 @@ public class RecycledTextArea extends javax.swing.JTextArea{
     private void printTexts(){
         final StringBuilder sb = new StringBuilder();
 //        if(title != null) sb.append(title).append("\r\n");
-        texts.forEach(sb::append); //t -> sb.append(t)
+        if(inverted){
+            for (int i = texts.size(); i-- > 0; ) {
+                sb.append(texts.get(i));
+            }
+//            setCaretPosition(0);
+        }else{
+            texts.forEach(sb::append); //t -> sb.append(t)
+        }
         super.setText(sb.toString());
     }
     
@@ -82,13 +95,23 @@ public class RecycledTextArea extends javax.swing.JTextArea{
 //        this.title = title;
 //    }
 
-    public LinkedList<String> getTexts() {
+    public List<String> getTexts() {
         return texts;
     }
     
-    public void setTexts(Collection<String> texts){
+    public void setTexts(List<String> texts){
         texts.forEach(t -> addWithoutPrinting(t));
         printTexts();
     }
-   
+
+    public void setInverted(boolean inverted) {
+        this.inverted = inverted;
+        DefaultCaret caret = (DefaultCaret) getCaret();
+        if(inverted){ 
+            caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        }else{
+            caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        }
+    }
+    
 }
