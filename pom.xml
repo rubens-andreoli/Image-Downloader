@@ -71,5 +71,10 @@
             </configuration>
           </plugin> 
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/images</directory>
+            </resource>
+        </resources>
     </build>
-</project>
+</project> 

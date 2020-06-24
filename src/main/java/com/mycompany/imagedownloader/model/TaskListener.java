@@ -1,6 +1,6 @@
 package com.mycompany.imagedownloader.model;
 
 @FunctionalInterface
-public interface ProgressListener {
+public interface TaskListener {
     void progressed(ProgressLog log);
 }

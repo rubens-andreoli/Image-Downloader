@@ -1,11 +1,12 @@
 package com.mycompany.imagedownloader.model;
 
-import com.mycompany.imagedownloader.model.ProgressLog.Status;
+import static com.mycompany.imagedownloader.model.ProgressLog.ERROR;
+import static com.mycompany.imagedownloader.model.ProgressLog.INFO;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-public class SequencialTask implements Task{
+public class SequencialTask extends BasicTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String URL_MASK = "%s/%s%s";
@@ -17,7 +18,6 @@ public class SequencialTask implements Task{
     
     private static final String INVALID_URL_MSG = "Invalid image URL.";
     private static final String MISSING_MARKERS_MSG = "Image URL missing markers '"+LOWER_MARKER+"_"+UPPER_MARKER+"'.";
-    private static final String MISSING_DESTINATION_MSG = "Destination folder not found.";
     private static final String INVALID_BOUNDS_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     
     private static final String DOWNLOADING_LOG_MASK = "Downloading %s\r\n"; //file
@@ -30,17 +30,11 @@ public class SequencialTask implements Task{
     private int lowerBound;
     private int upperBound;
     private String extension; //with dot at start
-    private String destination;
     
-    private ProgressListener listener;
-    private volatile boolean running;
-
-    public SequencialTask(String url, String dest, int upperBound) 
+    public SequencialTask(String url, String destination, int upperBound) 
             throws MalformedURLException, IOException, BoundsException, NullPointerException {
         //PARAMETERS TESTS
-        if(!(new File(dest)).isDirectory()){
-            throw new IOException(MISSING_DESTINATION_MSG);
-        }
+        setDestination(destination);
         if(!url.matches(URL_REGEX)){
             throw new MalformedURLException(INVALID_URL_MSG);
         }
@@ -59,9 +53,6 @@ public class SequencialTask implements Task{
         //FILENAME AND EXTENSION
         maskedFilename = Utils.parseFilename(file, false);
         extension = Utils.parseExtension(file);
-        
-        //DESTINATION FOLDER
-        destination = dest;
     }
     
     private String parseNumber(String file) throws BoundsException {
@@ -81,32 +72,25 @@ public class SequencialTask implements Task{
     }
 
     @Override
-    public void start(){
-        running = true;
+    protected void run() {
         for(int i=lowerBound; i<=upperBound; i++){
-            if(!running) break;
+            if(isInterrupted()) break;
             //OUTPUT FILE
             String formatedFilename = String.format(maskedFilename, i);
-            File file = Utils.createValidFile(destination, formatedFilename, extension);
+            File file = Utils.createValidFile(getDestination(), formatedFilename, extension);
             
             //DOWNLOAD TO FILE
             String url = String.format(URL_MASK, path, formatedFilename, extension);
             var log = new ProgressLog(i);
-            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), Status.INFO);
+            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), INFO);
             try {
                 Utils.downloadToFile(url, file);
-                log.appendToLog(DOWNLOADED_LOG, Status.INFO);
+                log.appendToLog(DOWNLOADED_LOG, INFO);
             } catch (IOException ex) {
-                log.appendToLog(String.format(DOWNLOAD_FAILED_LOG_MASK, url), Status.ERROR);
+                log.appendToLog(String.format(DOWNLOAD_FAILED_LOG_MASK, url), ERROR);
             }
             if(listener != null) listener.progressed(log);
         }
-        running = false; //not really needed
-    }
-    
-    @Override
-    public void stop() {
-        running = false;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
@@ -114,10 +98,6 @@ public class SequencialTask implements Task{
         return path;
     }
 
-    public String getDestiantion() {
-        return destination;
-    }
-    
     @Override
     public int getProcessesCount() {
         return upperBound-lowerBound;
@@ -144,11 +124,6 @@ public class SequencialTask implements Task{
 //        }
 //        this.destination = destination;
 //    }
-    
-    @Override
-    public void setProgressListener(ProgressListener listener) {
-        this.listener = listener;
-    }
     // </editor-fold>
 
 }

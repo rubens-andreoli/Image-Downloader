@@ -3,6 +3,7 @@ package com.mycompany.imagedownloader.view_controller;
 import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
+import com.mycompany.imagedownloader.model.Task.Status;
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
@@ -16,7 +17,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,7 @@ import javax.swing.table.DefaultTableModel;
  * https://stackoverflow.com/questions/2973643/shutdown-windows-with-java
  * https://stackoverflow.com/questions/32228345/run-java-function-every-hour
  */
-public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener {
+public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener, TaskTableListener {
     private static final long serialVersionUID = 1L;
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
@@ -99,13 +100,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private void initComponents() {
 
         pnlTab = new javax.swing.JTabbedPane();
-        sclTasks = new javax.swing.JScrollPane();
-        tblTasks = new javax.swing.JTable();
         pnlTools = new javax.swing.JPanel();
         btnStart = new javax.swing.JButton();
         btnStop = new javax.swing.JButton();
         pgbTasks = new javax.swing.JProgressBar();
         chkShutdown = new javax.swing.JCheckBox();
+        tblTasks = new TaskTable(this);
         sclLogs = new javax.swing.JScrollPane();
         txaLogs = new com.mycompany.imagedownloader.view_controller.RecycledTextArea();
 
@@ -119,45 +119,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         });
 
         pnlTab.setMinimumSize(new java.awt.Dimension(100, 133));
-
-        sclTasks.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 1), javax.swing.BorderFactory.createEtchedBorder()));
-        sclTasks.setToolTipText("<html>Select rows and press the <br>\n<b>delete key to remove</b> a task.</html>");
-
-        tblTasks.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Type", "Description"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        tblTasks.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        tblTasks.getTableHeader().setReorderingAllowed(false);
-        tblTasks.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                tblTasksKeyPressed(evt);
-            }
-        });
-        sclTasks.setViewportView(tblTasks);
-        if (tblTasks.getColumnModel().getColumnCount() > 0) {
-            tblTasks.getColumnModel().getColumn(0).setPreferredWidth(75);
-            tblTasks.getColumnModel().getColumn(1).setPreferredWidth(400);
-        }
 
         btnStart.setText("Start");
         btnStart.addActionListener(new java.awt.event.ActionListener() {
@@ -218,10 +179,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(sclTasks, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 488, Short.MAX_VALUE)
                     .addComponent(pnlTools, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(sclLogs, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(tblTasks, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -229,8 +192,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(pnlTab, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(sclTasks, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(tblTasks, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(pnlTools, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -270,8 +233,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             @Override
             protected void process(List<ProgressLog> logs) {
                 logs.forEach(l -> txaLogs.addText(l.getLog()));
-                pgbTasks.setValue(counter);
-                pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
+                tblTasks.refresh(); //not efficient
+//                ProgressLog lastLog = logs.get(logs.size());
+//                if(!lastLog.isPartial()){
+//                    pgbTasks.setMaximum(lastLog.getWorkload());
+                    pgbTasks.setValue(counter);
+                    pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
+//                }
             }
 
             @Override
@@ -307,17 +275,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         }
     }//GEN-LAST:event_formWindowClosing
 
-    private void tblTasksKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tblTasksKeyPressed
-        if(evt.getKeyCode() == KeyEvent.VK_DELETE){
-            int[] rows = tblTasks.getSelectedRows();
-            for (int row : rows) {
-                tasks.remove(row);
-                ((DefaultTableModel)tblTasks.getModel()).removeRow(row);
-            }
-            //if(rows.length > 0) resize
-         }
-    }//GEN-LAST:event_tblTasksKeyPressed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnStart;
     private javax.swing.JButton btnStop;
@@ -326,8 +283,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private javax.swing.JTabbedPane pnlTab;
     private javax.swing.JPanel pnlTools;
     private javax.swing.JScrollPane sclLogs;
-    private javax.swing.JScrollPane sclTasks;
-    private javax.swing.JTable tblTasks;
+    private com.mycompany.imagedownloader.view_controller.TaskTable tblTasks;
     private com.mycompany.imagedownloader.view_controller.RecycledTextArea txaLogs;
     // End of variables declaration//GEN-END:variables
 
@@ -361,7 +317,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
         tblTasks.clearSelection();
-        tblTasks.setEnabled(false);
+        tblTasks.setEditable(false);
         //SET PROGRESS BAR
         int processes = 0;
         for (Task task : tasks) {
@@ -386,8 +342,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setValue(0);
         tasks = new LinkedList<>();
         btnStart.setEnabled(true);
-        tblTasks.setEnabled(true);
-        ((DefaultTableModel) tblTasks.getModel()).setRowCount(0);
+        tblTasks.setEditable(true);
+        tblTasks.clear();
         btnStop.setEnabled(true);
         taskPanels.forEach(p -> p.reset());
     }
@@ -401,8 +357,22 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     @Override
     public void taskCreated(TaskPanel source, Task task, String description) {
         tasks.add(task);
-        ((DefaultTableModel)tblTasks.getModel()).addRow(new Object[]{source.getTitle(), description});
+        tblTasks.addTask(source.getTitle(), task, description);
 //        System.out.println(taskPanels.get(pnlTab.getSelectedIndex()).getTitle());
+    }
+
+    @Override
+    public boolean taskRemoved(Task task) {
+        if(tasks.contains(task)){ //should contain always
+            if(task.getStatus() == Status.WAITING){
+                this.tasks.remove(task);
+                return true;
+            }
+            if(task == currentTask){
+                currentTask.stop();
+            }
+        }
+        return false;
     }
      
 }

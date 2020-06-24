@@ -107,7 +107,7 @@ public class SequencialPanel extends TaskPanel {
                             task.getPath(), 
                             task.getLowerBound(), 
                             task.getUpperBound(), 
-                            task.getDestiantion()
+                            task.getDestination()
                     ));
         } catch (MalformedURLException ex) {
             JOptionPane.showMessageDialog(

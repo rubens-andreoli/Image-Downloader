@@ -5,17 +5,14 @@ package com.mycompany.imagedownloader.model;
  */
 public class ProgressLog {
     
-    public enum Status{
-        INFO, WARNING, ERROR, CRITICAL;
+    public static final String INFO = "INFO";
+    public static final String WARNING = "WARNING";
+    public static final String ERROR = "ERROR";
+    public static final String CRITICAL = "CRITICAL";
 
-        @Override
-        public String toString() {
-            return this.name()+TAG_DELIMITER;
-        }
-    }
-    
     private static final String TAG_DELIMITER = ": ";
 
+    private int workload;
     private int number;
     private boolean partial;
     private StringBuilder log;
@@ -40,12 +37,11 @@ public class ProgressLog {
         appendToLog(log);
     }
     
-    public void appendToLog(String message, Status tag){
-        log.append(tag.toString());
-        log.append(message);
+    public void appendToLog(String message, String tag){
+        log.append(tag).append(TAG_DELIMITER).append(message);
     }
     
-    public void setLog(String log, Status tag){
+    public void setLog(String log, String tag){
         this.log = new StringBuilder();
         appendToLog(log, tag);
     }

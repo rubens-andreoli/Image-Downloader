@@ -1,6 +1,8 @@
 package com.mycompany.imagedownloader.model;
 
-import com.mycompany.imagedownloader.model.ProgressLog.Status;
+import static com.mycompany.imagedownloader.model.ProgressLog.CRITICAL;
+import static com.mycompany.imagedownloader.model.ProgressLog.ERROR;
+import static com.mycompany.imagedownloader.model.ProgressLog.INFO;
 import static com.mycompany.imagedownloader.model.Utils.USER_AGENT;
 import java.io.File;
 import java.io.IOException;
@@ -10,11 +12,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-public class ScraperTask implements Task{
+public class ScraperTask extends BasicTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String INVALID_URL_MSG = "Invalid URL.";
-    private static final String MISSING_DESTINATION_MSG = "Detination folder not found.";
     private static final String INVALID_BOUNDS_MSG_MASK = "Search depth has a limit of %d";
     
     private static final String CONNECTING_LOG_MASK = "Connecting to %s\r\n"; //url
@@ -29,51 +30,38 @@ public class ScraperTask implements Task{
         DEPTH_LIMIT = Configs.values.get("scraper:depth_limit", 3);
     }
     // </editor-fold>
-    
-    
+     
     private String path;
     private String root;
-    private String destination;
     private int depth;
     
     private ProgressLog log;
-    private ProgressListener listener;
-    private volatile boolean running;
 
     public ScraperTask(String path, String destination, int depth) throws MalformedURLException, IOException, BoundsException {       
         if(depth < 0 || depth > DEPTH_LIMIT){
             throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, DEPTH_LIMIT));
         }
-        if(!(new File(destination)).isDirectory()){
-            throw new IOException(MISSING_DESTINATION_MSG);
-        }
+        setDestination(destination);
         try {
             URL url = new URL(path);
             this.path = url.toString();
             root = url.getAuthority();
-            this.destination = destination;
             this.depth = depth;
         } catch (MalformedURLException ex) {
             throw new MalformedURLException(INVALID_URL_MSG);
         }   
     }
-    
-    @Override
-    public void start() {
-        running = true;
+
+        @Override
+    protected void run() {
         download(path, 0, true);
     }
-    
-    @Override
-    public void stop() {
-        running = false;
-    }
-    
+
     private void download(String url, int progress, boolean isPath){
-        if(!running) return;
+        if(isInterrupted()) return;
         
         log = new ProgressLog(progress, !isPath);
-        log.appendToLog(String.format(CONNECTING_LOG_MASK, url), Status.INFO);
+        log.appendToLog(String.format(CONNECTING_LOG_MASK, url), INFO);
         
         Document doc = null;
         try{
@@ -83,14 +71,14 @@ public class ScraperTask implements Task{
                     .userAgent(USER_AGENT)
                     .get();
         }catch(IOException ex){
-            log.appendToLog(CONNECTION_FAILED_LOG, isPath? Status.CRITICAL:Status.ERROR);
+            log.appendToLog(CONNECTION_FAILED_LOG, isPath? CRITICAL:ERROR);
             if(listener != null) listener.progressed(log);
         }
         if(doc == null) return;
         
         //PARSING IMAGES
         Elements images = doc.getElementsByTag("img");
-        log.appendToLog(String.format(IMAGE_COUNT_LOG_MASK, images.size()), Status.INFO);
+        log.appendToLog(String.format(IMAGE_COUNT_LOG_MASK, images.size()), INFO);
         for (int i = 0; i < images.size(); i++) {
             
             //GET SRC URL
@@ -103,11 +91,11 @@ public class ScraperTask implements Task{
             //SAVE
             String filename = Utils.parseFilename(imageUrl);
             String extension = Utils.parseExtension(imageUrl);
-            File file = Utils.createValidFile(destination, filename, extension);
+            File file = Utils.createValidFile(getDestination(), filename, extension);
             try{
                 Utils.downloadToFile(imageUrl, file);
             }catch(IOException ex){
-                log.appendToLog(String.format(FAILED_DOWNLOAD_LOG_MASK, imageUrl), Status.ERROR);
+                log.appendToLog(String.format(FAILED_DOWNLOAD_LOG_MASK, imageUrl), ERROR);
             }
         }
         
@@ -138,10 +126,6 @@ public class ScraperTask implements Task{
     public String getRoot() {
         return root;
     }
-    
-    public String getDestination() {
-        return destination;
-    }
 
     @Override
     public int getProcessesCount() {
@@ -149,11 +133,4 @@ public class ScraperTask implements Task{
     }
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    @Override
-    public void setProgressListener(ProgressListener listener) {
-        this.listener = listener;
-    }
-    // </editor-fold>
-    
 }

@@ -2,9 +2,14 @@ package com.mycompany.imagedownloader.model;
 
 public interface Task {
     
-    void setProgressListener(ProgressListener listener);
+    public enum Status {
+        WAITING, RUNNING, INTERRUPTED, COMPLETED
+    }
+    
+    void setProgressListener(TaskListener listener);
     void start();
     void stop();
+    Status getStatus();
     
     default int getProcessesCount(){
         return 1;

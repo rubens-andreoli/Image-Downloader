@@ -31,10 +31,13 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="sclTasks" alignment="1" pref="488" max="32767" attributes="0"/>
                   <Component id="pnlTools" alignment="1" max="32767" attributes="0"/>
                   <Component id="sclLogs" alignment="1" max="32767" attributes="0"/>
                   <Component id="pnlTab" alignment="0" max="32767" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="tblTasks" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -45,8 +48,8 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="pnlTab" min="-2" pref="96" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="sclTasks" min="-2" pref="110" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="tblTasks" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="pnlTools" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
@@ -68,60 +71,6 @@
       </AccessibilityProperties>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
-    </Container>
-    <Container class="javax.swing.JScrollPane" name="sclTasks">
-      <Properties>
-        <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
-          <Border info="org.netbeans.modules.form.compat2.border.CompoundBorderInfo">
-            <CompoundBorder>
-              <Border PropertyName="outside" info="org.netbeans.modules.form.compat2.border.EmptyBorderInfo">
-                <EmptyBorder bottom="0" left="0" right="1" top="0"/>
-              </Border>
-              <Border PropertyName="inside" info="org.netbeans.modules.form.compat2.border.EtchedBorderInfo">
-                <EtchetBorder/>
-              </Border>
-            </CompoundBorder>
-          </Border>
-        </Property>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Select rows and press the &lt;br&gt;&#xa;&lt;b&gt;delete key to remove&lt;/b&gt; a task.&lt;/html&gt;"/>
-      </Properties>
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
-      <SubComponents>
-        <Component class="javax.swing.JTable" name="tblTasks">
-          <Properties>
-            <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-              <Table columnCount="2" rowCount="0">
-                <Column editable="false" title="Type" type="java.lang.String"/>
-                <Column editable="false" title="Description" type="java.lang.String"/>
-              </Table>
-            </Property>
-            <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
-              <TableColumnModel selectionModel="0">
-                <Column maxWidth="-1" minWidth="-1" prefWidth="75" resizable="true">
-                  <Title/>
-                  <Editor/>
-                  <Renderer/>
-                </Column>
-                <Column maxWidth="-1" minWidth="-1" prefWidth="400" resizable="true">
-                  <Title/>
-                  <Editor/>
-                  <Renderer/>
-                </Column>
-              </TableColumnModel>
-            </Property>
-            <Property name="selectionModel" type="javax.swing.ListSelectionModel" editor="org.netbeans.modules.form.editors2.JTableSelectionModelEditor">
-              <JTableSelectionModel selectionMode="2"/>
-            </Property>
-            <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
-              <TableHeader reorderingAllowed="false" resizingAllowed="true"/>
-            </Property>
-          </Properties>
-          <Events>
-            <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="tblTasksKeyPressed"/>
-          </Events>
-        </Component>
-      </SubComponents>
     </Container>
     <Container class="javax.swing.JPanel" name="pnlTools">
 
@@ -187,6 +136,11 @@
         </Component>
       </SubComponents>
     </Container>
+    <Component class="com.mycompany.imagedownloader.view_controller.TaskTable" name="tblTasks">
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new TaskTable(this)"/>
+      </AuxValues>
+    </Component>
     <Container class="javax.swing.JScrollPane" name="sclLogs">
       <Properties>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">

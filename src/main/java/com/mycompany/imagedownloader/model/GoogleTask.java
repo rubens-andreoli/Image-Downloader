@@ -1,7 +1,10 @@
 package com.mycompany.imagedownloader.model;
 
+import static com.mycompany.imagedownloader.model.ProgressLog.CRITICAL;
+import static com.mycompany.imagedownloader.model.ProgressLog.ERROR;
+import static com.mycompany.imagedownloader.model.ProgressLog.INFO;
+import static com.mycompany.imagedownloader.model.ProgressLog.WARNING;
 import static com.mycompany.imagedownloader.model.Utils.USER_AGENT;
-import com.mycompany.imagedownloader.model.ProgressLog.Status;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +38,7 @@ import org.jsoup.nodes.Element;
  * https://stackoverflow.com/questions/3850074/regex-until-but-not-including
  * https://stackoverflow.com/questions/38581427/why-non-static-final-member-variables-are-not-required-to-follow-the-constant-na/38581517
  */
-public class GoogleTask implements Task {
+public class GoogleTask extends BasicTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
@@ -48,9 +51,6 @@ public class GoogleTask implements Task {
     private static final String IMAGE_LINK_DELIMITER = ",";
     private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
-    private static final String NO_FOLDER_MSG = "No folder was selected.";
-    private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found.";
-    private static final String FOLDER_PERMISSION_MSG_MASK = "You don't have folder [%s] read/write permissions.";
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
     
@@ -94,34 +94,24 @@ public class GoogleTask implements Task {
     private String source;
     private List<Path> images;
     private int startIndex;
-    private String destination;
     private boolean retrySmall;
     
-    private ProgressListener listener;
-    private volatile boolean running;
     private ProgressLog log;
     private int connectionFailed;
-    
+
     @Override
-    public void start() {
-        running = true;
+    protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         for (int i = startIndex; i < images.size(); i++) {
-            if(!running || connectionFailed >= DISCONNECTED_THREASHOLD) break;
+            if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break;
             Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
             log = new ProgressLog(i-startIndex);
             log.appendToLog(String.format("[%s]\n", i));
             searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
         }
-        running = false; //not really needed
     }
-    
-    @Override
-    public void stop() {
-        running = false;
-    }
-    
+
     private void searchWithFile(Path path){
         try(var fileStream = new BufferedInputStream(Files.newInputStream(path));  //TODO: test if splitting input stream instead of reading twice is more eficient
                 var cache = new ByteArrayOutputStream();){ //TODO: not sure if stream is needed here; use byte[] from fileStream directly?
@@ -130,8 +120,8 @@ public class GoogleTask implements Task {
             
             //GET IMAGE INFO FOR COMPARISON
             ImageInfo source = new ImageInfo(path.toString(), imageBytes);
-            log.appendToLog(LOADING_IMAGE_LOG, Status.INFO);
-            log.appendToLog(path.toString()+"\n", Status.INFO);
+            log.appendToLog(LOADING_IMAGE_LOG, INFO);
+            log.appendToLog(path.toString()+"\n", INFO);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -147,16 +137,16 @@ public class GoogleTask implements Task {
                 if(googleImages!=null && !googleImages.isEmpty()){
                     downloadLargest(googleImages, source);
                 } else {
-                    log.appendToLog(NO_SIMILAR_LOG, Status.WARNING);
+                    log.appendToLog(NO_SIMILAR_LOG, WARNING);
                 }
             }catch(IOException ex){
-                log.appendToLog(FAILED_UPLOADING_LOG, Status.ERROR);
+                log.appendToLog(FAILED_UPLOADING_LOG, ERROR);
                 connectionFailed++;
             }
         }catch(IOException ex){
-            log.appendToLog(FAILED_READING_FILE_LOG, Status.ERROR);
+            log.appendToLog(FAILED_READING_FILE_LOG, ERROR);
         }catch(Exception ex) {
-            log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), Status.CRITICAL);
+            log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), CRITICAL);
         }
     }
     
@@ -204,16 +194,16 @@ public class GoogleTask implements Task {
             }
         }
         if(largest == null){
-            log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), Status.INFO);
+            log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), INFO);
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height), Status.INFO);
-        log.appendToLog(largest.path+"\n", Status.INFO);
+        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height), INFO);
+        log.appendToLog(largest.path+"\n", INFO);
         
         boolean failed = false;
         try{
             //SAVE FILE
-            File file = Utils.createValidFile(destination, largest.getFilename(), largest.getExtension());
+            File file = Utils.createValidFile(getDestination(), largest.getFilename(), largest.getExtension());
             largest.setSize(Utils.downloadToFile(largest.path, file));
             
             //TESTS
@@ -229,7 +219,7 @@ public class GoogleTask implements Task {
             if(corrupt || small) failed = true;
             
         }catch(IOException ex){
-            log.appendToLog(FAILED_DOWNLOADING_LOG, Status.ERROR);
+            log.appendToLog(FAILED_DOWNLOADING_LOG, ERROR);
             //LAST RESORT (rarely solves the problem if failed because of path)
             if(largest.path.contains("?")){ 
                 googleImages.add(new ImageInfo(
@@ -245,9 +235,9 @@ public class GoogleTask implements Task {
         if(failed){
             googleImages.remove(largest);
             if(googleImages.isEmpty()){
-                log.appendToLog(NO_NEW_IMAGES_LOG, Status.WARNING);
+                log.appendToLog(NO_NEW_IMAGES_LOG, WARNING);
             }else{
-                log.appendToLog(TRY_OTHER_IMAGE_LOG, Status.INFO);
+                log.appendToLog(TRY_OTHER_IMAGE_LOG, INFO);
                 downloadLargest(googleImages, source);
             }
         }
@@ -255,11 +245,11 @@ public class GoogleTask implements Task {
     
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
-            log.appendToLog(SMALLER_THAN_SOURCE_LOG, Status.WARNING);
+            log.appendToLog(SMALLER_THAN_SOURCE_LOG, WARNING);
             Utils.moveFileToChild(file, SUBFOLDER);
             return true; //even if it failed to move, try other images
         }
-        log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), Status.INFO);
+        log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), INFO);
         return false;
     }
     
@@ -267,14 +257,14 @@ public class GoogleTask implements Task {
         //BELOW FILESIZE THRESHOLD
         if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
-               log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), Status.WARNING);
+               log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), WARNING);
             }
             return true;
         }
         
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
-            log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), Status.WARNING);
+            log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), WARNING);
             Utils.moveFileToChild(file, SUBFOLDER);
             return true;
         }
@@ -295,7 +285,7 @@ public class GoogleTask implements Task {
             HttpResponse response = client.execute(requisicao);
             //SAVE BYTES
             byte[] bytes = EntityUtils.toByteArray(response.getEntity());
-            Path filepath = Path.of(Utils.createValidFilepath(destination, image.getFilename(), image.getExtension()));
+            Path filepath = Path.of(Utils.createValidFilepath(getDestination(), image.getFilename(), image.getExtension()));
             Files.write(filepath, bytes);
             file = filepath.toFile();
         } catch (IOException ex) {
@@ -304,28 +294,14 @@ public class GoogleTask implements Task {
         
         //TEST IF CORRUPT AND LOG
         if(file != null && !reviseCorrupt(file, sourceSize)){
-            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.path), Status.INFO);
+            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.path), INFO);
         }else{
-            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.path), Status.ERROR);
+            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.path), ERROR);
         }
         return file;
     }
 
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    private File getFolder(String folder) throws IOException{
-        if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
-        try{
-            File file = new File(folder);
-            if(file.isDirectory()){
-                return file;
-            }else{
-                throw new IOException(String.format(NOT_FOLDER_MSG_MASK, folder));
-            }
-        }catch(SecurityException ex){
-            throw new IOException(String.format(FOLDER_PERMISSION_MSG_MASK, folder));
-        }
-    } 
-    
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     public void setSource(String folder)throws IOException{
         Path path = getFolder(folder).toPath();
         try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
@@ -340,22 +316,12 @@ public class GoogleTask implements Task {
             source = folder;
         }
     }
- 
-    public void setDestination(String folder) throws IOException {
-        getFolder(folder);
-        this.destination = folder;
-    }
 
     public void setStartIndex(int startIndex) throws BoundsException {
         if(startIndex < 0 || (images!=null && startIndex>images.size())){ //TODO: check index condition
             throw new BoundsException(INVALID_BOUNDS_MSG);
         }
         this.startIndex = startIndex;
-    }
-    
-    @Override
-    public void setProgressListener(ProgressListener listener) {
-        this.listener = listener;
     }
 
     public void setRetrySmall(boolean b) {
@@ -365,11 +331,7 @@ public class GoogleTask implements Task {
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public int getImageCount(){
-        return images==null?0:images.size();
-    }
-
-    public String getDestination() {
-        return destination;
+        return images==null?0:images.size()-1;
     }
 
     public String getSource() {
