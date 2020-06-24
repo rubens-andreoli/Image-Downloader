@@ -37,7 +37,7 @@ public class PathField extends javax.swing.JTextField{
     private final int mode;
     private String path = "";
     private int length;
-    private static JFileChooser chooser;
+    private static JFileChooser chooser = new JFileChooser();;
     
     public PathField(int mode, int length){
         this.mode = mode;
@@ -65,6 +65,7 @@ public class PathField extends javax.swing.JTextField{
                         if ((mode==FILES_AND_DIRECTORIES) || 
                                 (mode==FILES_ONLY && file.isFile()) ||
                                 (mode==DIRECTORIES_ONLY && file.isDirectory())){
+                            chooser.setSelectedFile(new File(file, File.separator));
                             setText(file.getAbsolutePath());
                             fireActionPerformed();
                         }
@@ -133,7 +134,6 @@ public class PathField extends javax.swing.JTextField{
     }
     
     private boolean selectFile(Component parent, int mode){
-        if (chooser == null) chooser = new JFileChooser();
         chooser.setFileSelectionMode(mode);
         if(chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION){
             String selected = chooser.getSelectedFile().getAbsolutePath();
