@@ -245,7 +245,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             @Override
             protected void done() {
                 currentTask = null;
-                cleanup();
+                cleanup(isCancelled());
                 if(!isCancelled() && chkShutdown.isSelected()){
                     ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, SHUTDOWN_EVENT_CODE));
                 }
@@ -328,17 +328,28 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
     
-    private void cleanup(){
+    private void cleanup(boolean isCanceled){
         pgbTasks.setCursor(Cursor.getDefaultCursor());
-        pgbTasks.setValue(pgbTasks.getMaximum());
-        pgbTasks.setToolTipText(null);
         saveLog();
-        JOptionPane.showMessageDialog( //TODO: diferent msg is cancelled is true
-                ImageDownloader.this,
-                COMPLETE_MSG,
-                COMPLETE_TITLE,
-                JOptionPane.INFORMATION_MESSAGE
-        );
+        pgbTasks.setValue(pgbTasks.getMaximum());
+        if(!chkShutdown.isSelected()) {
+            if(!isCanceled){
+                JOptionPane.showMessageDialog(
+                        ImageDownloader.this,
+                        COMPLETE_MSG,
+                        COMPLETE_TITLE,
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }else{
+                JOptionPane.showMessageDialog(
+                        ImageDownloader.this,
+                        "All remaining tasks were stopped.",
+                        "Tasks Aborted",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+        }
+        pgbTasks.setToolTipText(null);
         pgbTasks.setValue(0);
         tasks = new LinkedList<>();
         btnStart.setEnabled(true);
