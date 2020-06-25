@@ -13,6 +13,7 @@ public abstract class BasicTask implements Task {
     
     protected TaskListener listener;
     protected volatile Status status = Status.WAITING;
+    protected int progress;
     
     @Override
     public void setProgressListener(TaskListener listener) {
@@ -36,6 +37,11 @@ public abstract class BasicTask implements Task {
     @Override
     public Status getStatus(){
         return status;
+    }
+
+    @Override
+    public int getProgress(){
+        return progress;
     }
 
     public String getDestination() {

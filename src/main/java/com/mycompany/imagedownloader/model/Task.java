@@ -11,7 +11,8 @@ public interface Task {
     void stop();
     Status getStatus();
     
-    default int getProcessesCount(){
+    int getProgress();
+    default int getWorkload(){
         return 1;
     }
     

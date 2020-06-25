@@ -45,7 +45,7 @@ public class RecycledTextArea extends javax.swing.JTextArea{
     public RecycledTextArea() {
         this(DEFAULT_MAX_SIZE);
     }
-    
+
     private void addWithoutPrinting(String text){
         if(texts.size() > size){
             texts.removeFirst();
@@ -66,7 +66,7 @@ public class RecycledTextArea extends javax.swing.JTextArea{
     }
     
     public void clear(){
-        texts = new LinkedList<>(); //texts.clear();
+        texts.clear();
         super.setText("");
     }
     
@@ -77,7 +77,6 @@ public class RecycledTextArea extends javax.swing.JTextArea{
             for (int i = texts.size(); i-- > 0; ) {
                 sb.append(texts.get(i));
             }
-//            setCaretPosition(0);
         }else{
             texts.forEach(sb::append); //t -> sb.append(t)
         }

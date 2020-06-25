@@ -104,11 +104,12 @@ public class ScraperTask extends BasicTask{
         //PARSING LINKS
         if(depth > 0){
             depth--;
+            super.progress = depth+1;
             Elements links = doc.getElementsByTag("a"); //TODO: link with image as href
             for (int i = 0; i < links.size(); i++) {
                 String linkUrl = links.get(i).absUrl("href");
                 if(linkUrl.startsWith(root)){ //TODO: better solution?
-                    download(linkUrl, i, false);
+                    download(linkUrl, super.progress, false);
                 }
             }
         }
@@ -128,7 +129,7 @@ public class ScraperTask extends BasicTask{
     }
 
     @Override
-    public int getProcessesCount() {
+    public int getWorkload() {
         return getDepth()+1;
     }
     // </editor-fold>

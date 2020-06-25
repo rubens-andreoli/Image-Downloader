@@ -4,6 +4,7 @@ import com.mycompany.imagedownloader.model.Configs;
 import com.mycompany.imagedownloader.model.ProgressLog;
 import com.mycompany.imagedownloader.model.Task;
 import com.mycompany.imagedownloader.model.Task.Status;
+import com.mycompany.imagedownloader.model.Utils;
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +35,9 @@ import javax.swing.table.DefaultTableModel;
  * http://www.java2s.com/Code/Java/Swing-JFC/DisplayingthePercentageDoneonaJProgressBarComponent.htm
  * https://stackoverflow.com/questions/2973643/shutdown-windows-with-java
  * https://stackoverflow.com/questions/32228345/run-java-function-every-hour
+ * https://stackoverflow.com/questions/37117470/how-to-loop-arraylist-from-one-thread-while-adding-to-it-from-other-thread/37117674
+ * https://stackoverflow.com/questions/1426754/linkedblockingqueue-vs-concurrentlinkedqueue
+ * https://stackoverflow.com/questions/1614772/how-to-change-jframe-icon
  */
 public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener, TaskTableListener {
     private static final long serialVersionUID = 1L;
@@ -50,14 +55,15 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private static final String LOG_INVERT_KEY = "log_inverted";
     // </editor-fold>
     
-    private List<Task> tasks = new LinkedList<>();
-    private List<TaskPanel> taskPanels = new ArrayList<>();
+    private ConcurrentLinkedDeque<Task> tasks = new ConcurrentLinkedDeque<>();
     private SwingWorker<Void, ProgressLog> worker;
     private Task currentTask;
+    private int workload;
     private ScheduledExecutorService logger;
 
     public ImageDownloader() { 
         initComponents();
+        this.setIconImage(Utils.loadIcon("download_image.png").getImage());
         txaLogs.setSize(Configs.values.get(LOG_SIZE_KEY, RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE));
         txaLogs.setInverted(Configs.values.get(LOG_INVERT_KEY));
         loadLog();
@@ -100,12 +106,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private void initComponents() {
 
         pnlTab = new javax.swing.JTabbedPane();
+        tblTasks = new TaskTable(this);
         pnlTools = new javax.swing.JPanel();
         btnStart = new javax.swing.JButton();
         btnStop = new javax.swing.JButton();
         pgbTasks = new javax.swing.JProgressBar();
         chkShutdown = new javax.swing.JCheckBox();
-        tblTasks = new TaskTable(this);
         sclLogs = new javax.swing.JScrollPane();
         txaLogs = new com.mycompany.imagedownloader.view_controller.RecycledTextArea();
 
@@ -134,7 +140,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             }
         });
 
-        chkShutdown.setToolTipText("<html><b>Shutdown computer</b> after completion.<br>\n<i>Shutdown will occur automatically, <br>\nwithout any warning.</i></html>");
+        chkShutdown.setToolTipText("<html><b>Shutdown computer</b> after completion.<br>\n<i>Shutdown will occur automatically, <br>\nwithout an option to cancel it.</i></html>");
         chkShutdown.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         chkShutdown.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
         chkShutdown.setMargin(new java.awt.Insets(2, 2, 2, 0));
@@ -183,7 +189,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     .addComponent(sclLogs, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(pnlTab, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(tblTasks, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(tblTasks, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -218,7 +224,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             
             @Override
             protected Void doInBackground() throws Exception { //return value not being used
-                for (Task task : tasks) {
+                while(!tasks.isEmpty()){
+                    Task task = tasks.removeFirst();
+//                for (Task task : tasks) {
                     if(isCancelled()) break;
                     currentTask = task;
                     task.setProgressListener(l -> {
@@ -232,14 +240,14 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
             @Override
             protected void process(List<ProgressLog> logs) {
-                logs.forEach(l -> txaLogs.addText(l.getLog()));
-                tblTasks.refresh(); //not efficient
-//                ProgressLog lastLog = logs.get(logs.size());
-//                if(!lastLog.isPartial()){
-//                    pgbTasks.setMaximum(lastLog.getWorkload());
-                    pgbTasks.setValue(counter);
-                    pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
-//                }
+                boolean changedTask = false;
+                for (ProgressLog log : logs) {
+                    if(log.getNumber() == 0) changedTask = true;
+                    txaLogs.addText(log.getLog());
+                }
+                if(changedTask) tblTasks.refresh();
+                pgbTasks.setValue(counter);
+                pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
             }
 
             @Override
@@ -311,27 +319,16 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }
 
     private void prepare(){
-        //CLEAR LOGS
         txaLogs.clear();
-        //PREVENT CHANGE TO TASKS
-        taskPanels.forEach(p -> p.setEditable(false));
         btnStart.setEnabled(false);
-        tblTasks.clearSelection();
-        tblTasks.setEditable(false);
-        //SET PROGRESS BAR
-        int processes = 0;
-        for (Task task : tasks) {
-            processes += task.getProcessesCount();
-        }
-        pgbTasks.setMaximum(processes);
-        pgbTasks.setValue(0);
         pgbTasks.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
     }
     
     private void cleanup(boolean isCanceled){
         pgbTasks.setCursor(Cursor.getDefaultCursor());
+        pgbTasks.setValue(pgbTasks.getMaximum()); //if for some reason don't fill completly
+        tblTasks.refresh();
         saveLog();
-        pgbTasks.setValue(pgbTasks.getMaximum());
         if(!chkShutdown.isSelected()) {
             if(!isCanceled){
                 JOptionPane.showMessageDialog(
@@ -351,39 +348,38 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         }
         pgbTasks.setToolTipText(null);
         pgbTasks.setValue(0);
-        tasks = new LinkedList<>();
+        tasks = new ConcurrentLinkedDeque<>();
         btnStart.setEnabled(true);
-        tblTasks.setEditable(true);
         tblTasks.clear();
         btnStop.setEnabled(true);
-        taskPanels.forEach(p -> p.reset());
     }
 
     public void addTaskPanel(TaskPanel panel){
-        taskPanels.add(panel);
         panel.setTaskListener(this);
         pnlTab.addTab(panel.getTitle(), panel);
     }
 
     @Override
     public void taskCreated(TaskPanel source, Task task, String description) {
-        tasks.add(task);
+        tasks.addLast(task);
+        workload += task.getWorkload();
+        pgbTasks.setMaximum(workload);
         tblTasks.addTask(source.getTitle(), task, description);
-//        System.out.println(taskPanels.get(pnlTab.getSelectedIndex()).getTitle());
     }
 
     @Override
     public boolean taskRemoved(Task task) {
-        if(tasks.contains(task)){ //should contain always
-            if(task.getStatus() == Status.WAITING){
-                this.tasks.remove(task);
-                return true;
-            }
-            if(task == currentTask){
-                currentTask.stop();
-            }
+        boolean removed = false;
+        if(task.getStatus() == Status.WAITING){
+            tasks.remove(task);
+            workload -= task.getWorkload();
+            removed = true;
+        }else if(task == currentTask){
+            currentTask.stop();
+            workload -= (task.getWorkload()-task.getProgress()+1); //+1 because start is 0
         }
-        return false;
+        pgbTasks.setMaximum(workload);
+        return removed;
     }
      
 }

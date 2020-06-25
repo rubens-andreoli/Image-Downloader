@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import javax.swing.ImageIcon;
 import org.apache.commons.io.FileUtils;
 
 /** References:
@@ -324,6 +325,15 @@ public class Utils {
             index += token.length(); 
         }
         return index;
+    }
+    
+    public static ImageIcon loadIcon(String url){
+        try{
+            ImageIcon icon = new ImageIcon(Utils.class.getClassLoader().getResource(url));
+            return icon;
+        }catch(NullPointerException ex){
+            return null;
+        }
     }
  
 }

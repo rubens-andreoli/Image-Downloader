@@ -141,9 +141,4 @@ public class SequencialPanel extends TaskPanel {
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
-    @Override
-    public void setEditable(boolean b) {
-        btnAdd.setEnabled(b);
-    }
-
 }

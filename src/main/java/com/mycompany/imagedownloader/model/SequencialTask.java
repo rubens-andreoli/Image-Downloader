@@ -81,7 +81,8 @@ public class SequencialTask extends BasicTask{
             
             //DOWNLOAD TO FILE
             String url = String.format(URL_MASK, path, formatedFilename, extension);
-            var log = new ProgressLog(i);
+            progress = i-lowerBound;
+            var log = new ProgressLog(progress);
             log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), INFO);
             try {
                 Utils.downloadToFile(url, file);
@@ -99,7 +100,7 @@ public class SequencialTask extends BasicTask{
     }
 
     @Override
-    public int getProcessesCount() {
+    public int getWorkload() {
         return upperBound-lowerBound;
     }
 
@@ -110,20 +111,6 @@ public class SequencialTask extends BasicTask{
     public int getUpperBound() {
         return upperBound;
     }
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-
-//    public void setPath(String path) {
-//        this.path = path;
-//    }
-//
-//    public void setDestination(String destination) throws IOException {
-//        if(!(new File(destination)).isDirectory()){
-//            throw new IOException(MISSING_DESTINATION_MSG);
-//        }
-//        this.destination = destination;
-//    }
     // </editor-fold>
 
 }

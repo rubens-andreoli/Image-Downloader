@@ -188,10 +188,5 @@ public class GooglePanel extends TaskPanel {
     private com.mycompany.imagedownloader.view_controller.PathField txfSource;
     private com.mycompany.imagedownloader.view_controller.NumberField txfStart;
     // End of variables declaration//GEN-END:variables
-
-    @Override
-    public void setEditable(boolean b) {
-        btnAdd.setEnabled(b);
-    }
     
 }

@@ -1,9 +1,10 @@
 package com.mycompany.imagedownloader.view_controller;
 
 import com.mycompany.imagedownloader.model.Task;
+import com.mycompany.imagedownloader.model.Utils;
 import java.awt.Component;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +21,10 @@ import javax.swing.table.TableCellRenderer;
 public class TaskTable extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     
-    private static final String[] columns =  new String [] {"Type", "", "Description"};
+    private static final String[] COLUMNS_NAME =  new String [] {"Type", "", "Description"};
+    private static final int[] COLUMNS_WIDTH = new int[] {56, 22, 400};
+    private static final int ROWS_HEIGHT = 18;
+    
     private TableModel model = new TableModel();
     private List<TaskAdapter> tasks = new LinkedList<>();
     private TaskTableListener listener;
@@ -72,7 +76,7 @@ public class TaskTable extends javax.swing.JPanel {
 
         @Override
         public String getColumnName(int column) {
-            return columns[column];
+            return COLUMNS_NAME[column];
         }
 
         @Override
@@ -115,10 +119,13 @@ public class TaskTable extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc=" TABLE CELL RENDERER "> 
     public static class TaskCellRenderer implements TableCellRenderer {
 
-        private JLabel label;
+        private static final ImageIcon RUNNING_ICON = Utils.loadIcon("download.png");
+        private static final ImageIcon INTERRUPTED_ICON = Utils.loadIcon("close.png");
+        private static final ImageIcon COMPLETED_ICON = Utils.loadIcon("checkmark.png");
+        
+        private final JLabel label = new JLabel();
         
         public TaskCellRenderer(){
-            label = new JLabel();
             label.setHorizontalAlignment(JLabel.CENTER);
             label.setVerticalAlignment(JLabel.BOTTOM);
         }
@@ -128,13 +135,13 @@ public class TaskTable extends javax.swing.JPanel {
             Task task = (Task) value;
             switch(task.getStatus()){
                 case RUNNING:
-                    label.setIcon(new ImageIcon(getClass().getResource("/download.png")));
+                    label.setIcon(RUNNING_ICON);
                     break;
                 case INTERRUPTED:
-                    label.setIcon(new ImageIcon(getClass().getResource("/close.png")));
+                    label.setIcon(INTERRUPTED_ICON);
                     break;
                 case COMPLETED:
-                    label.setIcon(new ImageIcon(getClass().getResource("/checkmark.png")));
+                    label.setIcon(COMPLETED_ICON);
                     break;
                 default:
                     label.setIcon(null);
@@ -152,13 +159,6 @@ public class TaskTable extends javax.swing.JPanel {
     public TaskTable(TaskTableListener listener) {
         this.listener = listener;
         initComponents();
-        tblTasks.getColumnModel().getColumn(0).setMinWidth(60);
-        tblTasks.getColumnModel().getColumn(0).setPreferredWidth(60);
-        tblTasks.getColumnModel().getColumn(1).setMinWidth(22);
-        tblTasks.getColumnModel().getColumn(1).setPreferredWidth(22);
-        tblTasks.getColumnModel().getColumn(2).setPreferredWidth(400);
-        tblTasks.setDefaultRenderer(Task.class, new TaskCellRenderer());
-        tblTasks.setRowHeight(18);
     }
      
     @SuppressWarnings("unchecked")
@@ -169,7 +169,7 @@ public class TaskTable extends javax.swing.JPanel {
         tblTasks = new javax.swing.JTable();
 
         sclTasks.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 1), javax.swing.BorderFactory.createEtchedBorder()));
-        sclTasks.setToolTipText("<html>Select rows and press the <br>\n<b>delete key to remove</b> a task.</html>");
+        sclTasks.setToolTipText("<html>Select rows and press the <b>delete key</b><br>\nto <b>remove</b> a task that hasn't been started yet,<br>\nor to <b>stop</b> the current task.</html>");
 
         tblTasks.setModel(model);
         tblTasks.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -179,6 +179,13 @@ public class TaskTable extends javax.swing.JPanel {
                 tblTasksKeyPressed(evt);
             }
         });
+        tblTasks.getColumnModel().getColumn(0).setMinWidth(COLUMNS_WIDTH[0]);
+        tblTasks.getColumnModel().getColumn(0).setPreferredWidth(COLUMNS_WIDTH[0]);
+        tblTasks.getColumnModel().getColumn(1).setMinWidth(COLUMNS_WIDTH[1]);
+        tblTasks.getColumnModel().getColumn(1).setPreferredWidth(COLUMNS_WIDTH[1]);
+        tblTasks.getColumnModel().getColumn(2).setPreferredWidth(COLUMNS_WIDTH[2]);
+        tblTasks.setDefaultRenderer(Task.class, new TaskCellRenderer());
+        tblTasks.setRowHeight(ROWS_HEIGHT);
         sclTasks.setViewportView(tblTasks);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
@@ -220,12 +227,7 @@ public class TaskTable extends javax.swing.JPanel {
     public void addTask(String title, Task task, String description){
         addTask(new TaskAdapter(title, task, description));
     }
-    
-    public void setEditable(boolean b){
-//        tblTasks.setRowSelectionAllowed(b);
-        tblTasks.setEnabled(b);
-    }
-    
+ 
     public void refresh(){
         model.fireTableDataChanged();
     }
@@ -235,15 +237,12 @@ public class TaskTable extends javax.swing.JPanel {
        tasks = new LinkedList<>();
        model.fireTableRowsDeleted(0, size);
     }
-    
-    public void clearSelection() {
-        tblTasks.clearSelection();
-    }
-    
+ 
     private List<TaskAdapter> getSelected(int[] rows){
-        List<TaskAdapter> selectedAdapters = new ArrayList<>();
+        System.out.println(Arrays.toString(rows));
+        LinkedList<TaskAdapter> selectedAdapters = new LinkedList<>();
         for (int row : rows) {
-            selectedAdapters.add(tasks.get(row));
+            selectedAdapters.addFirst(tasks.get(row)); //add backwards so it's removed from last to active task
         }
         return selectedAdapters;
     }

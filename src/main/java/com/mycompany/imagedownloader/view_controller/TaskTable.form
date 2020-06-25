@@ -43,8 +43,11 @@
             </CompoundBorder>
           </Border>
         </Property>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Select rows and press the &lt;br&gt;&#xa;&lt;b&gt;delete key to remove&lt;/b&gt; a task.&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Select rows and press the &lt;b&gt;delete key&lt;/b&gt;&lt;br&gt;&#xa;to &lt;b&gt;remove&lt;/b&gt; a task that hasn&apos;t been started yet,&lt;br&gt;&#xa;or to &lt;b&gt;stop&lt;/b&gt; the current task.&lt;/html&gt;"/>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="TaskTable_sclTasks"/>
+      </AuxValues>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
@@ -64,6 +67,9 @@
           <Events>
             <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="tblTasksKeyPressed"/>
           </Events>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="        tblTasks.getColumnModel().getColumn(0).setMinWidth(COLUMNS_WIDTH[0]);&#xa;        tblTasks.getColumnModel().getColumn(0).setPreferredWidth(COLUMNS_WIDTH[0]);&#xa;        tblTasks.getColumnModel().getColumn(1).setMinWidth(COLUMNS_WIDTH[1]);&#xa;        tblTasks.getColumnModel().getColumn(1).setPreferredWidth(COLUMNS_WIDTH[1]);&#xa;        tblTasks.getColumnModel().getColumn(2).setPreferredWidth(COLUMNS_WIDTH[2]);&#xa;        tblTasks.setDefaultRenderer(Task.class, new TaskCellRenderer());&#xa;        tblTasks.setRowHeight(ROWS_HEIGHT);"/>
+          </AuxValues>
         </Component>
       </SubComponents>
     </Container>

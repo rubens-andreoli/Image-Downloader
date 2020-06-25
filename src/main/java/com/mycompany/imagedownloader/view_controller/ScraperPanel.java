@@ -134,9 +134,4 @@ public class ScraperPanel extends TaskPanel {
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
-    @Override
-    public void setEditable(boolean isOpen) {
-        btnAdd.setEnabled(isOpen);
-    }
-
 }

@@ -21,12 +21,6 @@ public abstract class TaskPanel extends javax.swing.JPanel {
         setMaximumSize(min);
     }
     
-    public abstract void setEditable(boolean b);
-    
-    public void reset() {
-        setEditable(true);
-    }
-
     public void setTaskListener(TaskPanelListener listener) {
         this.listener = listener;
     }

@@ -105,7 +105,8 @@ public class GoogleTask extends BasicTask{
         for (int i = startIndex; i < images.size(); i++) {
             if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break;
             Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
-            log = new ProgressLog(i-startIndex);
+            progress = i-startIndex;
+            log = new ProgressLog(progress);
             log.appendToLog(String.format("[%s]\n", i));
             searchWithFile(images.get(i));
             if(listener!= null) listener.progressed(log);
@@ -347,7 +348,7 @@ public class GoogleTask extends BasicTask{
     }
 
     @Override
-    public int getProcessesCount() {
+    public int getWorkload() {
         return getImageCount()-startIndex;
     }
     // </editor-fold>
