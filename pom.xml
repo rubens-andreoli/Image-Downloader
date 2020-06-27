@@ -62,7 +62,7 @@
               <archive>
                 <manifest>
                   <addClasspath>true</addClasspath>
-                  <mainClass>com.mycompany.imagedownloader.Launcher</mainClass>
+                  <mainClass>rubensandreoli.imagedownloader.Launcher</mainClass>
                 </manifest>
               </archive>
               <descriptorRefs>
