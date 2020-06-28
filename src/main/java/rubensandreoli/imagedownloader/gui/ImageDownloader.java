@@ -392,6 +392,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         //AFTER USER VERIFICATION
         pgbTasks.setToolTipText(null);
         pgbTasks.setValue(0);
+        workload = 0;
+        progress = 0;
         if(isCanceled) tasks.clear(); //if cancelled remove remaining tasks
         tblTasks.clear();
         btnStart.setEnabled(true);

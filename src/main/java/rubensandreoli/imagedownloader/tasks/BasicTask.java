@@ -13,7 +13,7 @@ public abstract class BasicTask implements Task {
     
     protected TaskListener listener;
     protected volatile Status status = Status.WAITING;
-    protected int progress;
+    protected int progress; //TODO: private
     
     @Override
     public void setProgressListener(TaskListener listener) {
@@ -33,22 +33,13 @@ public abstract class BasicTask implements Task {
     public void stop() {
         status = Status.INTERRUPTED;
     }
-
-    @Override
-    public Status getStatus(){
-        return status;
-    }
-
-    @Override
-    public int getProgress(){
-        return progress;
-    }
-
-    public String getDestination() {
-        return destination;
+    
+    public void setDestination(String folder) throws IOException{
+        createFolder(folder);
+        this.destination = folder;
     }
     
-    protected File getFolder(String folder) throws IOException{
+    protected File createFolder(String folder) throws IOException{
         if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
         try{
             File file = new File(folder);
@@ -61,10 +52,23 @@ public abstract class BasicTask implements Task {
             throw new IOException(String.format(FOLDER_PERMISSION_MSG_MASK, folder));
         }
     } 
+
+    protected int increaseProgress(){
+        return ++progress;
+    }
     
-    public void setDestination(String folder) throws IOException{
-        getFolder(folder);
-        this.destination = folder;
+    @Override
+    public Status getStatus(){
+        return status;
+    }
+
+    @Override
+    public int getProgress(){
+        return progress;
+    }
+
+    public String getDestination() {
+        return destination;
     }
     
     protected boolean isInterrupted(){

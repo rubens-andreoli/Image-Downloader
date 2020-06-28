@@ -306,7 +306,7 @@ public class GoogleTask extends BasicTask{
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     public void setSource(String folder)throws IOException{
-        Path path = getFolder(folder).toPath();
+        Path path = createFolder(folder).toPath();
         try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
             List<Path> paths = new ArrayList<>();
             for (Path file : contents) {

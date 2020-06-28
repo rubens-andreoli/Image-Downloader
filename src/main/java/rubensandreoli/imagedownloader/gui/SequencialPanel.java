@@ -4,6 +4,8 @@ import rubensandreoli.imagedownloader.tasks.BoundsException;
 import rubensandreoli.imagedownloader.tasks.SequencialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 /** References:
@@ -99,28 +101,26 @@ public class SequencialPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
+        SequencialTask task = new SequencialTask();
+        
         try {
-            SequencialTask task = new SequencialTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
-            txfUrl.setText("");
-            listener.taskCreated(this, task, 
-                    String.format(DESCRIPTION_MASK, 
-                            task.getPath(), 
-                            task.getLowerBound(), 
-                            task.getUpperBound(), 
-                            task.getDestination()
-                    ));
-        } catch (MalformedURLException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_URL_MSG+ex.getMessage(), 
-                INVALID_URL_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
+            task.setDestination(txfDest.getText());
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 this, 
                 INVALID_DESTINATION_MSG+ex.getMessage(), 
                 INVALID_DESTINATION_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+        
+        try {
+            task.setSource(txfUrl.getText());
+        } catch (MalformedURLException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_URL_MSG+ex.getMessage(), 
+                INVALID_URL_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
         } catch (BoundsException ex) {
@@ -131,6 +131,27 @@ public class SequencialPanel extends TaskPanel {
                 JOptionPane.ERROR_MESSAGE
             );
         }
+        
+        try {
+            task.setUpperBound(txfNumber.getInt());
+        } catch (BoundsException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_NUMBER_MSG+ex.getMessage(), 
+                INVALID_NUMBER_TITLE,
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+
+        listener.taskCreated(this, task, 
+                    String.format(DESCRIPTION_MASK, 
+                            task.getPath(), 
+                            task.getLowerBound(), 
+                            task.getUpperBound(), 
+                            task.getDestination()
+                    ));
+        
+        txfUrl.setText("");
     }//GEN-LAST:event_btnAddActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
