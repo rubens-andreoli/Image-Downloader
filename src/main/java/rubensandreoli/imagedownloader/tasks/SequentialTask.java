@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-public class SequencialTask extends BasicTask{
+public class SequentialTask extends BasicTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String URL_MASK = "%s/%s%s"; //path, filename, extension

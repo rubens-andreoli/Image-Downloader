@@ -1,7 +1,7 @@
 package rubensandreoli.imagedownloader.gui;
 
 import rubensandreoli.imagedownloader.tasks.BoundsException;
-import rubensandreoli.imagedownloader.tasks.SequencialTask;
+import rubensandreoli.imagedownloader.tasks.SequentialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
@@ -12,11 +12,11 @@ import javax.swing.JOptionPane;
  * https://stackoverflow.com/questions/26848647/custom-bean-class-for-gui-component-in-netbeans
  * https://docs.oracle.com/javase/tutorial/uiswing/components/textarea.html
  */
-public class SequencialPanel extends TaskPanel {
+public class SequentialPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String TITLE = "Sequencial";
+    private static final String TITLE = "Sequential";
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
@@ -26,7 +26,7 @@ public class SequencialPanel extends TaskPanel {
     private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     // </editor-fold>
     
-    public SequencialPanel() {
+    public SequentialPanel() {
         super(TITLE);
         initComponents();
     }
@@ -101,7 +101,7 @@ public class SequencialPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        SequencialTask task = new SequencialTask();
+        SequentialTask task = new SequentialTask();
         
         try {
             task.setDestination(txfDest.getText());

@@ -255,12 +255,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             protected Void doInBackground() throws Exception {
                 while(!tasks.isEmpty()){
                     if(isCancelled()) break;
-                    
                     currentTask = tasks.removeFirst();
-                    currentTask.setProgressListener(l -> {
-                        publish(l);
-                        if(!l.isPartial()) progress++;
-                    });
+                    currentTask.setProgressListener(l -> publish(l));
                     currentTask.start();
                 }
                 return null;
@@ -270,7 +266,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             protected void process(List<ProgressLog> logs) {
                 boolean changedTask = false;
                 for (ProgressLog log : logs) {
-                    if(log.getNumber() == 0) changedTask = true;
+                    if(log.getNumber() == 1) changedTask = true;
+                    if(!log.isPartial()) progress++;
                     txaLogs.addText(log.getMessages());
                 }
                 if(changedTask) tblTasks.refresh();

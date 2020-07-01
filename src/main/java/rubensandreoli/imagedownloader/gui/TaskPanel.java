@@ -2,6 +2,14 @@ package rubensandreoli.imagedownloader.gui;
 
 import java.awt.Dimension;
 
+/**
+ * TasksPanels act like Task factories, but 
+ * instead of asking for an instance from them, 
+ * the panel provides one, when created, to the 
+ * TaskPanelListener set.
+ * 
+ * @author Rubens A. A. Andreoli
+ */
 public abstract class TaskPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
 
