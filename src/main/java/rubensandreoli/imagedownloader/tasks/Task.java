@@ -6,11 +6,11 @@ public interface Task {
         WAITING, RUNNING, INTERRUPTED, COMPLETED
     }
     
-    void setProgressListener(TaskListener listener);
-    void start();
-    void stop();
-    Status getStatus();
+    void setProgressListener(ProgressListener listener);
+    void perform();
+    void interrupt();
     
+    Status getStatus();
     int getProgress();
     default int getWorkload(){
         return 1;

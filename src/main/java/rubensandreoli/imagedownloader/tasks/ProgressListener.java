@@ -1,6 +1,6 @@
 package rubensandreoli.imagedownloader.tasks;
 
 @FunctionalInterface
-public interface TaskListener {
+public interface ProgressListener {
     void progressed(ProgressLog log);
 }

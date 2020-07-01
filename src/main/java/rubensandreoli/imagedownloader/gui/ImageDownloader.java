@@ -8,7 +8,6 @@ import rubensandreoli.imagedownloader.tasks.Task.Status;
 import rubensandreoli.commons.utils.Utils;
 import java.awt.Cursor;
 import java.awt.Frame;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -17,10 +16,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,7 +28,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
-import javax.swing.table.DefaultTableModel;
 import rubensandreoli.commons.swing.AboutDialog;
 
 /** References:
@@ -257,7 +253,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     if(isCancelled()) break;
                     currentTask = tasks.removeFirst();
                     currentTask.setProgressListener(l -> publish(l));
-                    currentTask.start();
+                    currentTask.perform();
                 }
                 return null;
             }
@@ -334,7 +330,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         //currentTask and worker are null if not started; no need to stop
         //currentTask null, worker not null if completed; no need to stop
         if(worker != null && currentTask != null){
-            currentTask.stop();
+            currentTask.interrupt();
             worker.cancel(interrupt);
         }
     }
@@ -398,8 +394,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }
 
     public void addTaskPanel(TaskPanel panel){
-        panel.setTaskListener(this);
+        panel.setTaskPanelListener(this);
         pnlTab.addTab(panel.getTitle(), panel);
+        Integer mnemonic = panel.getMnemonic();
+        if(mnemonic != null){
+            pnlTab.setMnemonicAt(pnlTab.getTabCount()-1, mnemonic);
+        }
     }
 
     @Override
@@ -418,7 +418,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             workload -= task.getWorkload();
             removed = true;
         }else if(task == currentTask){
-            currentTask.stop();
+            currentTask.interrupt();
             workload -= (task.getWorkload()-task.getProgress()+1); //+1 because start is 0; TODO: +2 from current iteration before stopping?
         }
         pgbTasks.setMaximum(workload);

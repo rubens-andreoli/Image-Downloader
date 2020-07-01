@@ -11,17 +11,17 @@ public abstract class BasicTask implements Task {
     
     private String destination;
     
-    protected TaskListener listener;
+    protected ProgressListener listener;
     protected volatile Status status = Status.WAITING;
     protected int progress; //TODO: private
     
     @Override
-    public void setProgressListener(TaskListener listener) {
+    public void setProgressListener(ProgressListener listener) {
         this.listener = listener;
     }
 
     @Override
-    public void start() {
+    public void perform() {
         status = Status.RUNNING;
         run();
         if(status != Status.INTERRUPTED) status = Status.COMPLETED;
@@ -30,7 +30,7 @@ public abstract class BasicTask implements Task {
     protected abstract void run();
 
     @Override
-    public void stop() {
+    public void interrupt() {
         status = Status.INTERRUPTED;
     }
     

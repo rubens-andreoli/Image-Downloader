@@ -1,5 +1,6 @@
 package rubensandreoli.imagedownloader.gui;
 
+import java.awt.event.KeyEvent;
 import rubensandreoli.imagedownloader.tasks.BoundsException;
 import rubensandreoli.imagedownloader.tasks.GoogleTask;
 import java.io.IOException;
@@ -115,7 +116,7 @@ public class GooglePanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        txfDest.selector(this);
+        txfDest.select(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
@@ -176,7 +177,7 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
-        txfSource.selector(this);
+        txfSource.select(this);
     }//GEN-LAST:event_btnSourceActionPerformed
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -188,5 +189,10 @@ public class GooglePanel extends TaskPanel {
     private rubensandreoli.commons.swing.PathField txfSource;
     private rubensandreoli.commons.swing.NumberField txfStart;
     // End of variables declaration//GEN-END:variables
-    
+
+    @Override
+    public Integer getMnemonic() {
+        return KeyEvent.VK_G;
+    }
+      
 }

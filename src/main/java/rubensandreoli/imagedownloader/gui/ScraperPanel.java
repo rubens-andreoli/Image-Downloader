@@ -1,5 +1,6 @@
 package rubensandreoli.imagedownloader.gui;
 
+import java.awt.event.KeyEvent;
 import rubensandreoli.commons.swing.NumberField;
 import rubensandreoli.imagedownloader.tasks.BoundsException;
 import rubensandreoli.imagedownloader.tasks.ScraperTask;
@@ -89,7 +90,7 @@ public class ScraperPanel extends TaskPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnDestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDestActionPerformed
-        txfDest.selector(this);
+        txfDest.select(this);
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
@@ -135,4 +136,9 @@ public class ScraperPanel extends TaskPanel {
     private javax.swing.JTextField txfUrl;
     // End of variables declaration//GEN-END:variables
 
+    @Override
+    public Integer getMnemonic() {
+        return KeyEvent.VK_P;
+    }
+  
 }

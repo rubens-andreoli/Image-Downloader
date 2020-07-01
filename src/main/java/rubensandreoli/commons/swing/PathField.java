@@ -145,8 +145,19 @@ public class PathField extends javax.swing.JTextField{
         return false;
     }
         
-    public boolean selector(Component parent){
+    public boolean select(Component parent){
         return selectFile(parent, mode);
+    }
+    
+    public static String select(Component parent, int mode){
+        chooser.setFileSelectionMode(mode);
+        if(chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION){
+            String selected = chooser.getSelectedFile().getAbsolutePath();
+            if(!selected.isBlank()){
+                return selected;
+            }
+        }
+        return null;
     }
 
 }

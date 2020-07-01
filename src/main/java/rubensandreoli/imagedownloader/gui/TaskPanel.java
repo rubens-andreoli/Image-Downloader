@@ -29,12 +29,16 @@ public abstract class TaskPanel extends javax.swing.JPanel {
         setMinimumSize(min);
     }
     
-    public void setTaskListener(TaskPanelListener listener) {
+    public void setTaskPanelListener(TaskPanelListener listener) {
         this.listener = listener;
     }
 
     public String getTitle() {
         return title;
+    }
+    
+    public Integer getMnemonic(){
+        return null;
     }
     
 }
