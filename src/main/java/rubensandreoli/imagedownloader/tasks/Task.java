@@ -6,9 +6,10 @@ public interface Task {
         WAITING, RUNNING, INTERRUPTED, COMPLETED
     }
     
-    void setProgressListener(ProgressListener listener);
     void perform();
     void interrupt();
+    
+    void setProgressListener(ProgressListener listener);
     
     Status getStatus();
     int getProgress();

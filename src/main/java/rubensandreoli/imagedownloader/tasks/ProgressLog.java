@@ -5,49 +5,44 @@ package rubensandreoli.imagedownloader.tasks;
  */
 public class ProgressLog {
     
+    // <editor-fold defaultstate="collapsed" desc=" TAGS "> 
     public static final String INFO = "INFO";
     public static final String WARNING = "WARNING";
     public static final String ERROR = "ERROR";
     public static final String CRITICAL = "CRITICAL";
 
-    private static final String TAG_DELIMITER = ": ";
+    public static final String TAG_DELIMITER = ": ";
+    // </editor-fold>
 
-    private int workload;
-    private int number;
-    private boolean partial;
-    private StringBuilder log;
+    private final int number;
+    private final int workload;
+    private final StringBuilder log;
 
-    public ProgressLog(int number, boolean isPartial){
+    public ProgressLog(final int number, final int workload){
         this.number = number;
-        this.partial = isPartial;
+        this.workload = workload;
         log = new StringBuilder();
-    }
-
-    public ProgressLog(int number) {
-        this(number, false);
     }
     
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    public void appendToLog(String message){
+    public void append(String message, Object...args){
+        if(args != null) message = String.format(message, args);
         log.append(message);
     }
     
-    public void setLog(String log){
-        this.log = new StringBuilder();
-        appendToLog(log);
+    public void appendLine(String message, Object...args){
+        append(message, args);
+        log.append("\r\n");
     }
     
-    public void appendToLog(String message, String tag){
-        log.append(tag).append(TAG_DELIMITER).append(message);
+    public void append(String tag, String message, Object...args){
+        log.append(tag).append(TAG_DELIMITER);
+        append(message, args);
     }
-    
-    public void setLog(String log, String tag){
-        this.log = new StringBuilder();
-        appendToLog(log, tag);
-    }
-
-    public void setPartial(boolean b) {
-        this.partial = b;
+ 
+    public void appendLine(String tag, String message, Object...args){
+        log.append(tag).append(TAG_DELIMITER);
+        appendLine(message, args);
     }
     // </editor-fold>
     
@@ -60,8 +55,8 @@ public class ProgressLog {
         return number;
     }
 
-    public boolean isPartial() {
-        return partial;
+    public int getWorkload() {
+        return workload;
     }
     // </editor-fold>
 

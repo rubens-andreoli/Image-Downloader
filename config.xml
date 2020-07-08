@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<comment>CONFIGURATIONS</comment>
+<entry key="log_inverted">false</entry>
+<entry key="scraper:depth_limit">3</entry>
+<entry key="sequencial:fail_threashold">5</entry>
+<entry key="log_timer">10</entry>
+<entry key="log_size">30</entry>
+<entry key="connection_timeout_min">500</entry>
+<entry key="connection_timeout_max">1000</entry>
+</properties>

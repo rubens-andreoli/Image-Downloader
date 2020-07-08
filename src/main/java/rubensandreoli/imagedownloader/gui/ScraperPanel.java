@@ -94,38 +94,50 @@ public class ScraperPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        try{
-            ScraperTask task = new ScraperTask(txfUrl.getText(), txfDest.getText(), txfNumber.getInt());
-            txfUrl.setText("");
-            listener.taskCreated(this, task, 
-                    String.format(
-                            DESCRIPTION_MASK, 
-                            task.getPath(),
-                            task.getDepth(),
-                            task.getDestination()
-                    ));
-        } catch (MalformedURLException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_URL_MSG+ex.getMessage(), 
-                INVALID_URL_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
+        ScraperTask task = new ScraperTask();
+        
+        try {
+            task.setDestination(txfDest.getText());
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
+            JOptionPane.showMessageDialog(this, 
                 INVALID_DESTINATION_MSG+ex.getMessage(), 
                 INVALID_DESTINATION_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
+        }
+        
+        try {
+            task.setSource(txfUrl.getText());
+        } catch (MalformedURLException ex) {
+            JOptionPane.showMessageDialog(this, 
+                INVALID_URL_MSG+ex.getMessage(), 
+                INVALID_URL_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+        
+        try {
+            task.setDepth(txfNumber.getInt());
         } catch (BoundsException ex) {
             JOptionPane.showMessageDialog(this, 
                 INVALID_DEPTH_MSG+ex.getMessage(), 
                 INVALID_DEPTH_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         }
 
+        listener.taskCreated(this, task, 
+                String.format(
+                        DESCRIPTION_MASK, 
+                        task.getPath(),
+                        task.getDepth(),
+                        task.getDestination()
+                ));
+
+        txfUrl.setText("");
     }//GEN-LAST:event_btnAddActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

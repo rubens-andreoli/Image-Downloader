@@ -1,11 +1,8 @@
 package rubensandreoli.imagedownloader.tasks;
 
+import java.awt.image.BufferedImage;
 import rubensandreoli.commons.utils.Configs;
 import rubensandreoli.commons.utils.Utils;
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.CRITICAL;
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.ERROR;
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.INFO;
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.WARNING;
 import static rubensandreoli.commons.utils.Utils.USER_AGENT;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -18,9 +15,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -32,6 +31,93 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
+// <editor-fold defaultstate="collapsed" desc=" IMAGE INFO "> 
+class ImageInfo implements Comparable<ImageInfo>{
+    
+    public final String path;
+    private String filename;
+    private String extension;
+    public final int width;
+    public final int height;
+    private long size;
+
+    public ImageInfo(String path, int width, int height, String filename, String extension){
+        this.path = path;
+        this.filename = filename;
+        this.extension = extension;
+        this.width = width;
+        this.height = height;
+    }
+    
+    public ImageInfo(String path, int width, int height) {
+        this(path, width, height, null, null);
+    }
+
+    public ImageInfo(String path, String width, String height) {
+        this(path, Utils.parseInteger(width), Utils.parseInteger(height));
+    }
+    
+    public ImageInfo(String path, BufferedImage image){
+        this(path, image.getWidth(), image.getHeight());
+    }
+    
+    public ImageInfo(String path, byte[] imageBytes) throws IOException{
+        this(path, ImageIO.read(new ByteArrayInputStream(imageBytes)));
+        this.size = imageBytes.length;
+    }
+
+    public ImageInfo(String path) {
+        this(path, 0 ,0);
+    }
+
+    public String getFilename() {
+        if(filename == null) filename = Utils.parseFilename(path);
+        return filename;
+    }
+
+    public String getExtension() {
+        if(extension == null) extension = Utils.parseExtension(path);
+        return extension;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+    
+    public boolean largerThan(ImageInfo i){
+        return compareTo(i)>0;
+    }
+    
+    public boolean smallerThan(ImageInfo i){
+        return compareTo(i)<0;
+    }
+
+    @Override
+    public int hashCode() {
+        return 61 + Objects.hashCode(this.path);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        return Objects.equals(this.path, ((ImageInfo) obj).path);
+    }
+
+    @Override
+    public int compareTo(ImageInfo i) { //image is larger only if proportionally
+        if(width > i.width && height > i.height) return 1;
+        return (width == i.width && height == i.height)? 0: -1;
+    }
+
+}
+// </editor-fold>
 
 /** References:
  * https://javapapers.com/java/glob-with-java-nio/
@@ -56,36 +142,33 @@ public class GoogleTask extends BasicTask{
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
     
-    private static final String LOADING_IMAGE_LOG = "Loading image...\r\n";
-    private static final String NO_SIMILAR_LOG = "No similar images were found\r\n";
-    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file\r\n";
-    private static final String FAILED_READING_FILE_LOG = "Failed reading file\r\n";
-    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)\r\n"; //image count
-    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]\r\n"; //width, height, source width, source height
-    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s\r\n"; //size, path
-    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file\r\n";
-    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image\r\n";
-    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s\r\n"; //url
-    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s\r\n"; //url
-    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s\r\n"; //exception message
-    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]\r\n";
-    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source\r\n";
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]\r\n";
-    private static final String NO_NEW_IMAGES_LOG ="No new images were found\r\n";
+    private static final String IMAGE_NUMBER_LOG_MASK = "[%s]"; //index
+    private static final String LOADING_IMAGE_LOG = "Loading image...";
+    private static final String NO_SIMILAR_LOG = "No similar images were found";
+    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file";
+    private static final String FAILED_READING_FILE_LOG = "Failed reading file";
+    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)"; //image count
+    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]"; //width, height, source width, source height
+    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s"; //size, path
+    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file";
+    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image";
+    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s"; //url
+    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s"; //url
+    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s"; //exception message
+    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]";
+    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source";
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]";
+    private static final String NO_NEW_IMAGES_LOG ="No new images were found";
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    private static final int SEARCH_MAX_TIMEOUT; //ms
-    private static final int SEARCH_MIN_TIMEOUT; //ms
     private static final int DISCONNECTED_THREASHOLD;
     private static final double MIN_FILESIZE_RATIO; //to source image
     private static final int MIN_FILESIZE; //bytes
     private static final String RESPONSE_LINK_TEXT; //pt-br
     private static final String SUBFOLDER;
     static{
-        SEARCH_MIN_TIMEOUT = Configs.values.get("google:timout_min", 500);
-        SEARCH_MAX_TIMEOUT = Configs.values.get("google:timeout_max", SEARCH_MIN_TIMEOUT+500, SEARCH_MIN_TIMEOUT);
-        DISCONNECTED_THREASHOLD = Configs.values.get("google:connection_max_retry", 10, 1);
+        DISCONNECTED_THREASHOLD = Configs.values.get("google:fail_threashold", 10, 1);
         MIN_FILESIZE = Configs.values.get("google:filesize_min", 25600);
         MIN_FILESIZE_RATIO = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
         RESPONSE_LINK_TEXT = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
@@ -93,7 +176,7 @@ public class GoogleTask extends BasicTask{
     }
     // </editor-fold>
     
-    private String source;
+    private String sourceFolder;
     private List<Path> images;
     private int startIndex;
     private boolean retrySmall;
@@ -104,14 +187,14 @@ public class GoogleTask extends BasicTask{
     @Override
     protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
+        setWorkload(getImageCount()-startIndex);
         for (int i = startIndex; i < images.size(); i++) {
-            if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break;
-            Utils.sleepRandom(SEARCH_MIN_TIMEOUT, SEARCH_MAX_TIMEOUT);
-            progress = i-startIndex;
-            log = new ProgressLog(progress);
-            log.appendToLog(String.format("[%s]\n", i));
+            if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break; //INTERRUPT EXIT POINT
+            Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
+            log = new ProgressLog(increaseProgress(), getWorkload());
+            log.appendLine(IMAGE_NUMBER_LOG_MASK, i);
             searchWithFile(images.get(i));
-            if(listener!= null) listener.progressed(log);
+            report(log);
         }
     }
 
@@ -123,8 +206,8 @@ public class GoogleTask extends BasicTask{
             
             //GET IMAGE INFO FOR COMPARISON
             ImageInfo source = new ImageInfo(path.toString(), imageBytes);
-            log.appendToLog(LOADING_IMAGE_LOG, INFO);
-            log.appendToLog(path.toString()+"\n", INFO);
+            log.appendLine(ProgressLog.INFO, LOADING_IMAGE_LOG);
+            log.appendLine(ProgressLog.INFO, path.toString());
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -140,16 +223,16 @@ public class GoogleTask extends BasicTask{
                 if(googleImages!=null && !googleImages.isEmpty()){
                     downloadLargest(googleImages, source);
                 } else {
-                    log.appendToLog(NO_SIMILAR_LOG, WARNING);
+                    log.appendLine(ProgressLog.WARNING, NO_SIMILAR_LOG);
                 }
             }catch(IOException ex){
-                log.appendToLog(FAILED_UPLOADING_LOG, ERROR);
+                log.appendLine(ProgressLog.ERROR, FAILED_UPLOADING_LOG);
                 connectionFailed++;
             }
         }catch(IOException ex){
-            log.appendToLog(FAILED_READING_FILE_LOG, ERROR);
+            log.appendLine(ProgressLog.ERROR, FAILED_READING_FILE_LOG);
         }catch(Exception ex) {
-            log.appendToLog(String.format(UNEXPECTED_LOG_MASK, ex.getMessage()), CRITICAL);
+            log.appendLine(ProgressLog.CRITICAL, UNEXPECTED_LOG_MASK, ex.getMessage());
         }
     }
     
@@ -197,11 +280,11 @@ public class GoogleTask extends BasicTask{
             }
         }
         if(largest == null){
-            log.appendToLog(String.format(NO_BIGGER_LOG_MASK, googleImages.size()), INFO);
+            log.appendLine(ProgressLog.INFO, NO_BIGGER_LOG_MASK, googleImages.size());
             return;
         }
-        log.appendToLog(String.format(BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height), INFO);
-        log.appendToLog(largest.path+"\n", INFO);
+        log.appendLine(ProgressLog.INFO, BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height);
+        log.appendLine(ProgressLog.INFO, largest.path);
         
         boolean failed = false;
         try{
@@ -222,7 +305,7 @@ public class GoogleTask extends BasicTask{
             if(corrupt || small) failed = true;
             
         }catch(IOException ex){
-            log.appendToLog(FAILED_DOWNLOADING_LOG, ERROR);
+            log.appendLine(ProgressLog.ERROR, FAILED_DOWNLOADING_LOG);
             //LAST RESORT (rarely solves the problem if failed because of path)
             if(largest.path.contains("?")){ 
                 googleImages.add(new ImageInfo(
@@ -238,9 +321,9 @@ public class GoogleTask extends BasicTask{
         if(failed){
             googleImages.remove(largest);
             if(googleImages.isEmpty()){
-                log.appendToLog(NO_NEW_IMAGES_LOG, WARNING);
+                log.appendLine(ProgressLog.WARNING, NO_NEW_IMAGES_LOG);
             }else{
-                log.appendToLog(TRY_OTHER_IMAGE_LOG, INFO);
+                log.appendLine(ProgressLog.INFO, TRY_OTHER_IMAGE_LOG);
                 downloadLargest(googleImages, source);
             }
         }
@@ -248,11 +331,11 @@ public class GoogleTask extends BasicTask{
     
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
-            log.appendToLog(SMALLER_THAN_SOURCE_LOG, WARNING);
+            log.append(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
             Utils.moveFileToChild(file, SUBFOLDER);
             return true; //even if it failed to move, try other images
         }
-        log.appendToLog(String.format(BIGGER_SIZE_LOG_MASK, size, sourceSize), INFO);
+        log.append(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
         return false;
     }
     
@@ -260,14 +343,14 @@ public class GoogleTask extends BasicTask{
         //BELOW FILESIZE THRESHOLD
         if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
-               log.appendToLog(String.format(DELETING_FILE_LOG_MASK, size), WARNING);
+               log.append(ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
             }
             return true;
         }
         
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
-            log.appendToLog(String.format(CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath()), WARNING);
+            log.append(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
             Utils.moveFileToChild(file, SUBFOLDER);
             return true;
         }
@@ -288,7 +371,7 @@ public class GoogleTask extends BasicTask{
             HttpResponse response = client.execute(requisicao);
             //SAVE BYTES
             byte[] bytes = EntityUtils.toByteArray(response.getEntity());
-            Path filepath = Path.of(Utils.createValidFilepath(getDestination(), image.getFilename(), image.getExtension()));
+            Path filepath = Path.of(Utils.createValidFile(getDestination(), image.getFilename(), image.getExtension()).getAbsolutePath());
             Files.write(filepath, bytes);
             file = filepath.toFile();
         } catch (IOException ex) {
@@ -297,9 +380,9 @@ public class GoogleTask extends BasicTask{
         
         //TEST IF CORRUPT AND LOG
         if(file != null && !reviseCorrupt(file, sourceSize)){
-            log.appendToLog(String.format(SUCCESS_TUMBLR_LOG_MASK, image.path), INFO);
+            log.append(ProgressLog.INFO, SUCCESS_TUMBLR_LOG_MASK, image.path);
         }else{
-            log.appendToLog(String.format(FAILED_TUMBLR_LOG_MASK, image.path), ERROR);
+            log.append(ProgressLog.ERROR, FAILED_TUMBLR_LOG_MASK, image.path);
         }
         return file;
     }
@@ -316,7 +399,7 @@ public class GoogleTask extends BasicTask{
                 throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, folder));
             }
             images = paths;
-            source = folder;
+            sourceFolder = folder;
         }
     }
 
@@ -338,7 +421,7 @@ public class GoogleTask extends BasicTask{
     }
 
     public String getSource() {
-        return source;
+        return sourceFolder;
     }
 
     public Set<Path> getSourceImages(int fromIndex){
@@ -347,11 +430,6 @@ public class GoogleTask extends BasicTask{
 
     public int getStartIndex() {
         return startIndex;
-    }
-
-    @Override
-    public int getWorkload() {
-        return getImageCount()-startIndex;
     }
     // </editor-fold>
 

@@ -5,8 +5,6 @@ import rubensandreoli.imagedownloader.tasks.BoundsException;
 import rubensandreoli.imagedownloader.tasks.SequentialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
 /** References:
@@ -107,50 +105,50 @@ public class SequentialPanel extends TaskPanel {
         try {
             task.setDestination(txfDest.getText());
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
+            JOptionPane.showMessageDialog(this, 
                 INVALID_DESTINATION_MSG+ex.getMessage(), 
                 INVALID_DESTINATION_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         }
         
         try {
             task.setSource(txfUrl.getText());
         } catch (MalformedURLException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
+            JOptionPane.showMessageDialog(this, 
                 INVALID_URL_MSG+ex.getMessage(), 
                 INVALID_URL_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
+            JOptionPane.showMessageDialog(this, 
                 INVALID_NUMBER_MSG+ex.getMessage(), 
                 INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         }
         
         try {
             task.setUpperBound(txfNumber.getInt());
         } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
+            JOptionPane.showMessageDialog(this, 
                 INVALID_NUMBER_MSG+ex.getMessage(), 
                 INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
+            return;
         }
 
         listener.taskCreated(this, task, 
-                    String.format(DESCRIPTION_MASK, 
-                            task.getPath(), 
-                            task.getLowerBound(), 
-                            task.getUpperBound(), 
-                            task.getDestination()
-                    ));
+                String.format(DESCRIPTION_MASK, 
+                        task.getPath(), 
+                        task.getLowerBound(), 
+                        task.getUpperBound(), 
+                        task.getDestination()
+                ));
         
         txfUrl.setText("");
     }//GEN-LAST:event_btnAddActionPerformed

@@ -61,7 +61,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private ConcurrentLinkedDeque<Task> tasks = new ConcurrentLinkedDeque<>();
     private SwingWorker<Void, ProgressLog> worker;
     private Task currentTask;
-    private int progress, workload;
     private ScheduledExecutorService logger;
 
     @SuppressWarnings("OverridableMethodCallInConstructor")
@@ -261,13 +260,14 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             @Override
             protected void process(List<ProgressLog> logs) {
                 boolean changedTask = false;
-                for (ProgressLog log : logs) {
-                    if(log.getNumber() == 1) changedTask = true;
-                    if(!log.isPartial()) progress++;
+                for (var log : logs) {
+                    if(log.getNumber() == 0) changedTask = true;
                     txaLogs.addText(log.getMessages());
                 }
                 if(changedTask) tblTasks.refresh();
-                pgbTasks.setValue(progress);
+                ProgressLog log = logs.get(logs.size()-1);
+                pgbTasks.setValue(log.getNumber());
+                pgbTasks.setMaximum(log.getWorkload());
                 pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
             }
 
@@ -385,8 +385,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         //AFTER USER VERIFICATION
         pgbTasks.setToolTipText(null);
         pgbTasks.setValue(0);
-        workload = 0;
-        progress = 0;
         if(isCanceled) tasks.clear(); //if cancelled remove remaining tasks
         tblTasks.clear();
         btnStart.setEnabled(true);
@@ -405,8 +403,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     @Override
     public void taskCreated(TaskPanel source, Task task, String description) { //TODO: name from source or selected panel?
         tasks.addLast(task);
-        workload += (task.getWorkload()+1); //+1 because start is 0
-        pgbTasks.setMaximum(workload);
         tblTasks.addTask(source.getTitle(), task, description); //add to table afer adding here
     }
 
@@ -415,13 +411,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         boolean removed = false;
         if(task.getStatus() == Status.WAITING){
             tasks.remove(task);
-            workload -= task.getWorkload();
             removed = true;
         }else if(task == currentTask){
             currentTask.interrupt();
-            workload -= (task.getWorkload()-task.getProgress()+1); //+1 because start is 0; TODO: +2 from current iteration before stopping?
         }
-        pgbTasks.setMaximum(workload);
         return removed;
     }
      

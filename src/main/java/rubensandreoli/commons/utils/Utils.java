@@ -6,6 +6,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import javax.swing.ImageIcon;
 import org.apache.commons.io.FileUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /** References:
  * https://stackoverflow.com/questions/265769/maximum-filename-length-in-ntfs-windows-xp-and-windows-vista#:~:text=14%20Answers&text=Individual%20components%20of%20a%20filename,files%2C%20248%20for%20folders).
@@ -26,24 +28,22 @@ public class Utils {
     private Utils(){}
     
     /**
-     * Returns a valid {@code File} conforming the filename by Windows OS
-     * standards. It removes all invalid characters (if indicated {@code removeInvalid}); 
+     * Returns a valid {@code File} conforming the filename to Windows OS
+     * standards. It removes all invalid characters; 
      * reduces the maximum filename length to fit the given pathname;
      * and resolve duplicated files.
      * 
-     * @param folder abstract directory pathname where the file will be saved, 
+     * @param folder directory {@code File} where the file will be saved, 
      *              must not be {@code null}
      * @param filename name of the file without extension, must not be {@code null}
      * @param extension extension of the file with {@literal '.'} (Dot) at the start, 
      *                  must not be {@code null}
-     * @param removeInvalid {@code true} to remove invalid characters; {@code false} otherwise
      * @return valid {@code File} ready to be saved
      */
-    public static File createValidFile(File folder, String filename, String extension, boolean removeInvalid){
-        if(removeInvalid){
-            filename = filename.replaceAll("[\\/\\\\:\\*?\\\"<\\>|]", "");
-            extension = extension.replaceAll("[^a-z-A-Z\\.]", "");
-        }
+    public static File createValidFile(File folder, String filename, String extension){
+        //FIX INVALID CHARACTERS
+        filename = filename.replaceAll("[\\\\\\/:*?\"<>|]", "");
+        extension = extension.replaceAll("[^a-z-A-Z\\.]", "");
         File file = new File(folder, String.format("%s%s", filename, extension));
         
         //FIX FILEPATH LENGTH
@@ -63,18 +63,30 @@ public class Utils {
         }
         return file;
     }
-    
-    public static File createValidFile(String folder, String filename, String extension, boolean removeInvalid){
-        if(removeInvalid)folder = folder.replaceAll("[\\/\\\\:\\*?\\\"<\\>|]", "");
-        return createValidFile(new File(folder), filename, extension, removeInvalid);
-    }
-    
+
     /**
      * Returns a valid {@code File} conforming the filename by Windows OS
-     * standards. It reduces the maximum filename length to fit the given 
-     * pathname; and resolve duplicated files.
+     * standards. It removes all invalid characters; 
+     * reduces the maximum filename length to fit the given pathname;
+     * and resolve duplicated files.
      * 
-     * @see Utils#createValidFile(String, String, String, boolean)
+     * @see Utils#createValidFile(File, String, String)
+     * @param folder directory {@code File} where the file will be saved, 
+     *              must not be {@code null}
+     * @param file filename with extension, must not be {@code null}
+     * @return valid {@code File} ready to be saved
+     */
+    public static File createValidFile(File folder, String file){
+        return createValidFile(folder, parseFilename(file), parseExtension(file));
+    }
+
+    /**
+     * Returns a valid {@code File} conforming the filename by Windows OS
+     * standards. It removes all invalid characters; 
+     * reduces the maximum filename length to fit the given pathname;
+     * and resolve duplicated files.
+     * 
+     * @see Utils#createValidFile(File, String, String)
      * @param folder abstract directory pathname where the file will be saved, 
      *              must not be {@code null}
      * @param filename name of the file without extension, must not be {@code null}
@@ -83,24 +95,24 @@ public class Utils {
      * @return valid {@code File} ready to be saved
      */
     public static File createValidFile(String folder, String filename, String extension){
-        return createValidFile(folder, filename, extension, false);
+        folder = folder.replaceAll("[*?\"<>|]", "");
+        return createValidFile(new File(folder), filename, extension);
     }
     
     /**
-     * Returns a {@code String} containing a valid pathname by Windows OS
-     * standards. It reduces the maximum filename length to fit the given 
-     * pathname; and resolve duplicated files.
+     * Returns a valid {@code File} conforming the filename by Windows OS
+     * standards. It removes all invalid characters; 
+     * reduces the maximum filename length to fit the given pathname;
+     * and resolve duplicated files.
      * 
-     * @see Utils#createValidFile(String, String, String, boolean)
+     * @see Utils#createValidFile(String, String, String)
      * @param folder abstract directory pathname where the file will be saved, 
      *              must not be {@code null}
-     * @param filename name of the file without extension, must not be {@code null}
-     * @param extension extension of the file with {@literal '.'} (Dot) at the start, 
-     *                  must not be {@code null}
-     * @return {@code String} containing a valid pathname
+     * @param file filename with extension, must not be {@code null}
+     * @return valid {@code File} ready to be saved
      */
-    public static String createValidFilepath(String folder, String filename, String extension){
-        return createValidFile(folder, filename, extension, false).getAbsolutePath();
+    public static File createValidFile(String folder, String file){
+        return createValidFile(folder, parseFilename(file), parseExtension(file));
     }
     
     /**
@@ -130,6 +142,14 @@ public class Utils {
     public static long downloadToFile(String url, File file) throws MalformedURLException, IOException{
         FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
         return Utils.getFileSize(file);
+    }
+    
+    public static long getFileSize(File file){
+        long size = 0L;
+        try{
+            size = file.length();
+        }catch(SecurityException ex){}
+        return size;
     }
 
     /**
@@ -292,15 +312,7 @@ public class Utils {
         if(!removed) System.err.println("ERROR: Failed removing "+file.getAbsolutePath());
         return removed;
     }
-    
-    public static long getFileSize(File file){
-        long size = 0L;
-        try{
-            size = file.length();
-        }catch(SecurityException ex){}
-        return size;
-    }
-    
+ 
     public static boolean sleepRandom(int min, int max){
         try {
             Thread.sleep(getRandomBetween(min, max));
@@ -335,5 +347,30 @@ public class Utils {
             return null;
         }
     }
- 
+    
+    public static Document connect(String url) throws IOException{
+        return Jsoup.connect(url)
+                    .header("Accept", "text/html; charset=UTF-8")
+                    .userAgent(USER_AGENT)
+                    .get();
+    }
+    
+//   public static void parseUrl(String url, Consumer<Document> consumer) throws IOException{
+//        Document d = Jsoup.connect(url)
+//                .header("Accept", "text/html; charset=UTF-8")
+//                .userAgent(USER_AGENT)
+//                .get();
+//
+//        consumer.accept(d);
+//    }
+//    
+//    public static void parseUrl(String url, Function<Document, Elements> function, Consumer<Element> consumer) throws IOException{
+//        Document d = Jsoup.connect(url)
+//                .header("Accept", "text/html; charset=UTF-8")
+//                .userAgent(USER_AGENT)
+//                .get();
+//
+//        function.apply(d).forEach(e -> consumer.accept(e));
+//    }
+
 }

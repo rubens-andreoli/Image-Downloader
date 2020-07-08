@@ -1,11 +1,10 @@
 package rubensandreoli.imagedownloader.tasks;
 
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.ERROR;
-import static rubensandreoli.imagedownloader.tasks.ProgressLog.INFO;
 import rubensandreoli.commons.utils.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import rubensandreoli.commons.utils.Configs;
 
 public class SequentialTask extends BasicTask{
 
@@ -15,18 +14,26 @@ public class SequentialTask extends BasicTask{
     private static final String LOWER_MARKER = "{";
     private static final String UPPER_MARKER = "}";
     private static final String MARKER_REGEX = "(\\"+LOWER_MARKER+"\\d+\\"+UPPER_MARKER+")";
-    private static final String URL_MARKER_REGEX = "^[^\\{\\}]+(\\{\\d+\\})[^\\{\\}\\/]+$"; //only one marker
+    private static final String URL_MARKER_REGEX = "^[^\\"+LOWER_MARKER+"\\"+UPPER_MARKER+"]+"+MARKER_REGEX+"[^\\"+LOWER_MARKER+"\\"+UPPER_MARKER+"\\/]+$"; //only one marker
     
     private static final String INVALID_URL_MSG = "Invalid image URL.";
     private static final String MISSING_MARKERS_MSG = "Image URL missing markers '"+LOWER_MARKER+"_"+UPPER_MARKER+"'.";
     private static final String INVALID_LOWER_BOUND_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     private static final String INVALID_UPPER_BOUND_MSG = "Upper bound must be greater than 0, and then the lower bound.";
     
-    private static final String DOWNLOADING_LOG_MASK = "Downloading image to %s\r\n"; //file
-    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s\r\n"; //url
-    private static final String DOWNLOADED_LOG_MASK = "%s image(s) downloaded.\r\n";
+    private static final String DOWNLOAD_LOG_MASK = "Downloaded image to %s"; //file
+    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s"; //url
+    private static final String DOWNLOAD_TOTAL_LOG_MASK = "%s image(s) downloaded"; //success count
     // </editor-fold>
     
+    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
+    public static final int FAIL_THREASHOLD;
+    static{
+        FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", 5);
+    }
+    // </editor-fold>
+    
+    //SOURCE
     private String path;
     private String maskedFilename; //with %d where number is supposed to be
     private String extension; //with dot at start
@@ -36,51 +43,29 @@ public class SequentialTask extends BasicTask{
 
     @Override
     protected void run() {
+        setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
         int success = 0;
+        int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
-            if(isInterrupted()) break; //could check with loop condition
+            if(isInterrupted() || fails >= FAIL_THREASHOLD) break; //INTERRUPT PROCCESS
             //OUTPUT FILE
             String formatedFilename = String.format(maskedFilename, i);
             File file = Utils.createValidFile(getDestination(), formatedFilename, extension);
             
             //DOWNLOAD TO FILE
             String url = String.format(URL_MASK, path, formatedFilename, extension);
-            var log = new ProgressLog(increaseProgress());
-            log.appendToLog(String.format(DOWNLOADING_LOG_MASK, file), INFO);
             try {
                 Utils.downloadToFile(url, file);
+                report(ProgressLog.INFO, DOWNLOAD_LOG_MASK, file);
                 success++;
+                Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
             } catch (IOException ex) {
-                log.appendToLog(String.format(DOWNLOAD_FAILED_LOG_MASK, url), ERROR);
+                report(ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, url);
+                fails++;
             }
-            if(listener != null) listener.progressed(log);
         }
-        //COMPLETED TASK
-        if(listener != null){
-            var log = new ProgressLog(upperBound+1, true);
-            log.appendToLog(String.format(DOWNLOADED_LOG_MASK, success), INFO);
-            listener.progressed(log);
-        }
+        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, success);
     }
-    
-    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
-    public String getPath() {
-        return path;
-    }
-
-    @Override
-    public int getWorkload() {
-        return upperBound-lowerBound+1; //+1: lower inclusive
-    }
-
-    public int getLowerBound() {
-        return lowerBound;
-    }
-
-    public int getUpperBound() {
-        return upperBound;
-    }
-    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void setSource(String url) throws MalformedURLException, BoundsException{
@@ -117,4 +102,18 @@ public class SequentialTask extends BasicTask{
     }
     // </editor-fold>
     
+    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
+    public String getPath() {
+        return path;
+    }
+
+    public int getLowerBound() {
+        return lowerBound;
+    }
+
+    public int getUpperBound() {
+        return upperBound;
+    }
+    // </editor-fold>
+
 }
