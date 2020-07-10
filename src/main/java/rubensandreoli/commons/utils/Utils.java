@@ -329,15 +329,20 @@ public class Utils {
     
     
     public static int getNthIndexOf(String str, String regex, int n){
+        return getNthIndexOf(str, regex, n, false);
+    }
+    
+    public static int getNthIndexOf(String str, String regex, int n, boolean reverse){
+        if(reverse) str = new StringBuilder(str).reverse().toString();
         String[] tokens = str.split(regex);
         if(tokens.length <= n) return -1;
         
-        int index = n-1; //regex previous occurances
-        for (String token : tokens) {
-            index += token.length(); 
+        int index = n-1; //add regex previous occurances
+        for (int i = 0; i < n; i++) {
+            index += tokens[i].length();
         }
-        return index;
-    }
+        return reverse? str.length()-index:index ;
+    } 
     
     public static ImageIcon loadIcon(String url){
         try{

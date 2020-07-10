@@ -16,6 +16,9 @@ import javax.swing.table.AbstractTableModel;
 public class TaskTable extends javax.swing.JTable {
     private static final long serialVersionUID = 1L;
     
+    private static final String TOOLTIP = "<html>Select rows and press the <b>delete key</b><br>"
+            + " to <b>remove</b> a task that hasn't been started yet,<br>"
+            + " or to <b>stop</b> the current task.</html>";
     private static final String[] COLUMNS_NAME =  new String [] {"Type", "", "Description"};
     private static final int[] COLUMNS_WIDTH = new int[] {56, 22, 400};
     private static final int ROWS_HEIGHT = 18;
@@ -124,6 +127,7 @@ public class TaskTable extends javax.swing.JTable {
         setRowHeight(ROWS_HEIGHT); 
         
         setDefaultRenderer(Task.class, new TaskCellRenderer());
+        setToolTipText(TOOLTIP);
     }
 
     public void addTask(TaskAdapter taskAdapter){

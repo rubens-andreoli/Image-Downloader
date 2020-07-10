@@ -2,11 +2,16 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>CONFIGURATIONS</comment>
-<entry key="log_inverted">false</entry>
+<entry key="google:filesize_suspect">0.25</entry>
 <entry key="scraper:depth_limit">3</entry>
+<entry key="log_inverted">false</entry>
+<entry key="google:filesize_min">25600</entry>
+<entry key="google:fail_threashold">10</entry>
+<entry key="google:link_text_marker">Todos os tamanhos</entry>
+<entry key="google:subfolder_name">low</entry>
+<entry key="connection_timeout_max">1000</entry>
 <entry key="sequencial:fail_threashold">5</entry>
 <entry key="log_timer">10</entry>
 <entry key="log_size">30</entry>
 <entry key="connection_timeout_min">500</entry>
-<entry key="connection_timeout_max">1000</entry>
 </properties>

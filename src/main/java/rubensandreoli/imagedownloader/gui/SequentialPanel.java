@@ -47,6 +47,7 @@ public class SequentialPanel extends TaskPanel {
             }
         });
 
+        txfUrl.setToolTipText("<html>\nImage source <b>URL</b>, with <b>first number</b> of the sequence between <b>curly brackets</b><br>\n<i>Eg.: https://www.site.com/image_{003}.jpg</i>\n</html>");
         txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
         btnAdd.setText("Add Task");
@@ -58,6 +59,7 @@ public class SequentialPanel extends TaskPanel {
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("50");
+        txfNumber.setToolTipText("<html>\n<b>Last number</b> of the sequence.<br>\n<i>Must be bigger than the url's number</i>\n</html>");
         txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);

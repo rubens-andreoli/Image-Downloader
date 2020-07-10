@@ -331,11 +331,11 @@ public class GoogleTask extends BasicTask{
     
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
-            log.append(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
+            log.appendLine(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
             Utils.moveFileToChild(file, SUBFOLDER);
             return true; //even if it failed to move, try other images
         }
-        log.append(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
+        log.appendLine(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
         return false;
     }
     
@@ -343,14 +343,14 @@ public class GoogleTask extends BasicTask{
         //BELOW FILESIZE THRESHOLD
         if(size < MIN_FILESIZE){
             if(Utils.deleteFile(file)){
-               log.append(ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
+               log.appendLine(ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
             }
             return true;
         }
         
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
-            log.append(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
+            log.appendLine(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
             Utils.moveFileToChild(file, SUBFOLDER);
             return true;
         }
@@ -380,9 +380,9 @@ public class GoogleTask extends BasicTask{
         
         //TEST IF CORRUPT AND LOG
         if(file != null && !reviseCorrupt(file, sourceSize)){
-            log.append(ProgressLog.INFO, SUCCESS_TUMBLR_LOG_MASK, image.path);
+            log.appendLine(ProgressLog.INFO, SUCCESS_TUMBLR_LOG_MASK, image.path);
         }else{
-            log.append(ProgressLog.ERROR, FAILED_TUMBLR_LOG_MASK, image.path);
+            log.appendLine(ProgressLog.ERROR, FAILED_TUMBLR_LOG_MASK, image.path);
         }
         return file;
     }

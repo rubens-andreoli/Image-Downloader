@@ -54,7 +54,7 @@ public class GooglePanel extends TaskPanel {
 
         chbSize.setSelected(true);
         chbSize.setText("Check size...");
-        chbSize.setToolTipText("<html>If checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>Can generate a lot of copies of the same image</i></html>");
+        chbSize.setToolTipText("<html>\nIf checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>Can generate a lot of copies of the same image</i>\n</html>");
         chbSize.setIconTextGap(6);
         chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
 
@@ -67,6 +67,7 @@ public class GooglePanel extends TaskPanel {
 
         txfStart.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfStart.setText("0");
+        txfStart.setToolTipText("<html>\n<b>Start</b> image <b>position</b> within the source folder<br>\n<i>Images as sorted alphabetically</i>\n</html>");
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {

@@ -153,7 +153,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pnlTab.getAccessibleContext().setAccessibleName("Tabs");
 
         sclTasks.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 1), javax.swing.BorderFactory.createEtchedBorder()));
-        sclTasks.setToolTipText("<html>Select rows and press the <b>delete key</b><br> to <b>remove</b> a task that hasn't been started yet,<br> or to <b>stop</b> the current task.</html>");
         sclTasks.setViewportView(tblTasks);
 
         btnStart.setText("Start");

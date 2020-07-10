@@ -133,7 +133,6 @@
             </CompoundBorder>
           </Border>
         </Property>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Select rows and press the &lt;b&gt;delete key&lt;/b&gt;&lt;br&gt; to &lt;b&gt;remove&lt;/b&gt; a task that hasn&apos;t been started yet,&lt;br&gt; or to &lt;b&gt;stop&lt;/b&gt; the current task.&lt;/html&gt;"/>
       </Properties>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>

@@ -44,6 +44,8 @@ public class ScraperPanel extends TaskPanel {
             }
         });
 
+        txfUrl.setToolTipText("<html>\n<b>Root URL</b> from where the scraper will try to crawl downloading images<br>\n<i>Eg.: https://www.site.com/page.html</i>\n</html>");
+
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -53,6 +55,7 @@ public class ScraperPanel extends TaskPanel {
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("0");
+        txfNumber.setToolTipText("<html>\n<b>Depth of the sub-links</b> that the scraper will crawl to<br>\n<i>Limit can be set in the configurations file (default = 3)</i>\n</html>");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
