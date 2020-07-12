@@ -29,7 +29,7 @@ public class SequentialTask extends BasicTask{
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
     public static final int FAIL_THREASHOLD;
     static{
-        FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", 5);
+        FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", 10, 0);
     }
     // </editor-fold>
     
@@ -47,7 +47,7 @@ public class SequentialTask extends BasicTask{
         int success = 0;
         int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
-            if(isInterrupted() || fails >= FAIL_THREASHOLD) break; //INTERRUPT PROCCESS
+            if(isInterrupted() || (FAIL_THREASHOLD > 0 && fails >= FAIL_THREASHOLD)) break; //INTERRUPT PROCCESS
             //OUTPUT FILE
             String formatedFilename = String.format(maskedFilename, i);
             File file = Utils.createValidFile(getDestination(), formatedFilename, extension);
@@ -58,6 +58,7 @@ public class SequentialTask extends BasicTask{
                 Utils.downloadToFile(url, file);
                 report(ProgressLog.INFO, DOWNLOAD_LOG_MASK, file);
                 success++;
+                fails = 0;
                 Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
             } catch (IOException ex) {
                 report(ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, url);
