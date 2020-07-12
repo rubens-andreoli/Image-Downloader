@@ -126,7 +126,7 @@ class ImageInfo implements Comparable<ImageInfo>{
  * https://stackoverflow.com/questions/3850074/regex-until-but-not-including
  * https://stackoverflow.com/questions/38581427/why-non-static-final-member-variables-are-not-required-to-follow-the-constant-na/38581517
  */
-public class GoogleTask extends BasicTask{
+public class GoogleTask extends DownloadTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
@@ -185,17 +185,19 @@ public class GoogleTask extends BasicTask{
     private int connectionFailed;
 
     @Override
-    protected void run() {
+    protected int run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         setWorkload(getImageCount()-startIndex);
+        int success = 0;
         for (int i = startIndex; i < images.size(); i++) {
             if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break; //INTERRUPT EXIT POINT
-            Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
+            Utils.sleepRandom(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN);
             log = new ProgressLog(increaseProgress(), getWorkload());
             log.appendLine(IMAGE_NUMBER_LOG_MASK, i);
             searchWithFile(images.get(i));
             report(log);
         }
+        return success;
     }
 
     private void searchWithFile(Path path){

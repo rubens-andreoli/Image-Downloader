@@ -2,11 +2,10 @@ package rubensandreoli.imagedownloader.tasks;
 
 import rubensandreoli.commons.utils.Utils;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import rubensandreoli.commons.utils.Configs;
 
-public class SequentialTask extends BasicTask{
+public class SequentialTask extends DownloadTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String URL_MASK = "%s/%s%s"; //path, filename, extension
@@ -20,52 +19,45 @@ public class SequentialTask extends BasicTask{
     private static final String MISSING_MARKERS_MSG = "Image URL missing markers '"+LOWER_MARKER+"_"+UPPER_MARKER+"'.";
     private static final String INVALID_LOWER_BOUND_MSG = "Marked number in the URL must be smaller than the target upper bound.";
     private static final String INVALID_UPPER_BOUND_MSG = "Upper bound must be greater than 0, and then the lower bound.";
-    
-    private static final String DOWNLOAD_LOG_MASK = "Downloaded image to %s"; //file
-    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s"; //url
-    private static final String DOWNLOAD_TOTAL_LOG_MASK = "%s image(s) downloaded"; //success count
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    public static final int FAIL_THREASHOLD;
+    public static final int DEFAULT_FAIL_THREASHOLD = 10;
+    
+    private static final int DOWNLOAD_FAIL_THREASHOLD;
+    private static final int MIN_FILESIZE; //bytes
     static{
-        FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", 10, 0);
+        DOWNLOAD_FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", DEFAULT_FAIL_THREASHOLD, 0);
+        MIN_FILESIZE = Configs.values.get("sequencial:filesize_min", 25600, 0);
     }
     // </editor-fold>
     
-    //SOURCE
     private String path;
     private String maskedFilename; //with %d where number is supposed to be
     private String extension; //with dot at start
     private int lowerBound = -1;
-    
     private int upperBound;
 
     @Override
-    protected void run() {
+    protected int run() {
         setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
         int success = 0;
         int fails = 0;
         for(int i=lowerBound; i<=upperBound; i++){
-            if(isInterrupted() || (FAIL_THREASHOLD > 0 && fails >= FAIL_THREASHOLD)) break; //INTERRUPT PROCCESS
-            //OUTPUT FILE
+            if(isInterrupted() || (DOWNLOAD_FAIL_THREASHOLD > 0 && fails >= DOWNLOAD_FAIL_THREASHOLD)) break;
+
             String formatedFilename = String.format(maskedFilename, i);
             File file = Utils.createValidFile(getDestination(), formatedFilename, extension);
-            
-            //DOWNLOAD TO FILE
             String url = String.format(URL_MASK, path, formatedFilename, extension);
-            try {
-                Utils.downloadToFile(url, file);
-                report(ProgressLog.INFO, DOWNLOAD_LOG_MASK, file);
+            
+            if(download(url, file, MIN_FILESIZE, null)){
                 success++;
                 fails = 0;
-                Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
-            } catch (IOException ex) {
-                report(ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, url);
+            }else{
                 fails++;
             }
         }
-        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, success);
+        return success;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 

@@ -10,35 +10,36 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class ScraperTask extends BasicTask{
+public class ScraperTask extends DownloadTask{
 
-    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">    
     private static final String INVALID_URL_MSG = "Invalid URL.";
     private static final String INVALID_BOUNDS_MSG_MASK = "Search depth has a limit of %d";
     
-    private static final String CONNECTION_LOG_MASK = "Connected to %s"; //url
-    private static final String CONNECTION_FAILED_LOG_MASK = "Failed connecting to %s"; //url
-    private static final String DOWNLOAD_LOG_MASK = "Downloaded image to %s"; //file
-    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving from %s"; //url
-    private static final String DOWNLOAD_TOTAL_LOG_MASK = "%s image(s) downloaded"; //success count
+    private static final String CONNECTION_LOG_MASK = "Connected to [%s]"; //url
+    private static final String CONNECTION_FAILED_LOG_MASK = "Failed connecting to [%s]"; //url
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    public static final int DEPTH_LIMIT;
+    public static final int DEFAULT_DEPTH_LIMIT = 3;
+    
+    private static final int DEPTH_LIMIT;
+    private static final int MIN_FILESIZE; //bytes
     static{
-        DEPTH_LIMIT = Configs.values.get("scraper:depth_limit", 3);
+        DEPTH_LIMIT = Configs.values.get("scraper:depth_limit", DEFAULT_DEPTH_LIMIT, 0);
+        MIN_FILESIZE = Configs.values.get("scraper:filesize_min", 25600, 0);
     }
     // </editor-fold>
      
-    //SOURCE
     private String path;
     private String root;
-    
     private int depth;
+    private int successTotal;
 
     @Override
-    protected void run() {
+    protected int run() {
         processPage(path);
+        return successTotal;
     }
         
     private void processPage(String url){
@@ -78,16 +79,11 @@ public class ScraperTask extends BasicTask{
             File file = Utils.createValidFile(getDestination(), filename, extension);
             
             //DOWNLOAD TO FILE
-            try {
-                Utils.downloadToFile(imageUrl, file);
-                report(ProgressLog.INFO, DOWNLOAD_LOG_MASK, file);
+            if(download(imageUrl, file, MIN_FILESIZE, null)){
                 success++;
-                Utils.sleepRandom(CONNECTION_MIN_TIMEOUT, CONNECTION_MAX_TIMEOUT);
-            } catch (IOException ex) {
-                report(ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, imageUrl);
             }
         }
-        report(ProgressLog.INFO, DOWNLOAD_TOTAL_LOG_MASK, success);
+        successTotal += success;
     }
     
     private void processLinks(Document d){

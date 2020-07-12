@@ -7,6 +7,7 @@ import rubensandreoli.imagedownloader.tasks.ScraperTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.swing.JOptionPane;
+import rubensandreoli.commons.utils.Configs;
 
 public class ScraperPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
@@ -34,7 +35,7 @@ public class ScraperPanel extends TaskPanel {
         btnDest = new javax.swing.JButton();
         txfUrl = new javax.swing.JTextField();
         btnAdd = new javax.swing.JButton();
-        txfNumber = new NumberField(ScraperTask.DEPTH_LIMIT);
+        txfNumber = new rubensandreoli.commons.swing.NumberField();
         txfDest = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 60);
 
         btnDest.setText("Destination");
@@ -55,7 +56,10 @@ public class ScraperPanel extends TaskPanel {
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("0");
-        txfNumber.setToolTipText("<html>\n<b>Depth of the sub-links</b> that the scraper will crawl to.<br>\n<i>Depth limit can be set in the configurations file (default = 3)</i>\n</html>");
+        txfNumber.setToolTipText("<html>" +
+            "<b>Depth of the sub-links</b> that the scraper will crawl to.<br>" +
+            "<i>Depth limit can be set in the configurations file (default = "+ScraperTask.DEFAULT_DEPTH_LIMIT+")</i>" +
+            "</html>");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

@@ -3,43 +3,69 @@ package rubensandreoli.imagedownloader.tasks;
 import java.io.File;
 import java.io.IOException;
 import rubensandreoli.commons.utils.Configs;
+import rubensandreoli.commons.utils.Utils;
 
-public abstract class BasicTask implements Task {
+public abstract class DownloadTask implements Task {
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String NO_FOLDER_MSG = "No folder selected.";
-    private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found.";
+    private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found."; //filepath
     private static final String FOLDER_PERMISSION_MSG_MASK = "You don't have folder [%s] read/write permissions.";
+    
+    private static final String DOWNLOAD_LOG_MASK = "Downloaded [%s]"; //url
+    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]"; //size
+    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving [%s]"; //url
+    private static final String DOWNLOAD_TOTAL_LOG_MASK = "%d file(s) downloaded"; //downloaded images
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    protected static final int CONNECTION_MAX_TIMEOUT; //ms
-    protected static final int CONNECTION_MIN_TIMEOUT; //ms
+    protected static final int CONNECTION_MIN_COOLDOWN; //ms
+    protected static final int CONNECTION_MAX_COOLDOWN; //ms
     static{
-        CONNECTION_MIN_TIMEOUT = Configs.values.get("connection_timeout_min", 500);
-        CONNECTION_MAX_TIMEOUT = Configs.values.get("connection_timeout_max", CONNECTION_MIN_TIMEOUT+500, CONNECTION_MIN_TIMEOUT);
+        CONNECTION_MIN_COOLDOWN = Configs.values.get("connection_cooldown_min", 500, 0);
+        CONNECTION_MAX_COOLDOWN = Configs.values.get("connection_cooldown_max", CONNECTION_MIN_COOLDOWN+500, CONNECTION_MIN_COOLDOWN);
     }
     // </editor-fold>
-    
+
     private String destination;
     private ProgressListener listener;
     private volatile Status status = Status.WAITING;
     private int progress, workload = 1;
     
     @Override
-    public void setProgressListener(ProgressListener listener) {
-        this.listener = listener;
-    }
-
-    @Override
     public void perform() {
         status = Status.RUNNING;
-        run();
+        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, run());
         if(status != Status.INTERRUPTED) status = Status.COMPLETED;
     }
     
-    protected abstract void run();
+    protected abstract int run();
 
+    protected boolean download(String url, File file){
+        return download(url, file, 0, null);
+    }
+    
+    protected boolean download(String url, File file, ProgressLog log){
+        return download(url, file, 0, log);
+    }
+    
+    protected boolean download(String url, File file, int minFilesize, ProgressLog log){
+        boolean success = false;
+        try {
+            long size = Utils.downloadToFile(url, file);
+            if(size > minFilesize){
+                Utils.sleepRandom(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN);
+                report(log, ProgressLog.INFO, DOWNLOAD_LOG_MASK, url);
+                success = true;
+            }else{
+                if(Utils.deleteFile(file)) report(log, ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
+            }
+        } catch (IOException ex) {
+            report(log, ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, url);
+        }
+        return success;
+    }
+    
     @Override
     public void interrupt() {
         status = Status.INTERRUPTED;
@@ -66,7 +92,7 @@ public abstract class BasicTask implements Task {
     protected void report(ProgressLog log){
         if(listener != null) listener.progressed(log);
     }
-    
+
     protected void report(String status, boolean progressed, String message, Object...args){
         var log = new ProgressLog(progressed? increaseProgress():getProgress(), getWorkload());
         log.appendLine(status, message, args);
@@ -77,7 +103,17 @@ public abstract class BasicTask implements Task {
         report(status, true, message, args);
     }
     
+    private void report(ProgressLog log, String status, String message, Object...args){
+        if(log == null) report(status, message, args);
+        else log.appendLine(status, message, args);
+    }
+    
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
+    @Override
+    public void setProgressListener(ProgressListener listener) {
+        this.listener = listener;
+    }
+    
     public void setDestination(String folder) throws IOException{
         createFolder(folder);
         this.destination = folder;

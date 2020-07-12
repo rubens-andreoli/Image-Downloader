@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.function.Consumer;
 import javax.swing.ImageIcon;
 import org.apache.commons.io.FileUtils;
 import org.jsoup.Jsoup;
@@ -17,6 +18,7 @@ import org.jsoup.nodes.Document;
 public class Utils {
     
     public static final int CONNECTION_TIMEOUT = 2000; //ms
+    public static final int READ_TIMEOUT = 4000; //ms
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
     public static final String EXTENSION_REGEX = "^.[a-z]{3,}$";
     public static final String FILENAME_INVALID_CHARS_REGEX = "[\\/\\\\:\\*?\\\"<\\>|]";
@@ -140,10 +142,26 @@ public class Utils {
      *              if an IO error occurs during copying
      */
     public static long downloadToFile(String url, File file) throws MalformedURLException, IOException{
-        FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, CONNECTION_TIMEOUT);
+        FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, READ_TIMEOUT);
         return Utils.getFileSize(file);
     }
     
+    public static boolean downloadToFile(String url, File file, long minSize, Consumer<Long> failed, Consumer<Long> succeeded) throws MalformedURLException, IOException{
+        long size = downloadToFile(url, file);
+        if(size <= minSize){
+            file.delete();
+            if(failed!=null) failed.accept(size);
+            return false;
+        }else{
+            if(succeeded!=null) succeeded.accept(size);
+            return true;
+        }
+    }
+    
+    public static boolean downloadToFile(String url, File file, long minSize) throws MalformedURLException, IOException{
+        return downloadToFile(url, file, minSize, null, null);
+    }
+
     public static long getFileSize(File file){
         long size = 0L;
         try{

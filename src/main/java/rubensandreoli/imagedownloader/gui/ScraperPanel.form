@@ -81,11 +81,10 @@
       <Properties>
         <Property name="horizontalAlignment" type="int" value="0"/>
         <Property name="text" type="java.lang.String" value="0"/>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&#xa;&lt;i&gt;Depth limit can be set in the configurations file (default = 3)&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="&quot;&lt;html&gt;&quot; +&#xd;&#xa;&quot;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&quot; +&#xd;&#xa;&quot;&lt;i&gt;Depth limit can be set in the configurations file (default = &quot;+ScraperTask.DEFAULT_DEPTH_LIMIT+&quot;)&lt;/i&gt;&quot; +&#xd;&#xa;&quot;&lt;/html&gt;&quot;" type="code"/>
+        </Property>
       </Properties>
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new NumberField(ScraperTask.DEPTH_LIMIT)"/>
-      </AuxValues>
     </Component>
     <Component class="rubensandreoli.commons.swing.PathField" name="txfDest">
       <AuxValues>
