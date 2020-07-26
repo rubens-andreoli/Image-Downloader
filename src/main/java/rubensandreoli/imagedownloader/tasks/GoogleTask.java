@@ -1,5 +1,22 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package rubensandreoli.imagedownloader.tasks;
 
+import rubensandreoli.commons.exceptions.BoundsException;
 import java.awt.image.BufferedImage;
 import rubensandreoli.commons.utils.Configs;
 import rubensandreoli.commons.utils.Utils;
@@ -131,6 +148,7 @@ public class GoogleTask extends DownloadTask{
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
+    private static final String ATENTION_FOLDER = "low";
     
     private static final String RESPONSE_LINK_PREFIX = "/search?tbs=simg:";
     private static final String RESPONSE_SCRIPT_PREFIX = "AF_initDataCallback";
@@ -140,7 +158,8 @@ public class GoogleTask extends DownloadTask{
     private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
     
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
-    private static final String INVALID_BOUNDS_MSG = "Starting index must be greater than 0 and smaller than the number of image files in the source folder.";
+    private static final String INVALID_BOUNDS_MSG_MASK = "Starting index must be greater than 0 and smaller than the number of image files [%d] in the source folder.";
+    private static final String FAILED_DESTINATION_MSG_MASK = "Failed creating a subfolder inside folder:\n%s\nTry setting a destination manually.";
     
     private static final String IMAGE_NUMBER_LOG_MASK = "[%s]"; //index
     private static final String LOADING_IMAGE_LOG = "Loading image...";
@@ -172,7 +191,7 @@ public class GoogleTask extends DownloadTask{
         MIN_FILESIZE = Configs.values.get("google:filesize_min", 25600);
         MIN_FILESIZE_RATIO = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
         RESPONSE_LINK_TEXT = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
-        SUBFOLDER = Configs.values.get("google:subfolder_name", "low");
+        SUBFOLDER = Configs.values.get("google:subfolder_name", "copies");
     }
     // </editor-fold>
     
@@ -334,7 +353,7 @@ public class GoogleTask extends DownloadTask{
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
             log.appendLine(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
-            Utils.moveFileToChild(file, SUBFOLDER);
+            Utils.moveFileToChild(file, ATENTION_FOLDER);
             return true; //even if it failed to move, try other images
         }
         log.appendLine(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
@@ -353,7 +372,7 @@ public class GoogleTask extends DownloadTask{
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendLine(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
-            Utils.moveFileToChild(file, SUBFOLDER);
+            Utils.moveFileToChild(file, ATENTION_FOLDER);
             return true;
         }
         return false;
@@ -391,9 +410,9 @@ public class GoogleTask extends DownloadTask{
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     public void setSource(String folder)throws IOException{
-        Path path = createFolder(folder).toPath();
+        Path path = getFolderPath(folder);
         try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
-            List<Path> paths = new ArrayList<>();
+            List<Path> paths = new ArrayList<>(); //temp variable used to keep source null if empty folder
             for (Path file : contents) {
                 paths.add(file);
             }
@@ -404,10 +423,24 @@ public class GoogleTask extends DownloadTask{
             sourceFolder = folder;
         }
     }
-
+    
+    @Override
+    public void setDestination(String folder) throws IOException {
+        if(folder == null || folder.isEmpty()){
+            File subfolder = new File(sourceFolder, SUBFOLDER);
+            if(!subfolder.isDirectory()){
+                if(!subfolder.mkdir()){
+                   throw new IOException(String.format(FAILED_DESTINATION_MSG_MASK, sourceFolder));
+                }
+            }
+            folder = subfolder.getAbsolutePath();
+        }
+        super.setDestination(folder);
+    }
+    
     public void setStartIndex(int startIndex) throws BoundsException {
-        if(startIndex < 0 || (images!=null && startIndex>images.size())){ //TODO: check index condition
-            throw new BoundsException(INVALID_BOUNDS_MSG);
+        if(startIndex < 0 || (images!=null && startIndex>images.size()-1)){
+            throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, images.size()));
         }
         this.startIndex = startIndex;
     }

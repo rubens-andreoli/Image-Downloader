@@ -1,7 +1,7 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.imagedownloader.tasks.BoundsException;
+import rubensandreoli.commons.exceptions.BoundsException;
 import rubensandreoli.imagedownloader.tasks.SequentialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;

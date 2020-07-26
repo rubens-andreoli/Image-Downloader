@@ -1,5 +1,22 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package rubensandreoli.imagedownloader.tasks;
 
+import rubensandreoli.commons.exceptions.BoundsException;
 import rubensandreoli.commons.utils.Configs;
 import rubensandreoli.commons.utils.Utils;
 import java.io.File;
@@ -32,7 +49,7 @@ public class ScraperTask extends DownloadTask{
     // </editor-fold>
      
     private String path;
-    private String root;
+    private String domain;
     private int depth;
     private int successTotal;
 
@@ -92,7 +109,7 @@ public class ScraperTask extends DownloadTask{
         for (Element link : links) {
             if(isInterrupted()) break; //INTERRUPT PROCCESS
             String linkUrl = link.absUrl("href");
-            if(linkUrl.startsWith(root)){ //TODO: better solution?
+            if(linkUrl.startsWith(domain)){ //TODO: better solution?
                 processPage(linkUrl);
             }
         }
@@ -103,7 +120,7 @@ public class ScraperTask extends DownloadTask{
         try {
             URL url = new URL(path);
             this.path = url.toString();
-            root = url.getAuthority();
+            domain = url.getAuthority();
         } catch (MalformedURLException ex) {
             throw new MalformedURLException(INVALID_URL_MSG);
         }
@@ -126,7 +143,7 @@ public class ScraperTask extends DownloadTask{
     }
 
     public String getRoot() {
-        return root;
+        return domain;
     }
     // </editor-fold>
 

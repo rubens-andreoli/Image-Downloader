@@ -14,11 +14,12 @@ import javax.swing.JOptionPane;
  * https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
  * https://stackoverflow.com/questions/1019062/how-to-programmatically-deselect-the-currently-selected-row-in-a-jtable-swing
  */
-public class GooglePanel extends TaskPanel {
+public class MorePanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
         
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String TITLE = "Google";
+    private static final String TITLE = "More";
+    private static final int MNEMONIC = KeyEvent.VK_M;
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
@@ -28,7 +29,7 @@ public class GooglePanel extends TaskPanel {
     private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     // </editor-fold>
 
-    public GooglePanel() {
+    public MorePanel() {
         super(TITLE);
         initComponents();
     }
@@ -39,7 +40,6 @@ public class GooglePanel extends TaskPanel {
 
         btnDest = new javax.swing.JButton();
         txfDest = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 50);
-        chbSize = new javax.swing.JCheckBox();
         btnSource = new javax.swing.JButton();
         txfSource = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 45);
         txfStart = new rubensandreoli.commons.swing.NumberField();
@@ -51,12 +51,6 @@ public class GooglePanel extends TaskPanel {
                 btnDestActionPerformed(evt);
             }
         });
-
-        chbSize.setSelected(true);
-        chbSize.setText("Check size...");
-        chbSize.setToolTipText("<html>\nIf checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be saved in a <b>subfolder</b>,<br>\nand another try is performed.<br>\n<i>Can generate a lot of copies of the same image</i>\n</html>");
-        chbSize.setIconTextGap(6);
-        chbSize.setMargin(new java.awt.Insets(2, 0, 2, 0));
 
         btnSource.setText("Source");
         btnSource.addActionListener(new java.awt.event.ActionListener() {
@@ -88,24 +82,21 @@ public class GooglePanel extends TaskPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txfSource, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(txfSource, javax.swing.GroupLayout.DEFAULT_SIZE, 229, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, 275, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(btnAdd, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
-                    .addComponent(chbSize, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(10, 10, 10)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnDest)
-                    .addComponent(chbSize, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(btnDest))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnAdd)
@@ -121,60 +112,7 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        GoogleTask task = new GoogleTask();
-        //SET SOURCE
-        try {
-            task.setSource(txfSource.getText());
-//            txfStart.setMaxValue(task.getImageCount());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_SOURCE_MSG+ex.getMessage(), 
-                INVALID_SOURCE_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        } 
-        
-        //SET DESTINATION
-        try {
-            task.setDestination(txfDest.getText());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_DESTINATION_MSG+ex.getMessage(), 
-                INVALID_DESTINATION_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        } 
 
-        //SET START INDEX
-        try {
-            task.setStartIndex(txfStart.getInt());
-        } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_NUMBER_MSG+ex.getMessage(), 
-                INVALID_NUMBER_TITLE,
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-
-        task.setRetrySmall(chbSize.isSelected());
-
-        //ALL VALID
-        txfSource.clear();
-        txfStart.clear();
-        listener.taskCreated(this, task, 
-                String.format(
-                        DESCRIPTION_MASK, 
-                        task.getSource(), 
-                        task.getStartIndex(), 
-                        task.getImageCount(), 
-                        task.getDestination()
-                ));
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
@@ -185,7 +123,6 @@ public class GooglePanel extends TaskPanel {
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
     private javax.swing.JButton btnSource;
-    private javax.swing.JCheckBox chbSize;
     private rubensandreoli.commons.swing.PathField txfDest;
     private rubensandreoli.commons.swing.PathField txfSource;
     private rubensandreoli.commons.swing.NumberField txfStart;
@@ -193,7 +130,7 @@ public class GooglePanel extends TaskPanel {
 
     @Override
     public Integer getMnemonic() {
-        return KeyEvent.VK_G;
+        return MNEMONIC;
     }
       
 }

@@ -1,13 +1,11 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.commons.swing.NumberField;
-import rubensandreoli.imagedownloader.tasks.BoundsException;
+import rubensandreoli.commons.exceptions.BoundsException;
 import rubensandreoli.imagedownloader.tasks.ScraperTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.swing.JOptionPane;
-import rubensandreoli.commons.utils.Configs;
 
 public class ScraperPanel extends TaskPanel {
     private static final long serialVersionUID = 1L;
