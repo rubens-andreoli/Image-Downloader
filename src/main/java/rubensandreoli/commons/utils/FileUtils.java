@@ -1,33 +1,35 @@
 package rubensandreoli.commons.utils;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 import javax.swing.ImageIcon;
-import org.apache.commons.io.FileUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 /** References:
  * https://stackoverflow.com/questions/265769/maximum-filename-length-in-ntfs-windows-xp-and-windows-vista#:~:text=14%20Answers&text=Individual%20components%20of%20a%20filename,files%2C%20248%20for%20folders).
  * https://stackoverflow.com/questions/57807466/what-is-the-maximum-filename-length-in-windows-10-java-would-try-catch-would
  * https://docs.oracle.com/javase/6/docs/technotes/tools/solaris/javadoc.html#@inheritDoc
  */
-public class Utils {
+public class FileUtils {
     
-    public static final int CONNECTION_TIMEOUT = 2000; //ms
-    public static final int READ_TIMEOUT = 4000; //ms
-    public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36";
+    public static final int DEFAULT_CONNECTION_TIMEOUT = 2000; //ms
+    public static final int DEFAULT_READ_TIMEOUT = 4000; //ms
+    public static final int DEFAULT_BUFFER_SIZE = 1024 * 4; //bytes
     public static final String EXTENSION_REGEX = "^.[a-z]{3,}$";
     public static final String FILENAME_INVALID_CHARS_REGEX = "[\\/\\\\:\\*?\\\"<\\>|]";
     public static final String DEFAULT_EXTENSION = ".jpg";
     public static final String FILENAME_MASK = "%s/%s%s";
     public static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
-    private static final int FILEPATH_MAX_LENGTH = 255;
-    
-    private Utils(){}
+    public static final int FILEPATH_MAX_LENGTH = 255;
+ 
+    private FileUtils(){}
     
     /**
      * Returns a valid {@code File} conforming the filename to Windows OS
@@ -55,7 +57,7 @@ public class Utils {
                 filename = filename.substring(0, filename.length()-toRemove); //TODO: removing 1 more than needed?
                 file = new File(String.format(FILENAME_MASK, folder, filename, extension));
             }else{
-                //TODO: throw exception?
+                return null;//TODO: throw exception?
             }
         }
 
@@ -115,51 +117,6 @@ public class Utils {
      */
     public static File createValidFile(String folder, String file){
         return createValidFile(folder, parseFilename(file), parseExtension(file));
-    }
-    
-    /**
-     * Copies bytes from the URL to a file. The directories in the pathname 
-     * will be created if they don't already exist, and the file will be 
-     * overwritten if it already exists.
-     * Convenience method for {@code org.apache.commons.io.FileUtils#copyURLToFile()} 
-     * that doesn't throw a {@code SecurityException} while trying to read the 
-     * length of the file created. It uses a default timeout value  in milliseconds 
-     * if no connection could be established to the source.
-     * 
-     * @see Utils#CONNECTION_TIMEOUT
-     * @see Utils#getFileSize(java.io.File) 
-     * @see org.apache.commons.io.FileUtils#copyURLToFile(java.net.URL, java.io.File, int, int)
-     * @param url a {@code String} containing the URL to copy bytes from, must not be {@code null}
-     * @param file the non-directory {@code File} to write bytes to (possibly overwriting), 
-     *              must not be {@code null}
-     * @return {@code long} with the length of the bytes copied (size of the file); or {@literal 0}
-     *          if a {@code SecurityException} is thrown while trying to read the length.
-     * @throws MalformedURLException if {@code url} is not properly formatted
-     * @throws IOException if {@code url} URL cannot be opened; 
-     *              if {@code file} is a directory;
-     *              if {@code file} cannot be written; 
-     *              if {@code file} needs creating but can't be;
-     *              if an IO error occurs during copying
-     */
-    public static long downloadToFile(String url, File file) throws MalformedURLException, IOException{
-        FileUtils.copyURLToFile(new URL(url), file, CONNECTION_TIMEOUT, READ_TIMEOUT);
-        return Utils.getFileSize(file);
-    }
-    
-    public static boolean downloadToFile(String url, File file, long minSize, Consumer<Long> failed, Consumer<Long> succeeded) throws MalformedURLException, IOException{
-        long size = downloadToFile(url, file);
-        if(size <= minSize){
-            file.delete();
-            if(failed!=null) failed.accept(size);
-            return false;
-        }else{
-            if(succeeded!=null) succeeded.accept(size);
-            return true;
-        }
-    }
-    
-    public static boolean downloadToFile(String url, File file, long minSize) throws MalformedURLException, IOException{
-        return downloadToFile(url, file, minSize, null, null);
     }
 
     public static long getFileSize(File file){
@@ -262,22 +219,6 @@ public class Utils {
     }
     
     /**
-     * Parses the string argument as a signed decimal integer.
-     * Convenience method for {@code Integer#parseInt()} that doesn't
-     * throw {@code NumberFormatException}.
-     * 
-     * @param value a {@code String} containing the {@code int} to be parsed
-     * @return the integer value or {@literal 0} if exception is thrown
-     */
-    public static int parseInteger(String value){
-        try{
-            return Integer.parseInt(value);
-        }catch(NumberFormatException ex){
-            return 0;
-        }
-    }
-    
-    /**
      * Creates child directory if doesn't exists and try to move the source file to it.
      * If there is already a file with the same pathname, a new filename will be created.
      * This method doesn't throw {@code SecurityException} of the {@code java.io.File} 
@@ -330,70 +271,106 @@ public class Utils {
         if(!removed) System.err.println("ERROR: Failed removing "+file.getAbsolutePath());
         return removed;
     }
- 
-    public static boolean sleepRandom(int min, int max){
-        try {
-            Thread.sleep(getRandomBetween(min, max));
-            return true;
-        } catch (InterruptedException ex) {
-            return false;
-        }
-    }
-    
-    public static int getRandomBetween(int min, int max){
-        if(max < min) max = min;
-        return (int) (Math.random() * (max - min)) + min;
-    }
-    
-    
-    public static int getNthIndexOf(String str, String regex, int n){
-        return getNthIndexOf(str, regex, n, false);
-    }
-    
-    public static int getNthIndexOf(String str, String regex, int n, boolean reverse){
-        if(reverse) str = new StringBuilder(str).reverse().toString();
-        String[] tokens = str.split(regex);
-        if(tokens.length <= n) return -1;
-        
-        int index = n-1; //add regex previous occurances
-        for (int i = 0; i < n; i++) {
-            index += tokens[i].length();
-        }
-        return reverse? str.length()-index:index ;
-    } 
-    
+
     public static ImageIcon loadIcon(String url){
         try{
-            ImageIcon icon = new ImageIcon(Utils.class.getClassLoader().getResource(url));
+            ImageIcon icon = new ImageIcon(FileUtils.class.getClassLoader().getResource(url));
             return icon;
         }catch(NullPointerException ex){
             return null;
         }
     }
     
-    public static Document connect(String url) throws IOException{
-        return Jsoup.connect(url)
-                    .header("Accept", "text/html; charset=UTF-8")
-                    .userAgent(USER_AGENT)
-                    .get();
+    public static List<File> scanFiles(File root){
+	if(!root.isDirectory()) return null;
+	Stack<File> folders = new Stack<>();
+	folders.add(root);
+	List<File> files = new ArrayList<>();
+	
+	while(!folders.empty()){
+            //2700-3000ms
+//	    File tempFolder = folders.pop();
+//	    File[] tempFolders = tempFolder.listFiles(f -> f.isDirectory());
+//	    File[] tempFiles = tempFolder.listFiles(f -> f.isFile());
+//	    if(tempFolders != null)folders.addAll(Arrays.asList(tempFolders));
+//	    if(tempFiles != null) files.addAll(Arrays.asList(tempFiles));
+	        
+	    //1600-1800ms
+            File[] tempFiles = folders.pop().listFiles();
+	    if(tempFiles == null) continue;
+	    for(File tempFile : tempFiles){
+		if(tempFile.isDirectory()) folders.push(tempFile);
+		else files.add(tempFile);
+	    }
+	}
+	return files;
     }
     
-//   public static void parseUrl(String url, Consumer<Document> consumer) throws IOException{
-//        Document d = Jsoup.connect(url)
-//                .header("Accept", "text/html; charset=UTF-8")
-//                .userAgent(USER_AGENT)
-//                .get();
-//
-//        consumer.accept(d);
-//    }
-//    
-//    public static void parseUrl(String url, Function<Document, Elements> function, Consumer<Element> consumer) throws IOException{
-//        Document d = Jsoup.connect(url)
-//                .header("Accept", "text/html; charset=UTF-8")
-//                .userAgent(USER_AGENT)
-//                .get();
-//
-//        function.apply(d).forEach(e -> consumer.accept(e));
-//    }
+    public static void scanFiles(List<File> files, File root) {
+	File[] tempFiles = root.listFiles();
+	if (tempFiles == null) return;
+	for (File tempFile : tempFiles) {
+	    if (tempFile.isFile()) files.add(tempFile);
+	    else scanFiles(files, tempFile);
+	}
+    }
+   
+    public static List<File> scanFolders(File root){
+	if(!root.isDirectory()) return null;
+	List<File> folders = new ArrayList<>();
+	folders.add(root);
+	for(int i=0; i<folders.size(); i++){
+	    File[] tempFolders = folders.get(i).listFiles(f -> f.isDirectory());
+	    if(tempFolders != null) folders.addAll(Arrays.asList(tempFolders));
+	}
+	return folders;
+    }
 
+    public static long downloadToFile(String path, File file) throws IOException{
+        return downloadToFile(path, file, DEFAULT_CONNECTION_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_BUFFER_SIZE);
+    }
+    
+    public static long downloadToFile(String path, File file, int connectionTimeout, int readTimeout) throws IOException{
+        return downloadToFile(path, file, connectionTimeout, readTimeout, DEFAULT_BUFFER_SIZE);
+    }
+      
+    public static long downloadToFile(String path, File file, int connectionTimeout, int readTimeout, int bufferSize) throws IOException{
+        long bytesWritten = 0;
+        try (InputStream in = openInputStream(new URL(path), connectionTimeout, readTimeout);
+             OutputStream out = openOutputStream(file)) {
+            int bytesRead;
+            byte[] buffer = new byte[bufferSize];
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+                bytesWritten += bytesRead;
+            }
+            return bytesWritten;
+        }
+    }
+    
+    private static InputStream openInputStream(final URL path, int connectionTimeout, int readTimeout) throws IOException{
+        try {
+            var conn = path.openConnection();
+            conn.setConnectTimeout(connectionTimeout);
+            conn.setReadTimeout(readTimeout);
+            return conn.getInputStream();
+        } catch (IOException ex) {
+             throw new IOException("URL '"+path+"' cannot be reached");
+        }
+    }
+    
+    private static FileOutputStream openOutputStream(final File file) throws IOException {
+        if (file.isDirectory()) {
+            throw new IOException("File '"+file+"' is a directory");
+        }else if (file.isFile() && !file.canWrite()) {
+            throw new IOException("File '"+file+"' cannot be overridden");
+        } else {
+            File parent = file.getParentFile();
+            if (parent != null && !parent.mkdirs() && !parent.isDirectory()) { //if not given, not created, and not validated
+                throw new IOException("Directory '"+parent+"' could not be created");
+            }
+        }
+        return new FileOutputStream(file, false);
+    }
+    
 }

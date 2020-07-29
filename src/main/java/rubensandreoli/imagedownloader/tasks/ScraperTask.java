@@ -18,7 +18,7 @@ package rubensandreoli.imagedownloader.tasks;
 
 import rubensandreoli.commons.exceptions.BoundsException;
 import rubensandreoli.commons.utils.Configs;
-import rubensandreoli.commons.utils.Utils;
+import rubensandreoli.commons.utils.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -48,21 +48,31 @@ public class ScraperTask extends DownloadTask{
     }
     // </editor-fold>
      
-    private String path;
-    private String domain;
+    private final String path;
+    private final String domain;
     private int depth;
-    private int successTotal;
+    private int success;
 
+    public ScraperTask(String url) throws MalformedURLException{
+        try {
+            URL validUrl = new URL(url);
+            path = validUrl.toString();
+            domain = validUrl.getAuthority();
+        } catch (MalformedURLException ex) {
+            throw new MalformedURLException(INVALID_URL_MSG);
+        }
+    }
+    
     @Override
     protected int run() {
         processPage(path);
-        return successTotal;
+        return success;
     }
         
     private void processPage(String url){
         try {
             //CONNECTION
-            Document d = Utils.connect(url);
+            Document d = connect(url);
             report(ProgressLog.INFO, false, CONNECTION_LOG_MASK, url);
             
             //DOWNLOAD
@@ -79,7 +89,7 @@ public class ScraperTask extends DownloadTask{
     private void downloadImages(Document d){
         Elements images = d.getElementsByTag("img");
         increaseWorkload(images.size());
-        int success = 0;
+        int successPartial = 0;
         for (Element image : images) {
             if(isInterrupted()) break; //INTERRUPT PROCCESS
             
@@ -91,16 +101,16 @@ public class ScraperTask extends DownloadTask{
             }
             
             //OUTPUT FILE
-            String filename = Utils.parseFilename(imageUrl);
-            String extension = Utils.parseExtension(imageUrl);
-            File file = Utils.createValidFile(getDestination(), filename, extension);
+            String filename = FileUtils.parseFilename(imageUrl);
+            String extension = FileUtils.parseExtension(imageUrl);
+            File file = FileUtils.createValidFile(getDestination(), filename, extension);
             
             //DOWNLOAD TO FILE
             if(download(imageUrl, file, MIN_FILESIZE, null)){
-                success++;
+                successPartial++;
             }
         }
-        successTotal += success;
+        success += successPartial;
     }
     
     private void processLinks(Document d){
@@ -109,23 +119,13 @@ public class ScraperTask extends DownloadTask{
         for (Element link : links) {
             if(isInterrupted()) break; //INTERRUPT PROCCESS
             String linkUrl = link.absUrl("href");
-            if(linkUrl.startsWith(domain)){ //TODO: better solution?
+            if(linkUrl.startsWith(domain)){ //process only links from same site
                 processPage(linkUrl);
             }
         }
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    public void setSource(String path) throws MalformedURLException{
-        try {
-            URL url = new URL(path);
-            this.path = url.toString();
-            domain = url.getAuthority();
-        } catch (MalformedURLException ex) {
-            throw new MalformedURLException(INVALID_URL_MSG);
-        }
-    }
-    
     public void setDepth(int depth) throws BoundsException{
         if(depth < 0 || depth > DEPTH_LIMIT){
             throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, DEPTH_LIMIT));

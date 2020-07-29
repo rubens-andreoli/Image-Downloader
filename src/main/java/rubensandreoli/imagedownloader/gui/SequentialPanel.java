@@ -16,6 +16,7 @@ public class SequentialPanel extends TaskPanel {
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String TITLE = "Sequential";
+    private static final int MNEMONIC = KeyEvent.VK_S;
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
@@ -106,57 +107,47 @@ public class SequentialPanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        SequentialTask task = new SequentialTask();
-        
         try {
-            task.setDestination(txfDest.getText());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, 
-                INVALID_DESTINATION_MSG+ex.getMessage(), 
-                INVALID_DESTINATION_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-        
-        try {
-            task.setSource(txfUrl.getText());
+            SequentialTask task = new SequentialTask(txfUrl.getText());
+            
+            try {
+                task.setDestination(txfDest.getText());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    INVALID_DESTINATION_MSG+ex.getMessage(), 
+                    INVALID_DESTINATION_TITLE, 
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+            
+            try {
+                task.setUpperBound(txfNumber.getInt());
+            } catch (BoundsException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    INVALID_NUMBER_MSG+ex.getMessage(), 
+                    INVALID_NUMBER_TITLE,
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
+            listener.taskCreated(this, task, 
+                    String.format(DESCRIPTION_MASK, 
+                            task.getPath(), 
+                            task.getLowerBound(), 
+                            task.getUpperBound(), 
+                            task.getDestination()
+                    ));
+
+            txfUrl.setText("");
         } catch (MalformedURLException ex) {
             JOptionPane.showMessageDialog(this, 
                 INVALID_URL_MSG+ex.getMessage(), 
                 INVALID_URL_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
-            return;
-        } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(this, 
-                INVALID_NUMBER_MSG+ex.getMessage(), 
-                INVALID_NUMBER_TITLE,
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
         }
-        
-        try {
-            task.setUpperBound(txfNumber.getInt());
-        } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(this, 
-                INVALID_NUMBER_MSG+ex.getMessage(), 
-                INVALID_NUMBER_TITLE,
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-
-        listener.taskCreated(this, task, 
-                String.format(DESCRIPTION_MASK, 
-                        task.getPath(), 
-                        task.getLowerBound(), 
-                        task.getUpperBound(), 
-                        task.getDestination()
-                ));
-        
-        txfUrl.setText("");
     }//GEN-LAST:event_btnAddActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -169,7 +160,7 @@ public class SequentialPanel extends TaskPanel {
 
     @Override
     public Integer getMnemonic() {
-        return KeyEvent.VK_S;
+        return MNEMONIC;
     }
 
 }

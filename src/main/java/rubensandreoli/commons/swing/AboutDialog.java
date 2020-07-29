@@ -4,7 +4,7 @@ import java.awt.Cursor;
 import java.awt.Frame;
 import java.awt.Image;
 import java.io.IOException;
-import rubensandreoli.commons.utils.Utils;
+import rubensandreoli.commons.utils.FileUtils;
 
 /**
  * https://stackoverflow.com/questions/51660856/open-a-browser-with-java
@@ -34,7 +34,7 @@ public class AboutDialog extends javax.swing.JDialog {
         setLocationRelativeTo(parent);
         setIconImage(parent.getIconImage());
 
-        lblIcon.setIcon(Utils.loadIcon(imageUrl));
+        lblIcon.setIcon(FileUtils.loadIcon(imageUrl));
 
         lblProgram.setText(programName);
         lblVersion.setText("Version: "+ version);

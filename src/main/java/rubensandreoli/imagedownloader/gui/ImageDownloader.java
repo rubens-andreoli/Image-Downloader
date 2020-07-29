@@ -5,7 +5,7 @@ import rubensandreoli.commons.utils.Configs;
 import rubensandreoli.imagedownloader.tasks.ProgressLog;
 import rubensandreoli.imagedownloader.tasks.Task;
 import rubensandreoli.imagedownloader.tasks.Task.Status;
-import rubensandreoli.commons.utils.Utils;
+import rubensandreoli.commons.utils.FileUtils;
 import java.awt.Cursor;
 import java.awt.Frame;
 import java.awt.event.WindowEvent;
@@ -67,7 +67,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     public ImageDownloader() { 
         initComponents();
         
-        setIconImage(Utils.loadIcon(PROGRAM_ICON).getImage());
+        setIconImage(FileUtils.loadIcon(PROGRAM_ICON).getImage());
         
         txaLogs.setSize(Configs.values.get(LOG_SIZE_KEY, RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE));
         txaLogs.setInverted(Configs.values.get(LOG_INVERT_KEY));
@@ -135,7 +135,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
         pnlOverlay.setLayout(new javax.swing.OverlayLayout(pnlOverlay));
 
-        lblAbout.setIcon(Utils.loadIcon("about.png"));
+        lblAbout.setIcon(FileUtils.loadIcon("about.png"));
         lblAbout.setAlignmentX(1.0F);
         lblAbout.setAlignmentY(0.0F);
         lblAbout.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 3));

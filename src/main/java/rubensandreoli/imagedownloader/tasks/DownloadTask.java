@@ -19,8 +19,11 @@ package rubensandreoli.imagedownloader.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import rubensandreoli.commons.utils.Configs;
-import rubensandreoli.commons.utils.Utils;
+import rubensandreoli.commons.utils.FileUtils;
+import rubensandreoli.commons.utils.IntegerUtils;
 
 public abstract class DownloadTask implements Task {
 
@@ -36,9 +39,15 @@ public abstract class DownloadTask implements Task {
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
+    protected static final String USER_AGENT;
+    protected static final int CONNECTION_TIMEOUT; //ms
+    protected static final int READ_TIMEOUT; //ms
     protected static final int CONNECTION_MIN_COOLDOWN; //ms
     protected static final int CONNECTION_MAX_COOLDOWN; //ms
     static{
+        USER_AGENT = Configs.values.get("user_agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36");
+        CONNECTION_TIMEOUT = Configs.values.get("connection_timeout", 2000, 500);
+        READ_TIMEOUT = Configs.values.get("read_timout", 4000, 1000);
         CONNECTION_MIN_COOLDOWN = Configs.values.get("connection_cooldown_min", 500, 0);
         CONNECTION_MAX_COOLDOWN = Configs.values.get("connection_cooldown_max", CONNECTION_MIN_COOLDOWN+500, CONNECTION_MIN_COOLDOWN);
     }
@@ -48,7 +57,7 @@ public abstract class DownloadTask implements Task {
     private ProgressListener listener;
     private volatile Status status = Status.WAITING;
     private int progress, workload = 1;
-    
+
     @Override
     public void perform() {
         status = Status.RUNNING;
@@ -61,28 +70,26 @@ public abstract class DownloadTask implements Task {
     protected boolean download(String url, File file){
         return download(url, file, 0, null);
     }
-    
-    protected boolean download(String url, File file, ProgressLog log){
-        return download(url, file, 0, log);
-    }
-    
+
     protected boolean download(String url, File file, int minFilesize, ProgressLog log){
         boolean success = false;
         try {
-            long size = Utils.downloadToFile(url, file);
+            long size = FileUtils.downloadToFile(url, file, CONNECTION_TIMEOUT, READ_TIMEOUT);
             if(size > minFilesize){
-                Utils.sleepRandom(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN);
+                sleepRandom();
                 report(log, ProgressLog.INFO, DOWNLOAD_LOG_MASK, url);
                 success = true;
             }else{
-                if(Utils.deleteFile(file)) report(log, ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
+                if(FileUtils.deleteFile(file)) {
+                    report(log, ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
+                }
             }
         } catch (IOException ex) {
             report(log, ProgressLog.ERROR, DOWNLOAD_FAILED_LOG_MASK, url);
         }
         return success;
     }
-    
+        
     @Override
     public void interrupt() {
         status = Status.INTERRUPTED;
@@ -92,7 +99,7 @@ public abstract class DownloadTask implements Task {
         return status == Status.INTERRUPTED;
     }
     
-    protected File getFolder(String folder) throws IOException{
+    protected File getFolderFile(String folder) throws IOException{
         if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
         try{
             File file = new File(folder);
@@ -107,7 +114,7 @@ public abstract class DownloadTask implements Task {
     }
     
     protected Path getFolderPath(String folder) throws IOException{
-        return this.getFolder(folder).toPath();
+        return this.getFolderFile(folder).toPath();
     }
     
     protected void report(ProgressLog log){
@@ -129,6 +136,19 @@ public abstract class DownloadTask implements Task {
         else log.appendLine(status, message, args);
     }
     
+    protected Document connect(String url) throws IOException{
+        return Jsoup.connect(url)
+                    .header("Accept", "text/html; charset=UTF-8")
+                    .userAgent(USER_AGENT)
+                    .get();
+    }
+    
+    protected void sleepRandom(){
+        try {
+            Thread.sleep(IntegerUtils.getRandomBetween(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN));
+        } catch (InterruptedException ex) {}
+    }
+    
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     @Override
     public void setProgressListener(ProgressListener listener) {
@@ -136,7 +156,7 @@ public abstract class DownloadTask implements Task {
     }
     
     public void setDestination(String folder) throws IOException{
-        getFolder(folder);
+        getFolderFile(folder);
         this.destination = folder;
     }
     

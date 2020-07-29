@@ -17,13 +17,10 @@
 package rubensandreoli.imagedownloader.tasks;
 
 import rubensandreoli.commons.exceptions.BoundsException;
-import java.awt.image.BufferedImage;
 import rubensandreoli.commons.utils.Configs;
-import rubensandreoli.commons.utils.Utils;
-import static rubensandreoli.commons.utils.Utils.USER_AGENT;
+import rubensandreoli.commons.utils.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -45,98 +42,12 @@ import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import rubensandreoli.commons.utils.IntegerUtils;
 
-// <editor-fold defaultstate="collapsed" desc=" IMAGE INFO "> 
-class ImageInfo implements Comparable<ImageInfo>{
-    
-    public final String path;
-    private String filename;
-    private String extension;
-    public final int width;
-    public final int height;
-    private long size;
 
-    public ImageInfo(String path, int width, int height, String filename, String extension){
-        this.path = path;
-        this.filename = filename;
-        this.extension = extension;
-        this.width = width;
-        this.height = height;
-    }
-    
-    public ImageInfo(String path, int width, int height) {
-        this(path, width, height, null, null);
-    }
-
-    public ImageInfo(String path, String width, String height) {
-        this(path, Utils.parseInteger(width), Utils.parseInteger(height));
-    }
-    
-    public ImageInfo(String path, BufferedImage image){
-        this(path, image.getWidth(), image.getHeight());
-    }
-    
-    public ImageInfo(String path, byte[] imageBytes) throws IOException{
-        this(path, ImageIO.read(new ByteArrayInputStream(imageBytes)));
-        this.size = imageBytes.length;
-    }
-
-    public ImageInfo(String path) {
-        this(path, 0 ,0);
-    }
-
-    public String getFilename() {
-        if(filename == null) filename = Utils.parseFilename(path);
-        return filename;
-    }
-
-    public String getExtension() {
-        if(extension == null) extension = Utils.parseExtension(path);
-        return extension;
-    }
-
-    public long getSize() {
-        return size;
-    }
-
-    public void setSize(long size) {
-        this.size = size;
-    }
-    
-    public boolean largerThan(ImageInfo i){
-        return compareTo(i)>0;
-    }
-    
-    public boolean smallerThan(ImageInfo i){
-        return compareTo(i)<0;
-    }
-
-    @Override
-    public int hashCode() {
-        return 61 + Objects.hashCode(this.path);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null) return false;
-        if (getClass() != obj.getClass()) return false;
-        return Objects.equals(this.path, ((ImageInfo) obj).path);
-    }
-
-    @Override
-    public int compareTo(ImageInfo i) { //image is larger only if proportionally
-        if(width > i.width && height > i.height) return 1;
-        return (width == i.width && height == i.height)? 0: -1;
-    }
-
-}
-// </editor-fold>
-
-/** References:
+/** 
+ * References:
  * https://javapapers.com/java/glob-with-java-nio/
  * https://stackoverflow.com/questions/5923817/how-to-clone-an-inputstream/5924132
  * https://stackoverflow.com/questions/12107049/how-can-i-make-a-copy-of-a-bufferedreader
@@ -145,6 +56,75 @@ class ImageInfo implements Comparable<ImageInfo>{
  */
 public class GoogleTask extends DownloadTask{
 
+    // <editor-fold defaultstate="collapsed" desc=" IMAGE INFO "> 
+    public static class ImageInfo implements Comparable<ImageInfo>{
+
+        public final String path;
+        public final int width;
+        public final int height;
+
+        private String filename;
+        private String extension;
+        private long size;
+
+        public ImageInfo(String path, int width, int height) {
+            this.path = path;
+            this.width = width;
+            this.height = height;
+        }
+
+        public ImageInfo(String path, String width, String height) {
+            this(path, IntegerUtils.parseInteger(width), IntegerUtils.parseInteger(height));
+        }
+
+        public String getFilename() {
+            if(filename == null) filename = FileUtils.parseFilename(path);
+            return filename;
+        }
+
+        public String getExtension() {
+            if(extension == null) extension = FileUtils.parseExtension(path);
+            return extension;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public boolean largerThan(ImageInfo i){
+            return compareTo(i)>0;
+        }
+
+        public boolean smallerThan(ImageInfo i){
+            return compareTo(i)<0;
+        }
+
+        @Override
+        public int hashCode() {
+            return 61 + Objects.hashCode(this.path);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            return Objects.equals(this.path, ((ImageInfo) obj).path);
+        }
+
+        @Override
+        public int compareTo(ImageInfo i) { //image is larger only if proportionally
+            if(width > i.width && height > i.height) return 1;
+            return (width == i.width && height == i.height)? 0: -1;
+        }
+
+    }
+    // </editor-fold>
+    
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String IMAGE_SUPPORTED_GLOB = "*.{jpg,jpeg,bmp,gif,png}";
     private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
@@ -164,7 +144,7 @@ public class GoogleTask extends DownloadTask{
     private static final String IMAGE_NUMBER_LOG_MASK = "[%s]"; //index
     private static final String LOADING_IMAGE_LOG = "Loading image...";
     private static final String NO_SIMILAR_LOG = "No similar images were found";
-    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading file";
+    private static final String FAILED_UPLOADING_LOG= "Failed connecting/uploading file";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file";
     private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)"; //image count
     private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]"; //width, height, source width, source height
@@ -195,14 +175,27 @@ public class GoogleTask extends DownloadTask{
     }
     // </editor-fold>
     
-    private String sourceFolder;
-    private List<Path> images;
+    private final String sourceFolder;
+    private final List<Path> images; //TODO: clear images after processing to free memory
     private int startIndex;
     private boolean retrySmall;
     
     private ProgressLog log;
     private int connectionFailed;
 
+    @SuppressWarnings("OverridableMethodCallInConstructor")
+    public GoogleTask(String folder) throws IOException{
+        Path path = getFolderPath(folder);
+        try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
+            images = new ArrayList<>();
+            for (Path file : contents) {
+                images.add(file);
+            }
+            if(images.isEmpty()) throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, folder));
+            sourceFolder = folder;
+        }
+    }
+    
     @Override
     protected int run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
@@ -210,25 +203,24 @@ public class GoogleTask extends DownloadTask{
         int success = 0;
         for (int i = startIndex; i < images.size(); i++) {
             if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break; //INTERRUPT EXIT POINT
-            Utils.sleepRandom(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN);
+            sleepRandom();
             log = new ProgressLog(increaseProgress(), getWorkload());
             log.appendLine(IMAGE_NUMBER_LOG_MASK, i);
-            searchWithFile(images.get(i));
+            processImage(images.get(i));
             report(log);
         }
-        return success;
+        return success; //TODO: not implemented
     }
-
-    private void searchWithFile(Path path){
-        try(var fileStream = new BufferedInputStream(Files.newInputStream(path));  //TODO: test if splitting input stream instead of reading twice is more eficient
-                var cache = new ByteArrayOutputStream();){ //TODO: not sure if stream is needed here; use byte[] from fileStream directly?
-            fileStream.transferTo(cache);
-            byte[] imageBytes = cache.toByteArray();
-            
-            //GET IMAGE INFO FOR COMPARISON
-            ImageInfo source = new ImageInfo(path.toString(), imageBytes);
+    
+    private void processImage(Path path){
+        try(var imageStream = new BufferedInputStream(Files.newInputStream(path))){
+            //LOAD IMAGE
+            byte[] imageBytes = imageStream.readAllBytes();
+            var bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
             log.appendLine(ProgressLog.INFO, LOADING_IMAGE_LOG);
             log.appendLine(ProgressLog.INFO, path.toString());
+            ImageInfo sourceInfo = new ImageInfo(path.toString(), bufferedImage.getWidth(), bufferedImage.getHeight());
+            sourceInfo.setSize(imageBytes.length);
             
             //PREPARE ENTITY
             MultipartEntity entity = new MultipartEntity(); 
@@ -239,43 +231,43 @@ public class GoogleTask extends DownloadTask{
             //POST
             try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
                 HttpResponse response = client.execute(post);
-                String link = response.getFirstHeader("location").getValue();
-                List<ImageInfo> googleImages = parseResponse(Jsoup.connect(link).get());
-                if(googleImages!=null && !googleImages.isEmpty()){
-                    downloadLargest(googleImages, source);
-                } else {
+                String responseLink = response.getFirstHeader("location").getValue();
+                
+                //PROCESS RESPONSE
+                List<ImageInfo> googleImages = processResponse(responseLink);
+                if(googleImages != null){
+                    download(googleImages, sourceInfo);
+                }else{
                     log.appendLine(ProgressLog.WARNING, NO_SIMILAR_LOG);
                 }
-            }catch(IOException ex){
+            } catch (IOException ex){
                 log.appendLine(ProgressLog.ERROR, FAILED_UPLOADING_LOG);
                 connectionFailed++;
             }
-        }catch(IOException ex){
+        } catch (IOException ex) {
             log.appendLine(ProgressLog.ERROR, FAILED_READING_FILE_LOG);
-        }catch(Exception ex) {
+        } catch (Exception ex) {
             log.appendLine(ProgressLog.CRITICAL, UNEXPECTED_LOG_MASK, ex.getMessage());
         }
     }
-    
-    private List<ImageInfo> parseResponse(Document doc) throws IOException{    
+
+    private List<ImageInfo> processResponse(String responseLink) throws IOException{    
         //FIND CORRECT LINK
-        String responseLink = null;
-        for (Element e : doc.getElementsByTag("a")) {
+        String similarLink = null;
+        for (Element e : connect(responseLink).getElementsByTag("a")) {
             String ref = e.attr("href");
             if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(RESPONSE_LINK_TEXT)){
-                responseLink = e.absUrl("href");
+                similarLink = e.absUrl("href");
                 break; //just one
             }
         }
-        if(responseLink==null){
-            return null; //if null: no similar images found
+        if(similarLink == null){
+            return null; //no similar images found
         }
 
-        //GET IMAGE LINKS
         List<ImageInfo> googleImages = new ArrayList<>();
         Pattern p = Pattern.compile(IMAGE_LINK_REGEX);
-        Document subdoc = Jsoup.connect(responseLink).get();
-        subdoc.getElementsByTag("script").forEach(s -> {
+        connect(similarLink).getElementsByTag("script").forEach(s -> {
             String script = s.data();
             if(script.startsWith(RESPONSE_SCRIPT_PREFIX)){
                 Matcher m = p.matcher(script);
@@ -289,10 +281,10 @@ public class GoogleTask extends DownloadTask{
                 }
             }
         });
-        return googleImages; //if empty: failed finding images urls
+        return googleImages.isEmpty()? null:googleImages; //if empty: failed finding images urls
     }
     
-    private void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {    
+    protected void download(List<ImageInfo> googleImages, ImageInfo source) {    
         //LOOK FOR LARGEST GOOGLE IMAGE LARGER THAN SOURCE (not worth sorting list before)
         ImageInfo largest = null;
         for (ImageInfo image : googleImages) {
@@ -310,8 +302,8 @@ public class GoogleTask extends DownloadTask{
         boolean failed = false;
         try{
             //SAVE FILE
-            File file = Utils.createValidFile(getDestination(), largest.getFilename(), largest.getExtension());
-            largest.setSize(Utils.downloadToFile(largest.path, file));
+            File file = FileUtils.createValidFile(getDestination(), largest.getFilename(), largest.getExtension());
+            largest.setSize(FileUtils.downloadToFile(largest.path, file, CONNECTION_TIMEOUT, READ_TIMEOUT));
             
             //TESTS
             boolean corrupt = reviseCorrupt(file, largest.getSize(), source.getSize());
@@ -345,7 +337,7 @@ public class GoogleTask extends DownloadTask{
                 log.appendLine(ProgressLog.WARNING, NO_NEW_IMAGES_LOG);
             }else{
                 log.appendLine(ProgressLog.INFO, TRY_OTHER_IMAGE_LOG);
-                downloadLargest(googleImages, source);
+                download(googleImages, source);
             }
         }
     }
@@ -353,7 +345,7 @@ public class GoogleTask extends DownloadTask{
     private boolean reviseSmall(File file, long size, long sourceSize){
         if(size < sourceSize){
             log.appendLine(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
-            Utils.moveFileToChild(file, ATENTION_FOLDER);
+            FileUtils.moveFileToChild(file, ATENTION_FOLDER);
             return true; //even if it failed to move, try other images
         }
         log.appendLine(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
@@ -363,7 +355,7 @@ public class GoogleTask extends DownloadTask{
     private boolean reviseCorrupt(File file, long size, long sourceSize){
         //BELOW FILESIZE THRESHOLD
         if(size < MIN_FILESIZE){
-            if(Utils.deleteFile(file)){
+            if(FileUtils.deleteFile(file)){
                log.appendLine(ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
             }
             return true;
@@ -372,14 +364,14 @@ public class GoogleTask extends DownloadTask{
         //TOO SMALL COMPARED TO SOURCE
         if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
             log.appendLine(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
-            Utils.moveFileToChild(file, ATENTION_FOLDER);
+            FileUtils.moveFileToChild(file, ATENTION_FOLDER);
             return true;
         }
         return false;
     }
     
     private boolean reviseCorrupt(File file, long sourceSize){
-        return reviseCorrupt(file, Utils.getFileSize(file), sourceSize);
+        return reviseCorrupt(file, FileUtils.getFileSize(file), sourceSize);
     }
 
     private File resolveTumblr(ImageInfo image, long sourceSize){
@@ -392,7 +384,7 @@ public class GoogleTask extends DownloadTask{
             HttpResponse response = client.execute(requisicao);
             //SAVE BYTES
             byte[] bytes = EntityUtils.toByteArray(response.getEntity());
-            Path filepath = Path.of(Utils.createValidFile(getDestination(), image.getFilename(), image.getExtension()).getAbsolutePath());
+            Path filepath = Path.of(FileUtils.createValidFile(getDestination(), image.getFilename(), image.getExtension()).getAbsolutePath());
             Files.write(filepath, bytes);
             file = filepath.toFile();
         } catch (IOException ex) {
@@ -409,21 +401,6 @@ public class GoogleTask extends DownloadTask{
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
-    public void setSource(String folder)throws IOException{
-        Path path = getFolderPath(folder);
-        try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, IMAGE_SUPPORTED_GLOB)){
-            List<Path> paths = new ArrayList<>(); //temp variable used to keep source null if empty folder
-            for (Path file : contents) {
-                paths.add(file);
-            }
-            if(paths.isEmpty()){
-                throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, folder));
-            }
-            images = paths;
-            sourceFolder = folder;
-        }
-    }
-    
     @Override
     public void setDestination(String folder) throws IOException {
         if(folder == null || folder.isEmpty()){
@@ -439,7 +416,7 @@ public class GoogleTask extends DownloadTask{
     }
     
     public void setStartIndex(int startIndex) throws BoundsException {
-        if(startIndex < 0 || (images!=null && startIndex>images.size()-1)){
+        if(startIndex < 0 || startIndex>images.size()-1){
             throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, images.size()));
         }
         this.startIndex = startIndex;

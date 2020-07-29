@@ -57,6 +57,11 @@ public class RecycledTextArea extends javax.swing.JTextArea{
         addWithoutPrinting(text);
         printTexts();
     }
+    
+    public void amendText(String text){
+        if(texts.isEmpty()) return;
+        texts.set(texts.size()-1, text);
+    }
 
     @Override
     public void setText(String text) {

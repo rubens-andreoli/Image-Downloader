@@ -16,11 +16,12 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.commons.exceptions.BoundsException;
-import rubensandreoli.commons.utils.Utils;
 import java.io.File;
 import java.net.MalformedURLException;
+import rubensandreoli.commons.exceptions.BoundsException;
 import rubensandreoli.commons.utils.Configs;
+import rubensandreoli.commons.utils.FileUtils;
+import rubensandreoli.commons.utils.IntegerUtils;
 
 public class SequentialTask extends DownloadTask{
 
@@ -34,8 +35,7 @@ public class SequentialTask extends DownloadTask{
     
     private static final String INVALID_URL_MSG = "Invalid image URL.";
     private static final String MISSING_MARKERS_MSG = "Image URL missing markers '"+LOWER_MARKER+"_"+UPPER_MARKER+"'.";
-    private static final String INVALID_LOWER_BOUND_MSG = "Marked number in the URL must be smaller than the target upper bound.";
-    private static final String INVALID_UPPER_BOUND_MSG = "Upper bound must be greater than 0, and then the lower bound.";
+    private static final String INVALID_UPPER_BOUND_MSG = "Upper bound must be greater than or equal to the lower bound.";
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
@@ -49,11 +49,34 @@ public class SequentialTask extends DownloadTask{
     }
     // </editor-fold>
     
-    private String path;
-    private String maskedFilename; //with %d where number is supposed to be
-    private String extension; //with dot at start
-    private int lowerBound = -1;
+    private final String path;
+    private final String maskedFilename; //with %d where number is supposed to be
+    private final String extension; //with dot at start
+    private final int lowerBound;
     private int upperBound;
+    
+    public SequentialTask(String url) throws MalformedURLException{
+        if(!url.matches(URL_REGEX)) throw new MalformedURLException(INVALID_URL_MSG);
+        if(!url.matches(URL_MARKER_REGEX)) throw new MalformedURLException(MISSING_MARKERS_MSG);
+        
+        //URL PATH AND LEAF
+        int fileIndex = url.lastIndexOf('/');
+        path = url.substring(0, fileIndex);
+        String file = url.substring(fileIndex+1);
+
+        //LOWER BOUND
+        int numberIndex = file.indexOf(LOWER_MARKER)+1;
+        int numberLenght = file.indexOf(UPPER_MARKER) - numberIndex;
+        upperBound = lowerBound = IntegerUtils.parseInteger(file.substring(numberIndex, numberIndex+numberLenght));
+        
+        //MASKED FILENAME AND EXTENSION
+        String numberMask = "%d";
+        if(file.charAt(numberIndex) == '0') {
+            numberMask = "%0"+numberLenght+"d";
+        }
+        maskedFilename = FileUtils.parseFilename(file.replaceAll(MARKER_REGEX, numberMask), false);
+        extension = FileUtils.parseExtension(file);
+    }
 
     @Override
     protected int run() {
@@ -64,7 +87,7 @@ public class SequentialTask extends DownloadTask{
             if(isInterrupted() || (DOWNLOAD_FAIL_THREASHOLD > 0 && fails >= DOWNLOAD_FAIL_THREASHOLD)) break;
 
             String formatedFilename = String.format(maskedFilename, i);
-            File file = Utils.createValidFile(getDestination(), formatedFilename, extension);
+            File file = FileUtils.createValidFile(getDestination(), formatedFilename, extension);
             String url = String.format(URL_MASK, path, formatedFilename, extension);
             
             if(download(url, file, MIN_FILESIZE, null)){
@@ -78,34 +101,8 @@ public class SequentialTask extends DownloadTask{
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    public void setSource(String url) throws MalformedURLException, BoundsException{
-        if(!url.matches(URL_REGEX)) throw new MalformedURLException(INVALID_URL_MSG);
-        if(!url.matches(URL_MARKER_REGEX)) throw new MalformedURLException(MISSING_MARKERS_MSG);
-        
-        //URL PATH AND LEAF
-        int fileIndex = url.lastIndexOf('/');
-        path = url.substring(0, fileIndex);
-        String file = url.substring(fileIndex+1);
-
-        //LOWER BOUND
-        int numberIndex = file.indexOf(LOWER_MARKER)+1;
-        int numberLenght = file.indexOf(UPPER_MARKER) - numberIndex;
-        lowerBound = Utils.parseInteger(file.substring(numberIndex, numberIndex+numberLenght));
-        if(upperBound > 0 && upperBound <= lowerBound){ //if upper bound is set
-            throw new BoundsException(INVALID_LOWER_BOUND_MSG);
-        }
-        
-        //MASKED FILENAME AND EXTENSION
-        String numberMask = "%d";
-        if(file.charAt(numberIndex) == '0'){
-            numberMask = "%0"+numberLenght+"d";
-        }
-        maskedFilename = Utils.parseFilename(file.replaceAll(MARKER_REGEX, numberMask), false);
-        extension = Utils.parseExtension(file);
-    }
-    
     public void setUpperBound(int upperBound) throws BoundsException{
-        if(upperBound <= 0 || (lowerBound != -1 && upperBound <= lowerBound)){
+        if(upperBound < lowerBound){
             throw new BoundsException(INVALID_UPPER_BOUND_MSG);
         }
         this.upperBound = upperBound;

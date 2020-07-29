@@ -121,11 +121,47 @@ public class GooglePanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        GoogleTask task = new GoogleTask();
-        //SET SOURCE
         try {
-            task.setSource(txfSource.getText());
+            GoogleTask task = new GoogleTask(txfSource.getText());
 //            txfStart.setMaxValue(task.getImageCount());
+        
+            try {
+                task.setDestination(txfDest.getText());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(
+                    this, 
+                    INVALID_DESTINATION_MSG+ex.getMessage(), 
+                    INVALID_DESTINATION_TITLE, 
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            } 
+
+            try {
+                task.setStartIndex(txfStart.getInt());
+            } catch (BoundsException ex) {
+                JOptionPane.showMessageDialog(
+                    this, 
+                    INVALID_NUMBER_MSG+ex.getMessage(), 
+                    INVALID_NUMBER_TITLE,
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
+            task.setRetrySmall(chbSize.isSelected());
+
+            txfSource.clear();
+            txfStart.clear();
+            listener.taskCreated(this, task, 
+                    String.format(
+                            DESCRIPTION_MASK, 
+                            task.getSource(), 
+                            task.getStartIndex(), 
+                            task.getImageCount(), 
+                            task.getDestination()
+                    ));
+        
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                 this, 
@@ -133,48 +169,7 @@ public class GooglePanel extends TaskPanel {
                 INVALID_SOURCE_TITLE, 
                 JOptionPane.ERROR_MESSAGE
             );
-            return;
         } 
-        
-        //SET DESTINATION
-        try {
-            task.setDestination(txfDest.getText());
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_DESTINATION_MSG+ex.getMessage(), 
-                INVALID_DESTINATION_TITLE, 
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        } 
-
-        //SET START INDEX
-        try {
-            task.setStartIndex(txfStart.getInt());
-        } catch (BoundsException ex) {
-            JOptionPane.showMessageDialog(
-                this, 
-                INVALID_NUMBER_MSG+ex.getMessage(), 
-                INVALID_NUMBER_TITLE,
-                JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-
-        task.setRetrySmall(chbSize.isSelected());
-
-        //ALL VALID
-        txfSource.clear();
-        txfStart.clear();
-        listener.taskCreated(this, task, 
-                String.format(
-                        DESCRIPTION_MASK, 
-                        task.getSource(), 
-                        task.getStartIndex(), 
-                        task.getImageCount(), 
-                        task.getDestination()
-                ));
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed

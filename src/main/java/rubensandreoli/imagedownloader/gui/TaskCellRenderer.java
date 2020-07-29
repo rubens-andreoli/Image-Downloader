@@ -5,14 +5,14 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.TableCellRenderer;
-import rubensandreoli.commons.utils.Utils;
+import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.imagedownloader.tasks.Task;
 
 public class TaskCellRenderer implements TableCellRenderer {
 
-    private static final ImageIcon RUNNING_ICON = Utils.loadIcon("download.png");
-    private static final ImageIcon INTERRUPTED_ICON = Utils.loadIcon("close.png");
-    private static final ImageIcon COMPLETED_ICON = Utils.loadIcon("checkmark.png");
+    private static final ImageIcon RUNNING_ICON = FileUtils.loadIcon("download.png");
+    private static final ImageIcon INTERRUPTED_ICON = FileUtils.loadIcon("close.png");
+    private static final ImageIcon COMPLETED_ICON = FileUtils.loadIcon("checkmark.png");
 
     private final JLabel label = new JLabel();
 

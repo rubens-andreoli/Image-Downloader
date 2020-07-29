@@ -1,6 +1,25 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package rubensandreoli.imagedownloader.tasks;
 
-/** References:
+import java.util.IllegalFormatException;
+
+/** 
+ * References:
  * https://howtodoinjava.com/java/string/4-ways-to-split-tokenize-strings-in-java/
  */
 public class ProgressLog {
@@ -26,7 +45,11 @@ public class ProgressLog {
     
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void append(String message, Object...args){
-        if(args != null) message = String.format(message, args);
+        if(args.length != 0){
+            try{
+                message = String.format(message, args);
+            } catch (IllegalFormatException ex){}
+        }
         log.append(message);
     }
     
