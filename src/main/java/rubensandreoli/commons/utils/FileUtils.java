@@ -150,6 +150,17 @@ public class FileUtils {
         return file;
     }
     
+    public static String parseParent(String path){
+        if(path == null) return "";
+        path = path.replaceAll("[/\\\\]", "/");
+        int index = path.lastIndexOf('/');
+        if(index > 0){
+            return path.substring(0, index);
+        }else{
+            return "";
+        }
+    }
+    
     /**
      * Extracts the file from the abstract pathname and then returns a 
      * {@code String} containing anything after the first {@literal '.'} (dot) 

@@ -26,6 +26,7 @@ public interface Task {
     void interrupt();
     
     void setProgressListener(ProgressListener listener);
+    ProgressListener getProgressListener();
     
     Status getStatus();
     int getProgress();

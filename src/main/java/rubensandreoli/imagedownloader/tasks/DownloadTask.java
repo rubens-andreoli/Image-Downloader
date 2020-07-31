@@ -56,21 +56,46 @@ public abstract class DownloadTask implements Task {
     private String destination;
     private ProgressListener listener;
     private volatile Status status = Status.WAITING;
-    private int progress, workload = 1;
+    private int successes, fails, progress, workload = 1;
 
     @Override
     public void perform() {
         status = Status.RUNNING;
-        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, run());
+        resetSucesses();
+        resetFails();
+        run();
+        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, successes);
         if(status != Status.INTERRUPTED) status = Status.COMPLETED;
     }
     
-    protected abstract int run();
+    protected abstract void run();
 
+    /**
+     * Download URL to file registering progress in a new log. If the downloaded
+     * size is zero the downloaded file is deleted.
+     * 
+     * @see DownloadTask#download(String, File, int, ProgressLog)
+     * @param url {@code String} containing the URL of the site to be downloaded
+     * @param file {@code File} representing the file to be created
+     * @return {@code true} if and only if the file was downloaded correctly; 
+     *         {@code false} otherwise
+     */
     protected boolean download(String url, File file){
         return download(url, file, 0, null);
     }
 
+    /**
+     * Download URL to file registering progress in the log provided or creating 
+     * a new one if {@code null}. If the downloaded size is smaller or equal to the 
+     * minimum size set the downloaded file is deleted.
+     * 
+     * @param url {@code String} containing the URL of the site to be downloaded
+     * @param file {@code File} representing the file to be created
+     * @param minFilesize minimum size for the downloaded file
+     * @param log {@code ProgressLog} to register progress; can be {@code null}
+     * @return {@code true} if and only if the file was downloaded correctly; 
+     *         {@code false} otherwise
+     */
     protected boolean download(String url, File file, int minFilesize, ProgressLog log){
         boolean success = false;
         try {
@@ -123,10 +148,11 @@ public abstract class DownloadTask implements Task {
 
     protected void report(String status, boolean progressed, String message, Object...args){
         var log = new ProgressLog(progressed? increaseProgress():getProgress(), getWorkload());
-        log.appendLine(status, message, args);
+        if(status != null) log.appendLine(status, message, args);
+        else log.appendLine(message, args);
         report(log);
     }
-    
+
     protected void report(String status, String message, Object...args){
         report(status, true, message, args);
     }
@@ -160,6 +186,26 @@ public abstract class DownloadTask implements Task {
         this.destination = folder;
     }
     
+    protected int increaseSuccesses(){
+        return successes++;
+    }
+    
+    protected void resetSucesses(){
+        successes = 0;
+    }
+    
+    protected void addSuccesses(int amount){
+        successes += amount;
+    }
+    
+    protected void resetFails(){
+        fails = 0;
+    }
+    
+    protected int increaseFails(){
+        return fails++;
+    }
+    
     protected int increaseProgress(){
         return progress++;
     }
@@ -168,11 +214,11 @@ public abstract class DownloadTask implements Task {
         this.workload = workload;
     }
     
-    protected void increaseWorkload(int amout) {
+    protected void addWorkload(int amout) {
         workload += amout;
     }
     
-    protected int increseWorkload(){
+    protected int increaseWorkload(){
         return workload++;
     }
     // </editor-fold>
@@ -181,7 +227,15 @@ public abstract class DownloadTask implements Task {
     public String getDestination() {
         return destination;
     }
-    
+
+    public int getSuccesses() {
+        return successes;
+    }
+
+    public int getFails() {
+        return fails;
+    }
+
     @Override
     public Status getStatus(){
         return status;
@@ -195,6 +249,11 @@ public abstract class DownloadTask implements Task {
     @Override
     public int getWorkload() {
         return workload;
+    }
+    
+    @Override
+    public ProgressListener getProgressListener() {
+        return listener;
     }
     // </editor-fold>
  

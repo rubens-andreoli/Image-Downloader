@@ -1,12 +1,29 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.commons.exceptions.BoundsException;
-import rubensandreoli.imagedownloader.tasks.GoogleTask;
 import java.io.IOException;
 import javax.swing.JOptionPane;
+import rubensandreoli.commons.exceptions.BoundsException;
+import rubensandreoli.imagedownloader.tasks.MoreTask;
 
-/** References:
+/** 
+ * References:
  * https://www.codejava.net/java-se/swing/jcheckbox-basic-tutorial-and-examples
  * https://stackoverflow.com/questions/9882845/jcheckbox-actionlistener-and-itemlistener/17576273
  * https://stackoverflow.com/questions/17858132/automatically-adjust-jtable-column-to-fit-content
@@ -44,6 +61,7 @@ public class MorePanel extends TaskPanel {
         txfSource = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 45);
         txfStart = new rubensandreoli.commons.swing.NumberField();
         btnAdd = new javax.swing.JButton();
+        chbLarger = new javax.swing.JCheckBox();
 
         btnDest.setText("Destination");
         btnDest.addActionListener(new java.awt.event.ActionListener() {
@@ -70,6 +88,12 @@ public class MorePanel extends TaskPanel {
             }
         });
 
+        chbLarger.setSelected(true);
+        chbLarger.setText("Larger...");
+        chbLarger.setToolTipText("<html>\nIf checked, will also look for larger images<br>\n</html>");
+        chbLarger.setIconTextGap(6);
+        chbLarger.setMargin(new java.awt.Insets(2, 0, 2, 0));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -82,12 +106,14 @@ public class MorePanel extends TaskPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(txfSource, javax.swing.GroupLayout.DEFAULT_SIZE, 229, Short.MAX_VALUE)
+                        .addComponent(txfSource, javax.swing.GroupLayout.DEFAULT_SIZE, 228, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(txfStart, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(txfDest, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnAdd, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(chbLarger, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -95,7 +121,9 @@ public class MorePanel extends TaskPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(10, 10, 10)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(chbLarger, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(btnDest))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -112,7 +140,54 @@ public class MorePanel extends TaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-
+        try {
+            MoreTask task = new MoreTask(txfSource.getText());
+            
+            try {
+                task.setDestination(txfDest.getText());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(
+                    this, 
+                    INVALID_DESTINATION_MSG+ex.getMessage(), 
+                    INVALID_DESTINATION_TITLE, 
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            } 
+            
+            try {
+                task.setStartIndex(txfStart.getInt());
+            } catch (BoundsException ex) {
+                JOptionPane.showMessageDialog(
+                    this, 
+                    INVALID_NUMBER_MSG+ex.getMessage(), 
+                    INVALID_NUMBER_TITLE,
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+            
+            task.setLargest(chbLarger.isSelected());
+            
+            txfSource.clear();
+            txfStart.clear();
+            listener.taskCreated(this, task, 
+                    String.format(
+                            DESCRIPTION_MASK, 
+                            task.getSource(), 
+                            task.getStartIndex(), 
+                            task.getImageCount(), 
+                            task.getDestination()
+                    ));
+            
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                this, 
+                INVALID_SOURCE_MSG+ex.getMessage(), 
+                INVALID_SOURCE_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } 
     }//GEN-LAST:event_btnAddActionPerformed
 
     private void btnSourceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSourceActionPerformed
@@ -123,6 +198,7 @@ public class MorePanel extends TaskPanel {
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnDest;
     private javax.swing.JButton btnSource;
+    private javax.swing.JCheckBox chbLarger;
     private rubensandreoli.commons.swing.PathField txfDest;
     private rubensandreoli.commons.swing.PathField txfSource;
     private rubensandreoli.commons.swing.NumberField txfStart;

@@ -45,7 +45,6 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.nodes.Element;
 import rubensandreoli.commons.utils.IntegerUtils;
 
-
 /** 
  * References:
  * https://javapapers.com/java/glob-with-java-nio/
@@ -176,12 +175,10 @@ public class GoogleTask extends DownloadTask{
     // </editor-fold>
     
     private final String sourceFolder;
-    private final List<Path> images; //TODO: clear images after processing to free memory
+    private final List<Path> images;
     private int startIndex;
     private boolean retrySmall;
-    
     private ProgressLog log;
-    private int connectionFailed;
 
     @SuppressWarnings("OverridableMethodCallInConstructor")
     public GoogleTask(String folder) throws IOException{
@@ -197,19 +194,17 @@ public class GoogleTask extends DownloadTask{
     }
     
     @Override
-    protected int run() {
+    protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
         setWorkload(getImageCount()-startIndex);
-        int success = 0;
+        
         for (int i = startIndex; i < images.size(); i++) {
-            if(isInterrupted() || connectionFailed >= DISCONNECTED_THREASHOLD) break; //INTERRUPT EXIT POINT
-            sleepRandom();
+            if(isInterrupted() || getFails() >= DISCONNECTED_THREASHOLD) break; //INTERRUPT EXIT POINT
             log = new ProgressLog(increaseProgress(), getWorkload());
             log.appendLine(IMAGE_NUMBER_LOG_MASK, i);
             processImage(images.get(i));
             report(log);
         }
-        return success; //TODO: not implemented
     }
     
     private void processImage(Path path){
@@ -232,17 +227,21 @@ public class GoogleTask extends DownloadTask{
             try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
                 HttpResponse response = client.execute(post);
                 String responseLink = response.getFirstHeader("location").getValue();
+                long start = System.currentTimeMillis();
                 
                 //PROCESS RESPONSE
                 List<ImageInfo> googleImages = processResponse(responseLink);
                 if(googleImages != null){
-                    download(googleImages, sourceInfo);
+                    downloadLargest(googleImages, sourceInfo);
                 }else{
                     log.appendLine(ProgressLog.WARNING, NO_SIMILAR_LOG);
                 }
+                if(System.currentTimeMillis() - start < CONNECTION_MIN_COOLDOWN){ //sleep if succeded and not enough time has passed
+                    sleepRandom();
+                }
             } catch (IOException ex){
                 log.appendLine(ProgressLog.ERROR, FAILED_UPLOADING_LOG);
-                connectionFailed++;
+                increaseFails();
             }
         } catch (IOException ex) {
             log.appendLine(ProgressLog.ERROR, FAILED_READING_FILE_LOG);
@@ -284,7 +283,7 @@ public class GoogleTask extends DownloadTask{
         return googleImages.isEmpty()? null:googleImages; //if empty: failed finding images urls
     }
     
-    protected void download(List<ImageInfo> googleImages, ImageInfo source) {    
+    protected void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {    
         //LOOK FOR LARGEST GOOGLE IMAGE LARGER THAN SOURCE (not worth sorting list before)
         ImageInfo largest = null;
         for (ImageInfo image : googleImages) {
@@ -337,8 +336,11 @@ public class GoogleTask extends DownloadTask{
                 log.appendLine(ProgressLog.WARNING, NO_NEW_IMAGES_LOG);
             }else{
                 log.appendLine(ProgressLog.INFO, TRY_OTHER_IMAGE_LOG);
-                download(googleImages, source);
+                downloadLargest(googleImages, source);
             }
+        }else{
+            increaseSuccesses();
+            resetFails(); //successive fails
         }
     }
     
@@ -403,7 +405,7 @@ public class GoogleTask extends DownloadTask{
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     @Override
     public void setDestination(String folder) throws IOException {
-        if(folder == null || folder.isEmpty()){
+        if(folder == null || folder.isEmpty()){ //TODO: change to panel? create if don't exist (delete if canceled not started?
             File subfolder = new File(sourceFolder, SUBFOLDER);
             if(!subfolder.isDirectory()){
                 if(!subfolder.mkdir()){
@@ -442,6 +444,10 @@ public class GoogleTask extends DownloadTask{
 
     public int getStartIndex() {
         return startIndex;
+    }
+    
+    public ProgressLog getCurrentLog() {
+        return log;
     }
     // </editor-fold>
 

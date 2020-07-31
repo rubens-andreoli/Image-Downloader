@@ -25,13 +25,16 @@
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <Component id="txfSource" pref="229" max="32767" attributes="0"/>
+                      <Component id="txfSource" pref="228" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="txfStart" min="-2" pref="40" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
                   </Group>
                   <Component id="txfDest" max="32767" attributes="0"/>
+              </Group>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
+                  <Component id="chbLarger" alignment="1" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -42,7 +45,10 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace min="-2" pref="10" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="txfDest" alignment="0" min="-2" pref="22" max="-2" attributes="0"/>
+                  <Group type="103" alignment="0" groupAlignment="3" attributes="0">
+                      <Component id="txfDest" alignment="3" min="-2" pref="22" max="-2" attributes="0"/>
+                      <Component id="chbLarger" alignment="3" max="32767" attributes="0"/>
+                  </Group>
                   <Component id="btnDest" alignment="0" max="-2" attributes="0"/>
               </Group>
               <EmptySpace min="-2" max="-2" attributes="0"/>
@@ -98,6 +104,17 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnAddActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="chbLarger">
+      <Properties>
+        <Property name="selected" type="boolean" value="true"/>
+        <Property name="text" type="java.lang.String" value="Larger..."/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, will also look for larger images&lt;br&gt;&#xa;&lt;/html&gt;"/>
+        <Property name="iconTextGap" type="int" value="6"/>
+        <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+          <Insets value="[2, 0, 2, 0]"/>
+        </Property>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

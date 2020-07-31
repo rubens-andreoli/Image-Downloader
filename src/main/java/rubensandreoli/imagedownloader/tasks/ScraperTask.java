@@ -51,7 +51,6 @@ public class ScraperTask extends DownloadTask{
     private final String path;
     private final String domain;
     private int depth;
-    private int success;
 
     public ScraperTask(String url) throws MalformedURLException{
         try {
@@ -64,9 +63,8 @@ public class ScraperTask extends DownloadTask{
     }
     
     @Override
-    protected int run() {
+    protected void run() {
         processPage(path);
-        return success;
     }
         
     private void processPage(String url){
@@ -79,7 +77,7 @@ public class ScraperTask extends DownloadTask{
             downloadImages(d);
             if(isInterrupted()) return; //INTERRUPT EXIT POINT
 
-            //PROCESS LINKS
+            //CRAWL
             if(depth-- > 0) processLinks(d);
         } catch (IOException ex) {
             report(ProgressLog.ERROR, CONNECTION_FAILED_LOG_MASK, url);
@@ -88,10 +86,9 @@ public class ScraperTask extends DownloadTask{
 
     private void downloadImages(Document d){
         Elements images = d.getElementsByTag("img");
-        increaseWorkload(images.size());
-        int successPartial = 0;
+        addWorkload(images.size());
         for (Element image : images) {
-            if(isInterrupted()) break; //INTERRUPT PROCCESS
+            if(isInterrupted()) break; //INTERRUPT
             
             //FIX URL
             String imageUrl = image.absUrl("src");
@@ -107,17 +104,16 @@ public class ScraperTask extends DownloadTask{
             
             //DOWNLOAD TO FILE
             if(download(imageUrl, file, MIN_FILESIZE, null)){
-                successPartial++;
+                increaseSuccesses();
             }
         }
-        success += successPartial;
     }
     
     private void processLinks(Document d){
         Elements links = d.getElementsByTag("a");
-        increaseWorkload(links.size());
+        addWorkload(links.size());
         for (Element link : links) {
-            if(isInterrupted()) break; //INTERRUPT PROCCESS
+            if(isInterrupted()) break; //INTERRUPT
             String linkUrl = link.absUrl("href");
             if(linkUrl.startsWith(domain)){ //process only links from same site
                 processPage(linkUrl);

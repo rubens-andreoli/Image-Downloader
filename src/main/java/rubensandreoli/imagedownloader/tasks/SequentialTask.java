@@ -41,7 +41,7 @@ public class SequentialTask extends DownloadTask{
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
     public static final int DEFAULT_FAIL_THREASHOLD = 10;
     
-    private static final int DOWNLOAD_FAIL_THREASHOLD;
+    public static final int DOWNLOAD_FAIL_THREASHOLD;
     private static final int MIN_FILESIZE; //bytes
     static{
         DOWNLOAD_FAIL_THREASHOLD = Configs.values.get("sequencial:fail_threashold", DEFAULT_FAIL_THREASHOLD, 0);
@@ -79,25 +79,23 @@ public class SequentialTask extends DownloadTask{
     }
 
     @Override
-    protected int run() {
+    protected void run() {
         setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
-        int success = 0;
-        int fails = 0;
+        
         for(int i=lowerBound; i<=upperBound; i++){
-            if(isInterrupted() || (DOWNLOAD_FAIL_THREASHOLD > 0 && fails >= DOWNLOAD_FAIL_THREASHOLD)) break;
+            if(isInterrupted() || (DOWNLOAD_FAIL_THREASHOLD > 0 && getFails() >= DOWNLOAD_FAIL_THREASHOLD)) break;  //INTERRUPT EXIT POINT
 
             String formatedFilename = String.format(maskedFilename, i);
             File file = FileUtils.createValidFile(getDestination(), formatedFilename, extension);
-            String url = String.format(URL_MASK, path, formatedFilename, extension);
+            String imageUrl = String.format(URL_MASK, path, formatedFilename, extension);
             
-            if(download(url, file, MIN_FILESIZE, null)){
-                success++;
-                fails = 0;
+            if(download(imageUrl, file, MIN_FILESIZE, null)){
+                increaseSuccesses();
+                resetFails(); //successive fails
             }else{
-                fails++;
+                increaseFails();
             }
         }
-        return success;
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
