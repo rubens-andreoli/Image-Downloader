@@ -2,7 +2,6 @@ package rubensandreoli.commons.swing;
 
 import java.awt.Cursor;
 import java.awt.Frame;
-import java.awt.Image;
 import java.io.IOException;
 import rubensandreoli.commons.utils.FileUtils;
 

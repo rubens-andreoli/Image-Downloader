@@ -17,7 +17,7 @@
 package rubensandreoli.imagedownloader.gui;
 
 import rubensandreoli.commons.swing.RecycledTextArea;
-import rubensandreoli.commons.utils.Configs;
+import rubensandreoli.commons.tools.Configs;
 import rubensandreoli.imagedownloader.tasks.ProgressLog;
 import rubensandreoli.imagedownloader.tasks.Task;
 import rubensandreoli.imagedownloader.tasks.Task.Status;

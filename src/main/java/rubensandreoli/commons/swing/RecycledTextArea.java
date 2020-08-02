@@ -16,7 +16,7 @@ import javax.swing.text.DefaultCaret;
 public class RecycledTextArea extends javax.swing.JTextArea{
     private static final long serialVersionUID = 1L;
     
-    public static final int DEFAULT_MAX_SIZE = 30;
+    public static final int DEFAULT_MAX_SIZE = 60;
     public static final int MIN_SIZE = 1;
     private static final String TOOLTIP = "<html><b>Double click</b> to <b>clear</b> texts.</html>";
     

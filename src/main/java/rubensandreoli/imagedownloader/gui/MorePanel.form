@@ -109,7 +109,7 @@
       <Properties>
         <Property name="selected" type="boolean" value="true"/>
         <Property name="text" type="java.lang.String" value="Larger..."/>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, will also look for larger images&lt;br&gt;&#xa;&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, will also attempt to download &lt;b&gt;larger copies&lt;/b&gt;&lt;br&gt;&#xa;of the &lt;b&gt;images&lt;/b&gt; in the folder.&#xa;&lt;/html&gt;"/>
         <Property name="iconTextGap" type="int" value="6"/>
         <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
           <Insets value="[2, 0, 2, 0]"/>

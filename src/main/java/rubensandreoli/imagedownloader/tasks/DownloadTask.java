@@ -19,22 +19,23 @@ package rubensandreoli.imagedownloader.tasks;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import rubensandreoli.commons.utils.Configs;
+import rubensandreoli.commons.tools.Configs;
 import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.commons.utils.IntegerUtils;
 
-public abstract class DownloadTask implements Task {
+public abstract class DownloadTask extends Task {
 
-    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">   
     private static final String NO_FOLDER_MSG = "No folder selected.";
     private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found."; //filepath
     private static final String FOLDER_PERMISSION_MSG_MASK = "You don't have folder [%s] read/write permissions.";
     
-    private static final String DOWNLOAD_LOG_MASK = "Downloaded [%s]"; //url
-    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]"; //size
-    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading/saving [%s]"; //url
+    private static final String DOWNLOAD_LOG_MASK = "Downloaded [%s]"; //url //TODO: add file to log msg?
+    private static final String DELETING_FILE_LOG_MASK = "Deleting unwanted file [%,d bytes]"; //size
+    private static final String DOWNLOAD_FAILED_LOG_MASK = "Failed downloading [%s]"; //url
     private static final String DOWNLOAD_TOTAL_LOG_MASK = "%d file(s) downloaded"; //downloaded images
     // </editor-fold>
     
@@ -42,68 +43,53 @@ public abstract class DownloadTask implements Task {
     protected static final String USER_AGENT;
     protected static final int CONNECTION_TIMEOUT; //ms
     protected static final int READ_TIMEOUT; //ms
-    protected static final int CONNECTION_MIN_COOLDOWN; //ms
-    protected static final int CONNECTION_MAX_COOLDOWN; //ms
+    protected static final int MIN_COOLDOWN; //ms
+    protected static final int MAX_COOLDOWN; //ms
     static{
         USER_AGENT = Configs.values.get("user_agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36");
         CONNECTION_TIMEOUT = Configs.values.get("connection_timeout", 2000, 500);
         READ_TIMEOUT = Configs.values.get("read_timout", 4000, 1000);
-        CONNECTION_MIN_COOLDOWN = Configs.values.get("connection_cooldown_min", 500, 0);
-        CONNECTION_MAX_COOLDOWN = Configs.values.get("connection_cooldown_max", CONNECTION_MIN_COOLDOWN+500, CONNECTION_MIN_COOLDOWN);
+        MIN_COOLDOWN = Configs.values.get("connection_cooldown_min", 500, 0);
+        MAX_COOLDOWN = Configs.values.get("connection_cooldown_max", MIN_COOLDOWN*2, MIN_COOLDOWN);
     }
-    // </editor-fold>
-
+    // </editor-fold> 
+    
     private String destination;
-    private ProgressListener listener;
-    private volatile Status status = Status.WAITING;
-    private int successes, fails, progress, workload = 1;
+    private int successes, fails = 0;
+    private int failTreashold, minFilesize = 0;
+    private boolean reportTotal = true;
 
     @Override
-    public void perform() {
-        status = Status.RUNNING;
-        resetSucesses();
-        resetFails();
-        run();
-        report(ProgressLog.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, successes);
-        if(status != Status.INTERRUPTED) status = Status.COMPLETED;
+    public boolean perform() {
+        final boolean performed = super.perform();
+        if(reportTotal) reportTotal();
+        return performed;
     }
     
-    protected abstract void run();
-
-    /**
-     * Download URL to file registering progress in a new log. If the downloaded
-     * size is zero the downloaded file is deleted.
-     * 
-     * @see DownloadTask#download(String, File, int, ProgressLog)
-     * @param url {@code String} containing the URL of the site to be downloaded
-     * @param file {@code File} representing the file to be created
-     * @return {@code true} if and only if the file was downloaded correctly; 
-     *         {@code false} otherwise
-     */
-    protected boolean download(String url, File file){
-        return download(url, file, 0, null);
+    protected void reportTotal(){
+        final var log = new ProgressLog(getProgress(), getWorkload());
+        log.appendLine(ProgressLog.INFO, DOWNLOAD_TOTAL_LOG_MASK, successes);
+        log.appendLine(String.format(Task.STATUS_LOG_MASK, ""));
+        reportLog(log);
     }
 
-    /**
-     * Download URL to file registering progress in the log provided or creating 
-     * a new one if {@code null}. If the downloaded size is smaller or equal to the 
-     * minimum size set the downloaded file is deleted.
-     * 
-     * @param url {@code String} containing the URL of the site to be downloaded
-     * @param file {@code File} representing the file to be created
-     * @param minFilesize minimum size for the downloaded file
-     * @param log {@code ProgressLog} to register progress; can be {@code null}
-     * @return {@code true} if and only if the file was downloaded correctly; 
-     *         {@code false} otherwise
-     */
-    protected boolean download(String url, File file, int minFilesize, ProgressLog log){
+    protected boolean download(String url, File file){
+        return download(url, file, null);
+    }
+
+    protected boolean download(String url, File file, ProgressLog log, Predicate<File>...conditions){
         boolean success = false;
         try {
-            long size = FileUtils.downloadToFile(url, file, CONNECTION_TIMEOUT, READ_TIMEOUT);
+            final long size = FileUtils.downloadToFile(url, file, CONNECTION_TIMEOUT, READ_TIMEOUT);
             if(size > minFilesize){
+                success = true;
+                for (int i = 0; success && i < conditions.length; i++) { //break if failed one
+                    success = conditions[i].test(file) && success;
+                }
+            }
+            if(success){
                 sleepRandom();
                 report(log, ProgressLog.INFO, DOWNLOAD_LOG_MASK, url);
-                success = true;
             }else{
                 if(FileUtils.deleteFile(file)) {
                     report(log, ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
@@ -114,20 +100,17 @@ public abstract class DownloadTask implements Task {
         }
         return success;
     }
-        
-    @Override
-    public void interrupt() {
-        status = Status.INTERRUPTED;
+       
+    protected void sleepRandom(){
+        try {
+            Thread.sleep(IntegerUtils.getRandomBetween(MIN_COOLDOWN, MAX_COOLDOWN));
+        } catch (InterruptedException ex) {}
     }
-    
-    protected boolean isInterrupted(){
-        return status == Status.INTERRUPTED;
-    }
-    
+
     protected File getFolderFile(String folder) throws IOException{
         if(folder==null || folder.isBlank()) throw new IOException(NO_FOLDER_MSG);
         try{
-            File file = new File(folder);
+            final File file = new File(folder);
             if(file.isDirectory()){
                 return file;
             }else{
@@ -142,21 +125,6 @@ public abstract class DownloadTask implements Task {
         return this.getFolderFile(folder).toPath();
     }
     
-    protected void report(ProgressLog log){
-        if(listener != null) listener.progressed(log);
-    }
-
-    protected void report(String status, boolean progressed, String message, Object...args){
-        var log = new ProgressLog(progressed? increaseProgress():getProgress(), getWorkload());
-        if(status != null) log.appendLine(status, message, args);
-        else log.appendLine(message, args);
-        report(log);
-    }
-
-    protected void report(String status, String message, Object...args){
-        report(status, true, message, args);
-    }
-    
     private void report(ProgressLog log, String status, String message, Object...args){
         if(log == null) report(status, message, args);
         else log.appendLine(status, message, args);
@@ -169,16 +137,9 @@ public abstract class DownloadTask implements Task {
                     .get();
     }
     
-    protected void sleepRandom(){
-        try {
-            Thread.sleep(IntegerUtils.getRandomBetween(CONNECTION_MIN_COOLDOWN, CONNECTION_MAX_COOLDOWN));
-        } catch (InterruptedException ex) {}
-    }
-    
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    @Override
-    public void setProgressListener(ProgressListener listener) {
-        this.listener = listener;
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
+    public void setReportTotal(boolean b){
+        reportTotal = b;
     }
     
     public void setDestination(String folder) throws IOException{
@@ -187,39 +148,27 @@ public abstract class DownloadTask implements Task {
     }
     
     protected int increaseSuccesses(){
-        return successes++;
+        return ++successes;
     }
     
-    protected void resetSucesses(){
-        successes = 0;
+    protected int addSuccesses(int amount){
+        return successes += amount;
     }
-    
-    protected void addSuccesses(int amount){
-        successes += amount;
+
+    protected int increaseFails(){
+        return ++fails;
     }
     
     protected void resetFails(){
         fails = 0;
     }
-    
-    protected int increaseFails(){
-        return fails++;
-    }
-    
-    protected int increaseProgress(){
-        return progress++;
+
+    public void setFailTreashold(int amout) {
+        failTreashold = amout;
     }
 
-    protected void setWorkload(int workload){
-        this.workload = workload;
-    }
-    
-    protected void addWorkload(int amout) {
-        workload += amout;
-    }
-    
-    protected int increaseWorkload(){
-        return workload++;
+    public void setSizeThreashold(int bytes) {
+        minFilesize = bytes;
     }
     // </editor-fold>
 
@@ -231,30 +180,16 @@ public abstract class DownloadTask implements Task {
     public int getSuccesses() {
         return successes;
     }
-
-    public int getFails() {
-        return fails;
-    }
-
-    @Override
-    public Status getStatus(){
-        return status;
-    }
-
-    @Override
-    public int getProgress(){
-        return progress;
-    }
     
-    @Override
-    public int getWorkload() {
-        return workload;
+    protected boolean interrupted(){
+        return getStatus() == Status.INTERRUPTED;
     }
-    
-    @Override
-    public ProgressListener getProgressListener() {
-        return listener;
+
+    public boolean failed() {
+        final boolean failed = fails > failTreashold;
+        if(failed) setStatus(Status.FAILED);
+        return failed;
     }
     // </editor-fold>
- 
+
 }

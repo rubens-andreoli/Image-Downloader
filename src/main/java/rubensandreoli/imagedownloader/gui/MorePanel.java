@@ -90,7 +90,7 @@ public class MorePanel extends TaskPanel {
 
         chbLarger.setSelected(true);
         chbLarger.setText("Larger...");
-        chbLarger.setToolTipText("<html>\nIf checked, will also look for larger images<br>\n</html>");
+        chbLarger.setToolTipText("<html>\nIf checked, will also attempt to download <b>larger copies</b><br>\nof the <b>images</b> in the folder.\n</html>");
         chbLarger.setIconTextGap(6);
         chbLarger.setMargin(new java.awt.Insets(2, 0, 2, 0));
 
@@ -167,7 +167,7 @@ public class MorePanel extends TaskPanel {
                 return;
             }
             
-            task.setLargest(chbLarger.isSelected());
+            task.downloadLarger(chbLarger.isSelected());
             
             txfSource.clear();
             txfStart.clear();

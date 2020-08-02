@@ -28,25 +28,51 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import rubensandreoli.commons.exceptions.BoundsException;
+import rubensandreoli.commons.tools.Configs;
 import rubensandreoli.commons.utils.FileUtils;
 
 public class MoreTask extends GoogleTask {
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String NUMBER_REGEX = "([?^\\d]{0,1}\\d{1,4}[?^\\d]{0,1})";
+    private static final String NUMBER_REGEX = "\\d+";
+    private static final String ONE_NUMBER_REGEX = "^[\\D]*\\d+[\\D]*$";
+    private static final String CONFIRMED_MARKER = ".";
     private static final String VALID_IMAGE_REGEX = ".*"+NUMBER_REGEX+".*";
-    private static final String LINK_MASK = "%s/%s{%%s}%s%s"; //parent; filename start; filename end; extension
+    private static final String SEQUENCE_LINK_MASK = "%s/%s{%%s}%s%s"; //parent; filename start; filename end; extension
+    private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_REGEX);
+    private static final String MORE_SUBFOLDER = "more";
     
     private static final String FOUND_SEQUENCE_LOG_MASK = "Found %d potential sequence(s)";
-    
-    private static final int MARGIN_LOWER = SequentialTask.DOWNLOAD_FAIL_THREASHOLD-1;
-    private static final int MARGIN_UPPER = 50;
-    private static final Pattern PATTERN = Pattern.compile(NUMBER_REGEX);
     // </editor-fold>
 
-    private final Map<String, Set<String>> links = new HashMap<>();
+    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
+    private static final int LOWER_MARGIN;
+    private static final int UPPER_MARGIN;
+    private static final boolean RETRY_SMALL;
+    static{
+        LOWER_MARGIN = Configs.values.get("more:lower_margin", 10, 0);
+        UPPER_MARGIN = Configs.values.get("more:upper_margin", 100, 0);
+        RETRY_SMALL = Configs.values.get("more:larger_retry_small", true);
+    }
+    // </editor-fold>
+    
+    private boolean larger;
+    private final Map<String, Set<String>> links = new HashMap<>() {
+        private Set<String> putOrAdd(String maskedLink, String number) {
+            Set<String> numbers;
+            if((numbers = links.get(maskedLink)) != null){
+                numbers.add(number);
+                return numbers;
+            }else{
+                numbers = new TreeSet<>();
+                numbers.add(number);
+                links.put(maskedLink, numbers);
+                return null;
+            }   
+        } 
+    };
     private SequentialTask currentSubtask;
-    private boolean google;
+    private ImageInfo lastImage;
     
     public MoreTask(String folder) throws IOException {
         super(folder);
@@ -54,60 +80,79 @@ public class MoreTask extends GoogleTask {
 
     @Override
     protected void run() {
-        setRetrySmall(true);
+        setRetrySmall(RETRY_SMALL);
         super.run();
-        downloadSequence();
+        if (!interrupted() && !links.isEmpty()){
+            var log = new ProgressLog(getProgress(), getWorkload());
+            log.appendLine(String.format(STATUS_LOG_MASK, "MORE"));
+            reportLog(log);
+            downloadMore();
+        }
     }
     
-    private ImageInfo lastImage;
     @Override
     protected void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {
         if(!source.equals(lastImage)){ //TODO: temporary solution for repeating when retrying
             lastImage = source;
             int found = 0;
             for (ImageInfo i : googleImages) {
-                if(i.getFilename().matches(VALID_IMAGE_REGEX)){
-                    if(addSequence(FileUtils.parseParent(i.path), i.getFilename(), i.getExtension())){
-                        found++;
-                    }
+                //PREPARE VALUES
+                String path = i.path;
+                final int index = path.lastIndexOf('?');
+                if(index > 0){
+                    path = path.substring(0, index);
+                }
+                final String filename = FileUtils.parseFilename(path);
+                final String parent = FileUtils.parseParent(path);
+                final String extension = i.getExtension();
+                
+                //TEST AND ADD SEQUENCE
+                if(filename.matches(VALID_IMAGE_REGEX)){
+                    found += addSequence(parent, filename, extension);
                 }
             }
             getCurrentLog().appendLine(ProgressLog.INFO, FOUND_SEQUENCE_LOG_MASK, found);    
         }
-        if(google) super.downloadLargest(googleImages, source);
+        if(larger) super.downloadLargest(googleImages, source);
     }
     
-    private boolean addSequence(String site, String filename, String extension){
-        Matcher matcher = PATTERN.matcher(filename); //TODO: filename until '?'
-        int start = 0, end = 0;
-        while(matcher.find()){ //last ocurrance
-            start = matcher.start();
-            end = matcher.end();
-        }
-        String maskedLink = String.format(LINK_MASK, site, filename.substring(0, start), filename.substring(end), extension);
-        String value = filename.substring(start, end);
-        
-        Set<String> numbers;
-        if((numbers = links.get(maskedLink)) != null){
-            numbers.add(value);
-            if(numbers.size() == 2){ //consider a sequence only if more than one occurance
-                increaseWorkload();
-                return true;
-            }
-        }else{
-            numbers = new TreeSet<>();
-            numbers.add(value);
-            links.put(maskedLink, numbers);
-        }
-        return false;
-    }
-    
-    private void downloadSequence(){
-        for (var entry : links.entrySet()) {
-            if(isInterrupted()) break; //INTERRUPT EXIT POINT
+    private int addSequence(String site, String filename, String extension){
+        int added = 0, found = 0;
+        final Matcher matcher = NUMBER_PATTERN.matcher(filename);
+        Set<String> numbers = null;
+        while(matcher.find()){
+            found++;
+            final int start = matcher.start();
+            final int end = matcher.end();
+            final String maskedLink = String.format(SEQUENCE_LINK_MASK, site, filename.substring(0, start), filename.substring(end), extension);
+            final String number = filename.substring(start, end);
 
+            if((numbers = links.get(maskedLink)) != null){
+                numbers.add(number);
+                if(numbers.size() == 2){
+                    numbers.add(CONFIRMED_MARKER);
+                    increaseWorkload();
+                    added++;
+                }
+            }else{
+                numbers = new TreeSet<>();
+                numbers.add(number);
+                links.put(maskedLink, numbers);
+            }
+        }
+        if(numbers != null && found == 1){
+            numbers.add(CONFIRMED_MARKER);
+            increaseWorkload();
+            added++;
+        }
+        return added;
+    }
+    
+    private void downloadMore(){
+        for (var entry : links.entrySet()) {
+            if(interrupted()) break; //INTERRUPT EXIT POINT
             final Set<String> values = entry.getValue();
-            if(values.size() <= 1) continue; //not confirmed sequence
+            if(/*values.size() <= 1 || */!values.contains(".")) continue; //not confirmed sequence
             
             //PARSE NUMBERS
             final List<Integer> numbers = new ArrayList<>();
@@ -125,14 +170,13 @@ public class MoreTask extends GoogleTask {
             if(endZero == numbers.size()) continue; //possibly resolutions
             
             //PREPARE TASK VALUES
-            int start = numbers.get(0)-MARGIN_LOWER;
+            int start = numbers.get(0)-LOWER_MARGIN;
             if(start < 1) start = 1;
-            final int end = numbers.get(numbers.size()-1)+MARGIN_UPPER;
+            final int end = numbers.get(numbers.size()-1)+UPPER_MARGIN;
             String numberMask = "%d";
             if(padding) numberMask = "%0"+maxLenght+"d";
             String link = String.format(entry.getKey(), numberMask);
             link = String.format(link, start);
-            //TODO: if google, don't download found; sequenceTask.exclude(Set<Integer> numbers);
             
             //START SUB-TASK
             report(ProgressLog.INFO, false, "Starting sequence %s [%d:%d]", link, start, end);
@@ -141,12 +185,14 @@ public class MoreTask extends GoogleTask {
                 currentSubtask = new SequentialTask(link);
                 currentSubtask.setUpperBound(end);
                 String destination = super.getDestination();
-                if(google){
-                    File subfolder = new File(destination, "more");
+                if(larger){
+                    final File subfolder = new File(destination, MORE_SUBFOLDER);
                     if(!subfolder.isDirectory()) subfolder.mkdirs();
                     destination = subfolder.getAbsolutePath();
                 }
+                currentSubtask.excludeNumbers(numbers); //already have similar to found by google
                 currentSubtask.setDestination(destination);
+                currentSubtask.setSafeThreshold(numbers.get(numbers.size()-1));
                 currentSubtask.run();
                 downloaded = currentSubtask.getSuccesses();
                 addSuccesses(downloaded);
@@ -168,8 +214,8 @@ public class MoreTask extends GoogleTask {
         if(currentSubtask != null) currentSubtask.interrupt();
     }
 
-    public void setLargest(boolean b) {
-        this.google = b;
+    public void downloadLarger(boolean b) {
+        this.larger = b;
     }
       
 }

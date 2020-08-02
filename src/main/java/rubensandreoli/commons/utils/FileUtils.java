@@ -2,6 +2,7 @@ package rubensandreoli.commons.utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 /** References:
@@ -24,7 +26,6 @@ public class FileUtils {
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 4; //bytes
     public static final String EXTENSION_REGEX = "^.[a-z]{3,}$";
     public static final String FILENAME_INVALID_CHARS_REGEX = "[\\/\\\\:\\*?\\\"<\\>|]";
-    public static final String DEFAULT_EXTENSION = ".jpg";
     public static final String FILENAME_MASK = "%s/%s%s";
     public static final String DUPLICATED_FILENAME_MASK = "%s/%s (%d)%s";
     public static final int FILEPATH_MAX_LENGTH = 255;
@@ -171,12 +172,13 @@ public class FileUtils {
      * @see Utils#DEFAULT_EXTENSION
      * @see Utils#EXTENSION_REGEX
      * @param path abstract pathname from which the extension of the file will be parsed
+     * @param defaultValue default extension in case none is found
      * @return {@code String} containing the extension of the file without invalid characters; 
-     *          or a default value if this pathname doesn't contain one
+     *          or a given default value if this pathname doesn't contain one
      */
-    public static String parseExtension(String path){
+    public static String parseExtension(String path, String defaultValue){
         String file = parseFile(path);
-        String ext = DEFAULT_EXTENSION;
+        String ext = defaultValue;
         
         int extIndex = file.lastIndexOf("."); //indexOf()?
         if(extIndex > 0){ //?.xxx
@@ -189,6 +191,10 @@ public class FileUtils {
             }
         }
         return ext;
+    }
+    
+    public static String parseExtension(String path){
+        return parseExtension(path, "");
     }
     
     /**
@@ -382,6 +388,22 @@ public class FileUtils {
             }
         }
         return new FileOutputStream(file, false);
+    }
+    
+    public static boolean isImage(File file){
+        try {
+            return ImageIO.read(file) != null;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    public static Character readFirstCharacter(File file){
+        try(var br = new FileReader(file)){
+            return (char) br.read();
+        } catch (Exception ex) {
+            return null;
+        }
     }
     
 }

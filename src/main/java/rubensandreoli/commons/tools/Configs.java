@@ -1,4 +1,4 @@
-package rubensandreoli.commons.utils;
+package rubensandreoli.commons.tools;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import rubensandreoli.commons.exceptions.CastException;
+import rubensandreoli.commons.utils.BooleanUtils;
 
 public class Configs {
     
@@ -87,6 +89,15 @@ public class Configs {
         return Boolean.valueOf(v);
     }
     
+    public Boolean get(String key, boolean defaultValue) {
+        String v = get(key, String.valueOf(defaultValue));
+        try{
+            return BooleanUtils.parseBoolean(v);
+        }catch(CastException ex){
+            return defaultValue;
+        }
+    }
+    
     public void put(String key, String value) {
         p.put(key, value);
         changed = true;
@@ -107,5 +118,5 @@ public class Configs {
     public boolean hasChanged(){
         return changed;
     }
-    
+ 
 }

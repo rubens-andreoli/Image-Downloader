@@ -6,5 +6,9 @@ public class BoundsException extends Exception{
     public BoundsException(String msg) {
         super(msg);
     }
-    
+
+    public BoundsException() {
+        super();
+    }
+
 }

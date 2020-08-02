@@ -70,10 +70,7 @@ public class ScraperPanel extends TaskPanel {
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txfNumber.setText("0");
-        txfNumber.setToolTipText("<html>" +
-            "<b>Depth of the sub-links</b> that the scraper will crawl to.<br>" +
-            "<i>Depth limit can be set in the configurations file (default = "+ScraperTask.DEFAULT_DEPTH_LIMIT+")</i>" +
-            "</html>");
+        txfNumber.setToolTipText("\"<html>\" +\n\"<b>Depth of the sub-links</b> that the scraper will crawl to.<br>\" +\n\"<i>Depth limit can be set in the configurations file</i>\" +\n\"</html>\"");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

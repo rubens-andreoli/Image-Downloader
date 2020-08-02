@@ -2,19 +2,28 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>CONFIGURATIONS</comment>
-<entry key="google:filesize_suspect">0.25</entry>
 <entry key="connection_cooldown_max">1000</entry>
-<entry key="log_inverted">false</entry>
+<entry key="scraper:depth_limit">3</entry>
+<entry key="more:lower_margin">10</entry>
+<entry key="sequencial:fails_threshold">10</entry>
 <entry key="google:filesize_min">25600</entry>
-<entry key="connection_cooldown_min">500</entry>
-<entry key="google:fail_threashold">10</entry>
-<entry key="google:link_text_marker">Todos os tamanhos</entry>
+<entry key="google:more_lower_margin">10</entry>
 <entry key="google:subfolder_name">copies</entry>
-<entry key="read_timout">4000</entry>
-<entry key="sequencial:fail_threashold">10</entry>
 <entry key="log_timer">10</entry>
 <entry key="log_size">30</entry>
-<entry key="connection_timeout">2000</entry>
-<entry key="sequencial:filesize_min">25600</entry>
+<entry key="scraper:filesize_min">25600</entry>
 <entry key="user_agent">Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36</entry>
+<entry key="google:filesize_suspect">0.25</entry>
+<entry key="log_inverted">false</entry>
+<entry key="google:compare_size">true</entry>
+<entry key="more:larger_retry_small">true</entry>
+<entry key="more:upper_margin">100</entry>
+<entry key="connection_cooldown_min">500</entry>
+<entry key="google:more_upper_margin">100</entry>
+<entry key="google:link_text_marker">Todos os tamanhos</entry>
+<entry key="google:fail_threashold">10</entry>
+<entry key="read_timout">4000</entry>
+<entry key="sequencial:fail_threashold">10</entry>
+<entry key="sequencial:filesize_min">25600</entry>
+<entry key="connection_timeout">2000</entry>
 </properties>
