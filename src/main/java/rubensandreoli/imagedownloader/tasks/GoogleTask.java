@@ -16,32 +16,18 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.commons.exceptions.BoundsException;
-import rubensandreoli.commons.tools.Configs;
+import rubensandreoli.imagedownloader.support.ProgressLog;
+import rubensandreoli.commons.exceptions.checked.BoundsException;
 import rubensandreoli.commons.utils.FileUtils;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.imageio.ImageIO;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.jsoup.nodes.Element;
-import rubensandreoli.commons.utils.IntegerUtils;
+import java.util.Set;
+import java.util.TreeSet;
+import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
 
 /** 
  * References:
@@ -52,146 +38,44 @@ import rubensandreoli.commons.utils.IntegerUtils;
  * https://stackoverflow.com/questions/38581427/why-non-static-final-member-variables-are-not-required-to-follow-the-constant-na/38581517
  */
 public class GoogleTask extends DownloadTask{
- 
+
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String SUPPORTED_IMAGES_GLOB = "*.{jpg,jpeg,bmp,png,gif}";
-    private static final String GOOGLE_URL = "https://www.google.com/searchbyimage/upload";
-    private static final String ATTENTION_SUBFOLDER = "low";
-   
-    private static final String RESPONSE_LINK_PREFIX = "/search?tbs=simg:";
-    private static final String RESPONSE_SCRIPT_PREFIX = "AF_initDataCallback";
-    private static final String TUMBLR_IMAGE_PREFIX = "tumblr_";
-    private static final String IMAGE_LINK_CLEAR_REGEX = "[\\[\\]\\\"\\\"]";
-    private static final String IMAGE_LINK_DELIMITER = ",";
-    private static final String IMAGE_LINK_REGEX = "((\\[\"http.*\\/\\/(?!encrypted)).*\\])";
-    private static final Pattern IMAGE_LINK_PATTERN = Pattern.compile(IMAGE_LINK_REGEX);
+    public static final int DEFAULT_FAIL_THRESHOLD = 10;
+    public static final int DEFAULT_MIN_FILESIZE = 25600; //bytes
     
     private static final String EMPTY_SOURCE_MSG_MASK = "Source folder [%s] doesn't contain any image file.";
     private static final String INVALID_BOUNDS_MSG_MASK = "Starting index must be greater than 0 and smaller than the number of image files [%d] in the source folder.";
-    private static final String FAILED_DESTINATION_MSG_MASK = "Failed creating a subfolder inside folder:\n%s\nTry setting a destination manually.";
     
     private static final String IMAGE_NUMBER_LOG_MASK = "[%d]"; //index
-    private static final String LOADING_IMAGE_LOG = "Loading image...";
+    private static final String LOADING_IMAGE_LOG_MASK = "Loading [%s]"; //path
     private static final String NO_SIMILAR_LOG = "No similar images were found";
-    private static final String FAILED_UPLOADING_LOG= "Failed connecting/uploading file";
+    private static final String FAILED_UPLOADING_LOG= "Failed connecting/uploading image";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file";
-    private static final String NO_BIGGER_LOG_MASK = "No bigger images were found within %d image(s)"; //image count
-    private static final String BIGGER_FOUND_LOG_MASK = "Found image with bigger dimensions [%d:%d] > [%d:%d]"; //width, height, source width, source height
-    private static final String CORRUPTED_FILE_LOG_MASK = "Downloaded image may be corrupted [%,d bytes] %s"; //size, path
-    private static final String FAILED_DOWNLOADING_LOG = "Failed downloading/saving file";
-    private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image";
-    private static final String FAILED_TUMBLR_LOG_MASK = "Failed resolving Tumblr image %s"; //url
-    private static final String SUCCESS_TUMBLR_LOG_MASK = "Succeeded resolving Tumblr image %s"; //url
-    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception %s"; //exception message
-    private static final String DELETING_FILE_LOG_MASK = "Deleting corrupted file [%,d bytes]";
-    private static final String SMALLER_THAN_SOURCE_LOG = "Image has a smaller file size than source";
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]";
-    private static final String NO_NEW_IMAGES_LOG ="No new images were found";
+    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception [%s]"; //exception message
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    private static final int DISCONNECTED_THREASHOLD;
-    private static final double MIN_FILESIZE_RATIO; //to source image
-    private static final int MIN_FILESIZE; //bytes
-    private static final String RESPONSE_LINK_TEXT; //pt-br
-    private static final String SUBFOLDER;
-    static{
-        DISCONNECTED_THREASHOLD = Configs.values.get("google:fail_threashold", 10, 1);
-        MIN_FILESIZE = Configs.values.get("google:filesize_min", 25600);
-        MIN_FILESIZE_RATIO = Configs.values.get("google:filesize_suspect", 0.25, 0.1, 1);
-        RESPONSE_LINK_TEXT = Configs.values.get("google:link_text_marker", "Todos os tamanhos");
-        SUBFOLDER = Configs.values.get("google:subfolder_name", "copies");
-    }
-    // </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc=" IMAGE INFO "> 
-    public static class ImageInfo implements Comparable<ImageInfo>{
-
-        public final String path;
-        public final int width;
-        public final int height;
-
-        private String filename;
-        private String extension;
-        private long size;
-
-        public ImageInfo(String path, int width, int height) {
-            this.path = path;
-            this.width = width;
-            this.height = height;
-        }
-
-        public ImageInfo(String path, String width, String height) {
-            this(path, IntegerUtils.parseInteger(width), IntegerUtils.parseInteger(height));
-        }
-
-        public String getFilename() {
-            if(filename == null) filename = FileUtils.parseFilename(path);
-            return filename;
-        }
-
-        public String getExtension() {
-            if(extension == null) extension = FileUtils.parseExtension(path, ".jpg");
-            return extension;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
-        }
-
-        public boolean largerThan(ImageInfo i){
-            return compareTo(i)>0;
-        }
-
-        public boolean smallerThan(ImageInfo i){
-            return compareTo(i)<0;
-        }
-
-        @Override
-        public int hashCode() {
-            return 61 + Objects.hashCode(this.path);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null) return false;
-            if (getClass() != obj.getClass()) return false;
-            return Objects.equals(this.path, ((ImageInfo) obj).path);
-        }
-
-        @Override
-        public int compareTo(ImageInfo i) { //image is larger only if proportionally
-            if(width > i.width && height > i.height) return 1;
-            return (width == i.width && height == i.height)? 0: -1;
-        }
-
-    }
-    // </editor-fold>
-    
     private final String sourceFolder;
+    private final Searcher searcher;
     private final List<Path> images;
     private int startIndex = 0;
-    private boolean retrySmall;
     private ProgressLog currentLog;
+    private Set<GoogleSubtask> subtasks = new TreeSet<>();
+    private GoogleSubtask currentSubtask;
 
-    public GoogleTask(String folder) throws IOException{
-        final Path path = getFolderPath(folder);
-        try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, SUPPORTED_IMAGES_GLOB)){
+    public GoogleTask(String source, Searcher searcher) throws IOException{
+        final Path path = getFolderPath(source);
+        this.searcher = searcher;
+        try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, FileUtils.IMAGES_GLOB)){
             images = new ArrayList<>();
             for (Path file : contents) {
                 images.add(file);
             }
-            if(images.isEmpty()) throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, folder));
-            sourceFolder = folder;
+            if(images.isEmpty()) throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, source));
+            sourceFolder = source;
         }
         
-        setFailTreashold(DISCONNECTED_THREASHOLD);
-        setSizeThreashold(MIN_FILESIZE);
+        setFailThreshold(DEFAULT_FAIL_THRESHOLD);
+        setMinFilesize(DEFAULT_MIN_FILESIZE);
     }
     
     @Override
@@ -201,222 +85,52 @@ public class GoogleTask extends DownloadTask{
         
         for (int i = startIndex; i < images.size(); i++) {
             if(interrupted() || failed()) break; //INTERRUPT EXIT POINT
-            currentLog = new ProgressLog(increaseProgress(), getWorkload());
+            Path image = images.get(i);
+            currentLog = new ProgressLog(getProgress(), getWorkload());
             currentLog.appendLine(IMAGE_NUMBER_LOG_MASK, i);
-            processImage(images.get(i));
-            reportLog(currentLog);
-        }
-    }
-    
-    private void processImage(Path path){
-        try(var imageStream = new BufferedInputStream(Files.newInputStream(path))){
-            //LOAD IMAGE
-            final byte[] imageBytes = imageStream.readAllBytes();
-            final var bufferedImage = ImageIO.read(new ByteArrayInputStream(imageBytes));
-            currentLog.appendLine(ProgressLog.INFO, LOADING_IMAGE_LOG);
-            currentLog.appendLine(ProgressLog.INFO, path.toString());
-            final ImageInfo sourceInfo = new ImageInfo(path.toString(), bufferedImage.getWidth(), bufferedImage.getHeight());
-            sourceInfo.setSize(imageBytes.length);
+            currentLog.appendLine(Tag.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
             
-            //PREPARE ENTITY
-            final MultipartEntity entity = new MultipartEntity(); 
-            entity.addPart("encoded_image", new InputStreamBody(new ByteArrayInputStream(imageBytes), path.getFileName().toString()));
-            final HttpPost post = new HttpPost(GOOGLE_URL);
-            post.setEntity(entity); 
-            
-            //POST
-            try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
-                final HttpResponse response = client.execute(post);
-                final String responseLink = response.getFirstHeader("location").getValue();
-                final long start = System.currentTimeMillis();
-                
-                //PROCESS RESPONSE
-                final List<ImageInfo> googleImages = getSimilar(responseLink);
-                if(googleImages != null){
-                    downloadLargest(googleImages, sourceInfo);
-                }else{
-                    currentLog.appendLine(ProgressLog.WARNING, NO_SIMILAR_LOG);
-                }
-                if(System.currentTimeMillis() - start < MIN_COOLDOWN){ //sleep if succeded and not enough time has passed
-                    sleepRandom();
-                }
-            } catch (IOException ex){
-                currentLog.appendLine(ProgressLog.ERROR, FAILED_UPLOADING_LOG);
-                increaseFails();
-            }
-        } catch (IOException ex) {
-            currentLog.appendLine(ProgressLog.ERROR, FAILED_READING_FILE_LOG);
-        } catch (Exception ex) {
-            currentLog.appendLine(ProgressLog.CRITICAL, UNEXPECTED_LOG_MASK, ex.getMessage());
-        }
-    }
-
-    private List<ImageInfo> getSimilar(String responseLink) throws IOException{    
-        //FIND CORRECT LINK
-        String similarLink = null;
-        for (Element e : connect(responseLink).getElementsByTag("a")) {
-            final String ref = e.attr("href");
-            if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(RESPONSE_LINK_TEXT)){
-                similarLink = e.absUrl("href");
-                break; //just one
-            }
-        }
-        if(similarLink == null){
-            return null; //no similar images found
-        }
-
-        final List<ImageInfo> googleImages = new ArrayList<>();
-        connect(similarLink).getElementsByTag("script").forEach(s -> {
-            final String script = s.data();
-            if(script.startsWith(RESPONSE_SCRIPT_PREFIX)){
-                final Matcher m = IMAGE_LINK_PATTERN.matcher(script);
-                while(m.find()) {
-                    final String[] info = m.group(0) //first group of the pattern regex
-                            .replaceAll(IMAGE_LINK_CLEAR_REGEX, "")
-                            .split(IMAGE_LINK_DELIMITER);
-                    if(info.length == 3){ //contains width and height information
-                        googleImages.add(new ImageInfo(info[0], info[2], info[1]));
+            try {
+                final var search = searcher.getSearch(image);
+                try{
+                    search.request();
+                    if(search.search() > 0) {
+                        //SUBTASKS PROCESSING
+                        subtasks.forEach(subtask -> {
+                            currentSubtask = subtask;
+                            subtask.processing(this, search.getSourceInfo(), search.getSimilarsInfo());
+                        });
+                    } else {
+                        currentLog.appendLine(Tag.WARNING, NO_SIMILAR_LOG);
                     }
+                    resetFails();
+                    if(search.getDuration() < getMinCooldown()) sleepRandom();
+                }catch(IOException ex){
+                    currentLog.appendLine(Tag.ERROR, FAILED_UPLOADING_LOG);
+                    increaseFails();
                 }
+            } catch (IOException ex) {
+                currentLog.appendLine(Tag.ERROR, FAILED_READING_FILE_LOG);
+            } catch (Exception ex) {
+                currentLog.appendLine(Tag.CRITICAL, UNEXPECTED_LOG_MASK, ex.getMessage());
             }
+            reportLog(currentLog);
+            increaseProgress();
+        }
+        //SUBTASKS POST-PROCESSING
+        subtasks.forEach(subtask -> {
+            currentSubtask = subtask;
+            subtask.postProcessing(this);
         });
-        return googleImages.isEmpty()? null:googleImages; //if empty: failed finding images urls
-    }
-    
-    protected void downloadLargest(List<ImageInfo> googleImages, ImageInfo source) {    
-        //LOOK FOR LARGEST GOOGLE IMAGE LARGER THAN SOURCE (not worth sorting list before)
-        ImageInfo largest = null;
-        for (ImageInfo image : googleImages) {
-            if(image.largerThan(source) && (largest==null || image.largerThan(largest))){
-                largest = image;
-            }
-        }
-        if(largest == null){
-            currentLog.appendLine(ProgressLog.INFO, NO_BIGGER_LOG_MASK, googleImages.size());
-            return;
-        }
-        currentLog.appendLine(ProgressLog.INFO, BIGGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height);
-        currentLog.appendLine(ProgressLog.INFO, largest.path);
-        
-        boolean failed = false;
-        try{
-            //SAVE FILE
-            File file = FileUtils.createValidFile(getDestination(), largest.getFilename(), largest.getExtension());
-            largest.setSize(FileUtils.downloadToFile(largest.path, file, CONNECTION_TIMEOUT, READ_TIMEOUT));
-            
-            //TESTS
-            boolean corrupt = reviseCorrupt(file, largest.getSize(), source.getSize());
-            if(corrupt && largest.getFilename().startsWith(TUMBLR_IMAGE_PREFIX)){
-                File tmp = resolveTumblr(largest, source.getSize());
-                if(tmp != null){
-                    file = tmp;
-                    corrupt = false;
-                }
-            }
-            boolean small = (retrySmall && !corrupt)? reviseSmall(file, largest.getSize(), source.getSize()):false;
-            if(corrupt || small) failed = true;
-            
-        }catch(IOException ex){
-            currentLog.appendLine(ProgressLog.ERROR, FAILED_DOWNLOADING_LOG);
-            //LAST RESORT (rarely solves the problem if failed because of path)
-            if(largest.path.contains("?")){ 
-                googleImages.add(new ImageInfo(
-                        largest.path.substring(0, largest.path.lastIndexOf("?")), 
-                        largest.width, 
-                        largest.height)
-                );
-            }
-            failed = true;
-        }
-        
-        //RETRY
-        if(failed){
-            googleImages.remove(largest);
-            if(googleImages.isEmpty()){
-                currentLog.appendLine(ProgressLog.WARNING, NO_NEW_IMAGES_LOG);
-            }else{
-                currentLog.appendLine(ProgressLog.INFO, TRY_OTHER_IMAGE_LOG);
-                downloadLargest(googleImages, source);
-            }
-        }else{
-            increaseSuccesses();
-            resetFails(); //successive fails
-        }
-    }
-    
-    private boolean reviseSmall(File file, long size, long sourceSize){
-        if(size < sourceSize){
-            currentLog.appendLine(ProgressLog.WARNING, SMALLER_THAN_SOURCE_LOG);
-            FileUtils.moveFileToChild(file, ATTENTION_SUBFOLDER);
-            return true; //even if it failed to move, try other images
-        }
-        currentLog.appendLine(ProgressLog.INFO, BIGGER_SIZE_LOG_MASK, size, sourceSize);
-        return false;
-    }
-    
-    private boolean reviseCorrupt(File file, long size, long sourceSize){
-        //BELOW FILESIZE THRESHOLD
-        if(size < MIN_FILESIZE){
-            if(FileUtils.deleteFile(file)){
-               currentLog.appendLine(ProgressLog.WARNING, DELETING_FILE_LOG_MASK, size);
-            }
-            return true;
-        }
-        
-        //TOO SMALL COMPARED TO SOURCE
-        if (!retrySmall && size < (sourceSize*MIN_FILESIZE_RATIO)){
-            currentLog.appendLine(ProgressLog.WARNING, CORRUPTED_FILE_LOG_MASK, file.length(), file.getAbsolutePath());
-            FileUtils.moveFileToChild(file, ATTENTION_SUBFOLDER);
-            return true;
-        }
-        return false;
-    }
-    
-    private boolean reviseCorrupt(File file, long sourceSize){
-        return reviseCorrupt(file, FileUtils.getFileSize(file), sourceSize);
     }
 
-    private File resolveTumblr(ImageInfo image, long sourceSize){
-        File file = null;
-        try(CloseableHttpClient client = HttpClientBuilder.create().setUserAgent(USER_AGENT).build()){
-            //REQUEST
-            HttpGet requisicao = new HttpGet(image.path);
-            requisicao.addHeader("Accept", "image/webp,image/apng,*/*");
-            requisicao.addHeader("referer", image.path);
-            HttpResponse response = client.execute(requisicao);
-            //SAVE BYTES
-            byte[] bytes = EntityUtils.toByteArray(response.getEntity());
-            Path filepath = Path.of(FileUtils.createValidFile(getDestination(), image.getFilename(), image.getExtension()).getAbsolutePath());
-            Files.write(filepath, bytes);
-            file = filepath.toFile();
-        } catch (IOException ex) {
-            System.err.println("ERROR: Failed connecting Tumblr "+ex.getMessage());
-        }
-        
-        //TEST IF CORRUPT AND LOG
-        if(file != null && !reviseCorrupt(file, sourceSize)){
-            currentLog.appendLine(ProgressLog.INFO, SUCCESS_TUMBLR_LOG_MASK, image.path);
-        }else{
-            currentLog.appendLine(ProgressLog.ERROR, FAILED_TUMBLR_LOG_MASK, image.path);
-        }
-        return file;
-    }
-
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     @Override
-    public void setDestination(String folder) throws IOException {
-        if(folder == null || folder.isEmpty()){ //TODO: change to panel? create if don't exist (delete if canceled not started)?
-            File subfolder = new File(sourceFolder, SUBFOLDER);
-            if(!subfolder.isDirectory()){
-                if(!subfolder.mkdir()){
-                   throw new IOException(String.format(FAILED_DESTINATION_MSG_MASK, sourceFolder));
-                }
-            }
-            folder = subfolder.getAbsolutePath();
-        }
-        super.setDestination(folder);
+    public void interrupt() {
+        super.interrupt();
+        subtasks.forEach(t -> t.interrupt());
     }
-    
+
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">       
     public void setStartIndex(int startIndex) throws BoundsException {
         if(startIndex < 0 || startIndex>images.size()-1){
             throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, images.size()));
@@ -424,14 +138,15 @@ public class GoogleTask extends DownloadTask{
         this.startIndex = startIndex;
     }
     
-    public void setRetrySmall(boolean b){
-        retrySmall = b;
+    public boolean addSubtask(GoogleSubtask subtask){
+        if(getStatus() != Status.WAITING) return false;
+        return subtasks.add(subtask);
     }
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public int getImageCount(){
-        return images==null?0:images.size()-1;
+        return images==null? 0 : images.size()-1; //FIX: why -1?
     }
 
     public String getSource() {
@@ -441,10 +156,19 @@ public class GoogleTask extends DownloadTask{
     public int getStartIndex() {
         return startIndex;
     }
-    
-    protected ProgressLog getCurrentLog() {
+     
+    public ProgressLog getCurrentLog() {
         return currentLog;
     }
+    
+    @Override
+    public String getDestination() {
+        if(currentSubtask != null) {
+            return currentSubtask.getDestination();
+        }
+        return super.getDestination();
+    }
     // </editor-fold>
+
 
 }

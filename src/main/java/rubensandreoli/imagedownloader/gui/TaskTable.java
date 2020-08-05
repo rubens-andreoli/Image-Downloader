@@ -16,7 +16,6 @@
  */
 package rubensandreoli.imagedownloader.gui;
 
-import rubensandreoli.imagedownloader.tasks.Task;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.LinkedList;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import rubensandreoli.imagedownloader.tasks.Task;
 
 /** 
  * References:
@@ -41,7 +41,7 @@ public class TaskTable extends javax.swing.JTable {
     private static final int ROWS_HEIGHT = 18;
     
     private TableModel model = new TableModel();
-    private List<TaskAdapter> tasks = new LinkedList<>();
+    private List<TaskAdapter> tasks = createList();
     
     // <editor-fold defaultstate="collapsed" desc=" TASK ADAPTER "> 
     public static class TaskAdapter {
@@ -130,7 +130,6 @@ public class TaskTable extends javax.swing.JTable {
     }
     // </editor-fold>
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
     public TaskTable(){
         setModel(model);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -146,10 +145,14 @@ public class TaskTable extends javax.swing.JTable {
         setDefaultRenderer(Task.class, new TaskCellRenderer());
         setToolTipText(TOOLTIP);
     }
+    
+    private List<TaskAdapter> createList(){
+        return new LinkedList<>();
+    }
 
     public void addTask(TaskAdapter taskAdapter){
         tasks.add(taskAdapter);
-        int rows = model.getRowCount();
+        final int rows = model.getRowCount();
         model.fireTableRowsInserted(rows, rows);
     }
     
@@ -162,13 +165,13 @@ public class TaskTable extends javax.swing.JTable {
     }
     
     public void clear(){
-       int size = tasks.size();
-       tasks = new LinkedList<>();
-       model.fireTableRowsDeleted(0, size);
+       final int oldSize = tasks.size();
+       tasks = createList();
+       model.fireTableRowsDeleted(0, oldSize);
     }
 
     private List<TaskAdapter> getSelected(int[] rows){
-        LinkedList<TaskAdapter> selectedAdapters = new LinkedList<>();
+        final LinkedList<TaskAdapter> selectedAdapters = new LinkedList<>();
         for (int row : rows) {
             selectedAdapters.addFirst(tasks.get(row)); //add backwards so it's removed from last to active task
         }

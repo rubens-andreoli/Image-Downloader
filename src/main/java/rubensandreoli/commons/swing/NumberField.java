@@ -9,64 +9,75 @@ import java.awt.event.KeyEvent;
  * https://stackoverflow.com/questions/46343616/how-can-i-convert-a-char-to-int-in-java
  * https://stackoverflow.com/questions/4968323/java-parse-int-value-from-a-char
  */
-public final class NumberField extends javax.swing.JTextField{
+public class NumberField extends javax.swing.JTextField{
     private static final long serialVersionUID = 1L;
     
-    public static final String DEFAULT_VALUE = "0";
+    public static final int DEFAULT_INITIAL_VALUE = 0;
+    
+    private String initialNumber = String.valueOf(DEFAULT_INITIAL_VALUE);
+    private String maxNumber;
     private int maxValue;
     
-    public NumberField() {
+    public NumberField(){
+        reset();
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
                 
                 if(getText().isEmpty()){ //deleted value
-                    setText(DEFAULT_VALUE);
+                    clear();
                     return;
                 }
                 
-                char c = e.getKeyChar();
+                final char c = e.getKeyChar();
                 if (!Character.isDigit(c)) { //typed is not a number
                     e.consume();
                     return;
                 }
                 
-                if(maxValue > 0){
-                    try{
-                        int number = Integer.parseInt(getText());
-                        if(Integer.parseInt(number+""+c) > maxValue){
-                            if((c - '0') > maxValue){
-                                e.consume();
-                            }else{
-                                setText("");
-                            }
-                        }else if(getText().equals(DEFAULT_VALUE)){ //remove 0
-                            setText("");
-                        }
-                    }catch(NumberFormatException ex){
-                        System.err.println("Can't parse field value "+ ex.getMessage());
-//                        setText(DEFAULT_VALUE);
+                final int v = c - '0';
+                if(getText().equals("0")) setText("");
+                
+                if(maxValue > 0){ //max value is set
+                    if(v > maxValue){ //typed value is over max
+                        e.consume();
+                        setText(maxNumber);
+                    }else if(Integer.parseInt(getText()+v) > maxValue){ //total is over max
+                        setText("");
                     }
-                }else if(getText().equals(DEFAULT_VALUE)){ //remove 0
-                    setText("");
                 }
             }
         });
     }
-    
-    public NumberField(int maxValue){
-        this();
-        setMaxValue(maxValue);
+
+    public void reset(){
+        setText(initialNumber);
     }
     
     public void clear(){
-        setText(DEFAULT_VALUE);
-    }
-
-    public void setMaxValue(int maxValue) {
-        this.maxValue = maxValue>=0? maxValue:0;
+        setText("0");
     }
     
+    public void setValues(int initial, int max){
+        if(initial<0 || max <0) throw new IllegalArgumentException("Number fields can only work with positive numbers: "+Math.min(initial, max)+" < 0");
+        if(max!=0 && initial>max) throw new IllegalArgumentException("Number fields' initial value must be lower than the maximum: "+initial+" > "+max);
+        initialNumber = String.valueOf(initial);
+        maxValue = max;
+        maxNumber = String.valueOf(max);
+    }
+    
+    public void setValues(String initial, String max){
+        this.setValues(Integer.valueOf(initial), Integer.valueOf(max));
+    }
+    
+    public void setMaxValue(int max){
+        this.setValues(DEFAULT_INITIAL_VALUE, max);
+    }
+    
+    public void setMaxValue(String max){
+        this.setValues(String.valueOf(DEFAULT_INITIAL_VALUE), max);
+    }
+
     public int getInt(){
         return Integer.parseInt(getText());
     }        

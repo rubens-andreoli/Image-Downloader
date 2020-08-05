@@ -16,10 +16,8 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.commons.exceptions.BoundsException;
-import rubensandreoli.commons.tools.Configs;
+import rubensandreoli.commons.exceptions.checked.BoundsException;
 import rubensandreoli.commons.utils.FileUtils;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,11 +26,14 @@ import java.util.Set;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
 
 public class ScraperTask extends DownloadTask{
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String SUPPORTED_IMAGES_REGEX = ".*\\.jpg|jpeg|bmp|png|gif";
+    public static final int DEFAULT_DEPTH_LIMIT = 3;
+    public static final int DEFAULT_MIN_FILESIZE = 25600;
+    
     private static final String SITE_MASK = "%s://%s"; //protocol; authority
     
     private static final String INVALID_URL_MSG = "Invalid URL.";
@@ -41,16 +42,7 @@ public class ScraperTask extends DownloadTask{
     private static final String CONNECTION_LOG_MASK = "Connected to [%s]"; //url
     private static final String CONNECTION_FAILED_LOG_MASK = "Failed connecting to [%s]"; //url
     // </editor-fold>
-    
-    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    public static final int DEPTH_LIMIT; 
-    public static final int MIN_FILESIZE;
-    static{
-        DEPTH_LIMIT = Configs.values.get("scraper:depth_limit", 3, 0);
-        MIN_FILESIZE = Configs.values.get("scraper:filesize_min", 25600, 0);
-    }
-    // </editor-fold>
-    
+
     // <editor-fold defaultstate="collapsed" desc=" PAGE "> 
     public static class Page{
 
@@ -73,7 +65,7 @@ public class ScraperTask extends DownloadTask{
             imgTags.forEach(e -> images.add(e.absUrl("src")));
             for (Element link : aTags) {
                 final String linkUrl = link.absUrl("href");
-                if(linkUrl.matches(SUPPORTED_IMAGES_REGEX)){
+                if(linkUrl.matches(FileUtils.IMAGES_REGEX)){
                     images.add(linkUrl);
                 }
             }
@@ -94,26 +86,34 @@ public class ScraperTask extends DownloadTask{
     }
     // </editor-fold>
      
-    private final String path;
+    private final String url;
     private final String domain;
     private int depth = 0;
     private final Set<String> processed = new HashSet<>();
+    private final int depthLimit;
+    private int minFilezise = DEFAULT_MIN_FILESIZE;
 
-    public ScraperTask(String url) throws MalformedURLException{
+    public ScraperTask(String url, int depthLimit) throws MalformedURLException{
+        if(depthLimit < 0) throw new IllegalArgumentException(depthLimit+" < 0");
+        this.depthLimit = depthLimit;
         try {
             final URL validUrl = new URL(url);
-            path = validUrl.toString();
+            this.url = validUrl.toString();
             domain = String.format(SITE_MASK, validUrl.getProtocol(), validUrl.getAuthority());
             
-            setSizeThreashold(MIN_FILESIZE);
+            setMinFilesize(minFilezise);
         } catch (MalformedURLException ex) {
             throw new MalformedURLException(INVALID_URL_MSG);
         }
     }
     
+    public ScraperTask(String url) throws MalformedURLException{
+        this(url, DEFAULT_DEPTH_LIMIT);
+    }
+    
     @Override
     protected void run() {
-        processPage(path);
+        processPage(url);
     }
         
     private void processPage(String url){
@@ -121,8 +121,8 @@ public class ScraperTask extends DownloadTask{
         processed.add(url);
         try {
             //CONNECTION
-            final Document d = connect(url);
-            report(ProgressLog.INFO, false, CONNECTION_LOG_MASK, url);
+            final Document d = request(url);
+            report(Tag.INFO, false, CONNECTION_LOG_MASK, url);
             Page page = new Page(domain, url, d);
             
             //DOWNLOAD
@@ -139,46 +139,37 @@ public class ScraperTask extends DownloadTask{
                 links.forEach(this::processPage);
             }
         } catch (IOException ex) {
-            report(ProgressLog.ERROR, CONNECTION_FAILED_LOG_MASK, url);
+            report(Tag.ERROR, CONNECTION_FAILED_LOG_MASK, url);
         }
     }
 
-    private void downloadImages(Set<String> images){
-        for (String image : images) {
+    private void downloadImages(Set<String> urls){
+        for (String url : urls) {
             if(interrupted()) break; //INTERRUPT
             
-            //CREATE FILE
-            final String filename = FileUtils.parseFilename(image);
-            final String extension = FileUtils.parseExtension(image, ".jpg");
-            final File file = FileUtils.createValidFile(getDestination(), filename, extension);
+            //CREATE FILE NAME
+            final String filename = FileUtils.getFilename(url);
+            final String extension = FileUtils.getExtension(url, ".jpg");
             
             //DOWNLOAD
-            if(download(image, file)){
-                increaseSuccesses();
-            }
+            if(download(url, filename, extension) != null) increaseSuccesses();
         }
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void setDepth(int depth) throws BoundsException{
-        if(depth < 0 || depth > DEPTH_LIMIT){
-            throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, DEPTH_LIMIT));
-        }
+        if(depth < 0 || depth > depthLimit) throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, depthLimit));
         this.depth = depth;
     }
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
-    public String getPath() {
-        return path;
+    public String getURL() {
+        return url;
     }
 
     public int getDepth() {
         return depth;
-    }
-
-    public String getRoot() {
-        return domain;
     }
     // </editor-fold>
 

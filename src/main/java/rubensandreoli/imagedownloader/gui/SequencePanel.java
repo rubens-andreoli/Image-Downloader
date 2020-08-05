@@ -18,41 +18,45 @@ package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
 import rubensandreoli.commons.exceptions.checked.BoundsException;
-import rubensandreoli.imagedownloader.tasks.ScraperTask;
+import rubensandreoli.imagedownloader.tasks.SequentialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.swing.JOptionPane;
 import rubensandreoli.commons.others.Configuration;
 
-public class ScraperPanel extends DownloadTaskPanel {
+/** 
+ * References:
+ * https://stackoverflow.com/questions/26848647/custom-bean-class-for-gui-component-in-netbeans
+ * https://docs.oracle.com/javase/tutorial/uiswing/components/textarea.html
+ */
+public class SequencePanel extends DownloadTaskPanel {
     private static final long serialVersionUID = 1L;
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    private static final String TITLE = "Scraper";
-    private static final int MNEMONIC = KeyEvent.VK_P;
-    private static final String DESCRIPTION_MASK = "%s [%d] -> %s\n"; //source, depth, destination
+    private static final String TITLE = "Sequence";
+    private static final int MNEMONIC = KeyEvent.VK_S;
+    private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
-    private static final String INVALID_DEPTH_TITLE = "Invalid Depth";
-    private static final String INVALID_DEPTH_MSG = "Please verify if the depth set is lower then the limit.\n";
+    private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
+    private static final String INVALID_NUMBER_MSG = "Please verify if the marked file number is lower than the target set.\n";
     private static final String INVALID_URL_TITLE = "Malformed URL";
     private static final String INVALID_URL_MSG = "Please verify if the link provided is valid.\n";
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS "> 
-    public static final int DEPTH_LIMIT; 
-    public static final int MIN_FILESIZE;
+    private static final int FAIL_THRESHOLD;
+    private static final int MIN_FILESIZE;
     static{
-        DEPTH_LIMIT = Configuration.values.get("scraper:depth_limit", ScraperTask.DEFAULT_DEPTH_LIMIT, 0);
-        MIN_FILESIZE = Configuration.values.get("scraper:filesize_min", ScraperTask.DEFAULT_MIN_FILESIZE, 0);
+        FAIL_THRESHOLD = Configuration.values.get("sequencial:fails_threshold", SequentialTask.DEFAULT_FAIL_THRESHOLD, 0);
+        MIN_FILESIZE = Configuration.values.get("sequencial:filesize_min", SequentialTask.DEFAULT_MIN_FILESIZE, 0);
     }
     // </editor-fold>
     
-    public ScraperPanel() {
+    public SequencePanel() {
         super(TITLE);
         initComponents();
-        txfNumber.setMaxValue(DEPTH_LIMIT);
     }
     
     @SuppressWarnings("unchecked")
@@ -72,7 +76,8 @@ public class ScraperPanel extends DownloadTaskPanel {
             }
         });
 
-        txfUrl.setToolTipText("<html>\n<b>Root URL</b> from where the scraper will try to crawl downloading images.<br>\n<i>Eg.: https://www.site.com/page.html</i>\n</html>");
+        txfUrl.setToolTipText("<html>\nSource image <b>URL</b>, with <b>first number</b> of the sequence between <b>curly brackets</b>.<br>\n<i>Eg.: https://www.site.com/image_{003}.jpg</i><br>\n<i>The maximum number of consecutive failed attempts can be set in<br>\nthe configuration file (a value of '0' means no fail threashold).</i>\n</html>");
+        txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -82,7 +87,9 @@ public class ScraperPanel extends DownloadTaskPanel {
         });
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfNumber.setToolTipText("<html>\n<b>Depth of the sub-links</b> that the scraper will crawl to.<br>\n<i>Depth limit can be set in the configurations file</i>\n</html>");
+        txfNumber.setText("50");
+        txfNumber.setToolTipText("<html>\n<b>Last number</b> of the sequence.<br>\n<i>Must be greater than the URL number</i>\n</html>");
+        txfNumber.setPreferredSize(new java.awt.Dimension(35, 22));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -107,15 +114,15 @@ public class ScraperPanel extends DownloadTaskPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(10, 10, 10)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnDest)
                     .addComponent(txfDest, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnAdd))
-                .addContainerGap())
+                    .addComponent(btnAdd)
+                    .addComponent(txfNumber, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -125,7 +132,7 @@ public class ScraperPanel extends DownloadTaskPanel {
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         try {
-            final ScraperTask task = new ScraperTask(txfUrl.getText(), DEPTH_LIMIT);
+            final SequentialTask task = new SequentialTask(txfUrl.getText(), txfNumber.getInt());
             
             try {
                 task.setDestination(txfDest.getText());
@@ -137,21 +144,11 @@ public class ScraperPanel extends DownloadTaskPanel {
                 );
                 return;
             }
-            
-            try {
-                task.setDepth(txfNumber.getInt());
-            } catch (BoundsException ex) {
-                JOptionPane.showMessageDialog(this, 
-                    INVALID_DEPTH_MSG+ex.getMessage(), 
-                    INVALID_DEPTH_TITLE,
-                    JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
 
             notify(task, DESCRIPTION_MASK, 
-                    task.getURL(), 
-                    task.getDepth(), 
+                    task.getMaskedName(), 
+                    task.getLowerBound(), 
+                    task.getUpperBound(), 
                     task.getDestination()
             );
 
@@ -160,6 +157,12 @@ public class ScraperPanel extends DownloadTaskPanel {
             JOptionPane.showMessageDialog(this, 
                 INVALID_URL_MSG+ex.getMessage(), 
                 INVALID_URL_TITLE, 
+                JOptionPane.ERROR_MESSAGE
+            );
+        } catch (BoundsException ex) {
+            JOptionPane.showMessageDialog(this, 
+                INVALID_NUMBER_MSG+ex.getMessage(), 
+                INVALID_NUMBER_TITLE,
                 JOptionPane.ERROR_MESSAGE
             );
         }
@@ -180,12 +183,12 @@ public class ScraperPanel extends DownloadTaskPanel {
 
     @Override
     protected int getFailThreshold() {
-        return 0;
+        return FAIL_THRESHOLD;
     }
 
     @Override
     protected int getMinFilesize() {
         return MIN_FILESIZE;
     }
-  
+
 }

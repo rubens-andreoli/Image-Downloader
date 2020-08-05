@@ -17,12 +17,11 @@
 package rubensandreoli.imagedownloader.gui;
 
 import rubensandreoli.commons.swing.RecycledTextArea;
-import rubensandreoli.commons.tools.Configs;
-import rubensandreoli.imagedownloader.tasks.ProgressLog;
-import rubensandreoli.imagedownloader.tasks.Task;
-import rubensandreoli.imagedownloader.tasks.Task.Status;
+import rubensandreoli.commons.others.Configuration;
+import rubensandreoli.imagedownloader.support.ProgressLog;
 import rubensandreoli.commons.utils.FileUtils;
 import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
@@ -44,7 +43,11 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+import rubensandreoli.commons.others.Logger;
 import rubensandreoli.commons.swing.AboutDialog;
+import rubensandreoli.imagedownloader.tasks.DownloadTask;
+import rubensandreoli.imagedownloader.tasks.Task;
+import rubensandreoli.imagedownloader.tasks.Task.Status;
 
 /** 
  * References:
@@ -67,12 +70,23 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private static final String LOG_FILE = "history.log";
     private static final int SHUTDOWN_EVENT_CODE = 101;
     private static final int SHUTDOWN_INTERVAL = 10; //seconds
-    private static final String LOG_SIZE_KEY = "log_size";
-    private static final String LOG_TIMER_KEY = "log_timer";
-    private static final int DEFAULT_LOG_TIMER_INTERVAL = 10; //minutes
-    private static final String LOG_INVERT_KEY = "log_inverted";
     private static final String PROGRESSBAR_TOOLTIP_MASK = "%d/%d"; //progress, total
     private static final String PROGRAM_ICON = "download_image.png";
+    // </editor-fold>
+    
+    // <editor-fold defaultstate="collapsed" desc=" CONFIGURATIONS ">
+    public static final boolean DEGUB;
+    public static final int LOG_SIZE;
+    public static final boolean LOG_INVERTED;
+    public static final Font LOG_FONT;
+    public static final int SAVE_INTERVAL;
+    static{
+        DEGUB = Configuration.values.get("crash_log", true);
+        LOG_SIZE = Configuration.values.get("log_size", RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE);
+        LOG_INVERTED = Configuration.values.get("log_inverted", false);
+        LOG_FONT = new Font("Segoe UI", 0, Configuration.values.get("font_size", 10, 8));
+        SAVE_INTERVAL = Configuration.values.get("log_timer", 10, 0);
+    }
     // </editor-fold>
     
     private ConcurrentLinkedDeque<Task> tasks = new ConcurrentLinkedDeque<>();
@@ -80,20 +94,21 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private Task currentTask;
     private ScheduledExecutorService logger;
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
     public ImageDownloader() { 
         initComponents();
+        Logger.log.setEnabled(DEGUB);
         
         setIconImage(FileUtils.loadIcon(PROGRAM_ICON).getImage());
         
-        txaLogs.setSize(Configs.values.get(LOG_SIZE_KEY, RecycledTextArea.DEFAULT_MAX_SIZE, RecycledTextArea.MIN_SIZE));
-        txaLogs.setInverted(Configs.values.get(LOG_INVERT_KEY));
+        txaLogs.enableTooltip(true);
+        txaLogs.setSize(LOG_SIZE);
+        txaLogs.setInverted(LOG_INVERTED);
+        txaLogs.setFont(LOG_FONT);
         loadLog();
         
-        int minutes = Configs.values.get(LOG_TIMER_KEY, DEFAULT_LOG_TIMER_INTERVAL, 0);
-        if(minutes != 0){ //logger is running even when not task is performed; ineficient
+        if(SAVE_INTERVAL != 0){ //FIX: logger is running even when no task is performed; ineficient
             logger = Executors.newSingleThreadScheduledExecutor();
-            logger.scheduleAtFixedRate(this::saveLog, minutes, minutes, TimeUnit.MINUTES);  
+            logger.scheduleAtFixedRate(this::saveLog, SAVE_INTERVAL, SAVE_INTERVAL, TimeUnit.MINUTES);  
         }
         
         // <editor-fold defaultstate="collapsed" desc=" SSL TRUST MANAGER "> 
@@ -152,7 +167,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
         pnlOverlay.setLayout(new javax.swing.OverlayLayout(pnlOverlay));
 
-        lblAbout.setIcon(FileUtils.loadIcon("about.png"));
+        lblAbout.setIcon(rubensandreoli.commons.utils.FileUtils.loadIcon("about.png"));
         lblAbout.setAlignmentX(1.0F);
         lblAbout.setAlignmentY(0.0F);
         lblAbout.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 3));
@@ -257,7 +272,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
         if(tasks.isEmpty()) return; //TODO: warning no tasks?
-        prepare();
+        txaLogs.clear();
+        btnStart.setEnabled(false);
+        pgbTasks.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         
         //PERFORM TASKS IN ANOTHER THREAD AND UPDATE UI
         worker = new SwingWorker<>() {
@@ -281,9 +298,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     txaLogs.addText(log.getMessages());
                 }
                 if(changedTask) tblTasks.refresh();
-                ProgressLog log = logs.get(logs.size()-1);
-                pgbTasks.setValue(log.getNumber());
-                pgbTasks.setMaximum(log.getWorkload());
+                final ProgressLog lastLog = logs.get(logs.size()-1);
+                pgbTasks.setValue(lastLog.getNumber());
+                pgbTasks.setMaximum(lastLog.getWorkload());
                 pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
             }
 
@@ -307,13 +324,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         stop(true);
         if(logger != null) logger.shutdownNow();
         saveLog();
-        Configs.values.save();
+        Configuration.values.save();
         if(evt.getID() == SHUTDOWN_EVENT_CODE){
             try {
                 Runtime.getRuntime().exec("shutdown -s -t "+SHUTDOWN_INTERVAL);
                 dispose();
             } catch (IOException ex) {
-                System.err.println("ERROR: Failed to shutdown "+ex.getMessage());
+                Logger.log.print(Logger.Level.SEVERE, "failed auto-shutdown", ex);
             }
         }else{
             dispose();
@@ -323,7 +340,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private void lblAboutMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblAboutMouseClicked
         new AboutDialog(this, "Image Downloader", "1.0", "2020", "logo.png")
                 .addAtribution("Program icon", "Good Ware", "www.flaticon.com")
-                .addAtribution("Task status icons", "Pixel perfect", "www.flaticon.com")
+                .addAtribution("Status icons", "Pixel perfect", "www.flaticon.com")
                 .setVisible(true);
     }//GEN-LAST:event_lblAboutMouseClicked
 
@@ -355,7 +372,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         try(var is = new ObjectInputStream(new BufferedInputStream(new FileInputStream(LOG_FILE)))){
             txaLogs.setTexts((LinkedList<String>) is.readObject());
         } catch (IOException | ClassNotFoundException ex) {
-            System.err.println("ERROR: Failed loading log file "+ex.getMessage());
+//            Logger.log.print(Logger.Level.SEVERE, "failed loading log file "+LOG_FILE, ex);
         }
     }
     
@@ -363,16 +380,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         try(var os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(LOG_FILE)))){
             os.writeObject(txaLogs.getTexts());
         } catch (IOException ex) {
-            System.err.println("ERROR: Failed saving log file "+ex.getMessage());
+            Logger.log.print(Logger.Level.SEVERE, "failed saving log file "+LOG_FILE, ex);
         }
     }
 
-    private void prepare(){
-        txaLogs.clear();
-        btnStart.setEnabled(false);
-        pgbTasks.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-    }
-    
     private void clear(boolean isCanceled){
         //BEFORE USER VERIFICATION
         pgbTasks.setCursor(Cursor.getDefaultCursor());
@@ -382,15 +393,13 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(!chkShutdown.isSelected()) {
             setState(Frame.NORMAL);
             if(!isCanceled){
-                JOptionPane.showMessageDialog(
-                        ImageDownloader.this,
+                JOptionPane.showMessageDialog(ImageDownloader.this,
                         COMPLETE_MSG,
                         COMPLETE_TITLE,
                         JOptionPane.INFORMATION_MESSAGE
                 );
             }else{
-                JOptionPane.showMessageDialog(
-                        ImageDownloader.this,
+                JOptionPane.showMessageDialog(ImageDownloader.this,
                         ABORTED_MSG,
                         ABORTED_TITLE,
                         JOptionPane.INFORMATION_MESSAGE
@@ -419,7 +428,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     @Override
     public void taskCreated(TaskPanel source, Task task, String description) { //TODO: name from source or selected panel?
         tasks.addLast(task);
-        tblTasks.addTask(source.getTitle(), task, description); //add to table afer adding here
+        tblTasks.addTask(source.getTitle(), task, description);
     }
 
     @Override

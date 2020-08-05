@@ -16,7 +16,22 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-@FunctionalInterface
-public interface ProgressListener {
-    void progressed(ProgressLog log);
+import java.util.List;
+import rubensandreoli.imagedownloader.tasks.Searcher.ImageInfo;
+
+public interface GoogleSubtask extends Comparable<GoogleSubtask>{
+    
+    String getDestination();
+    
+    void processing(GoogleTask task, ImageInfo source, List<ImageInfo> similars);
+    void postProcessing(GoogleTask task);
+    void interrupt();
+    
+    int getPriority();
+
+    @Override
+    default int compareTo(GoogleSubtask o) {
+        return Integer.compare(this.getPriority(), o.getPriority());
+    }
+    
 }

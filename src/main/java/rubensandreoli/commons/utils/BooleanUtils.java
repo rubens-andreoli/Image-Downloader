@@ -1,6 +1,6 @@
 package rubensandreoli.commons.utils;
 
-import rubensandreoli.commons.exceptions.CastException;
+import rubensandreoli.commons.exceptions.checked.CastException;
 
 public class BooleanUtils {
     

@@ -1,0 +1,21 @@
+[INFO]
+date: 2020-08-06T03:12:20.587451400
+comment: failed starting subtask
+message: Upper bound must be greater than or equal to the lower bound.
+stack trace: rubensandreoli.imagedownloader.tasks.SequentialTask.<init>(SequentialTask.java:72)
+rubensandreoli.imagedownloader.tasks.MoreSubtask.postProcessing(MoreSubtask.java:165)
+rubensandreoli.imagedownloader.tasks.GoogleTask.lambda$run$2(GoogleTask.java:139)
+java.base/java.lang.Iterable.forEach(Iterable.java:75)
+rubensandreoli.imagedownloader.tasks.GoogleTask.run(GoogleTask.java:137)
+rubensandreoli.imagedownloader.tasks.BasicTask.perform(BasicTask.java:39)
+rubensandreoli.imagedownloader.tasks.DownloadTask.perform(DownloadTask.java:69)
+rubensandreoli.imagedownloader.gui.ImageDownloader$6.doInBackground(ImageDownloader.java:288)
+rubensandreoli.imagedownloader.gui.ImageDownloader$6.doInBackground(ImageDownloader.java:280)
+java.desktop/javax.swing.SwingWorker$1.call(SwingWorker.java:304)
+java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+java.desktop/javax.swing.SwingWorker.run(SwingWorker.java:343)
+java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:630)
+java.base/java.lang.Thread.run(Thread.java:832)
+
+-------------//----------------

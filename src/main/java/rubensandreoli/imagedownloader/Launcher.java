@@ -1,13 +1,10 @@
 package rubensandreoli.imagedownloader;
 
 import javax.swing.SwingUtilities;
-import rubensandreoli.imagedownloader.gui.AttackPanel;
 import rubensandreoli.imagedownloader.gui.GooglePanel;
 import rubensandreoli.imagedownloader.gui.ImageDownloader;
-import rubensandreoli.imagedownloader.gui.MorePanel;
-import rubensandreoli.imagedownloader.gui.NukePanel;
 import rubensandreoli.imagedownloader.gui.ScraperPanel;
-import rubensandreoli.imagedownloader.gui.SequentialPanel;
+import rubensandreoli.imagedownloader.gui.SequencePanel;
 
 public class Launcher {
     
@@ -23,14 +20,11 @@ public class Launcher {
 	    }
 	} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {}
         //</editor-fold>
-
+        
         ImageDownloader view = new ImageDownloader();
-        view.addTaskPanel(new SequentialPanel());
+        view.addTaskPanel(new SequencePanel());
         view.addTaskPanel(new ScraperPanel());
         view.addTaskPanel(new GooglePanel());
-        view.addTaskPanel(new MorePanel());
-        view.addTaskPanel(new AttackPanel());
-        view.addTaskPanel(new NukePanel());
         
         SwingUtilities.invokeLater(() -> view.setVisible(true));
     }

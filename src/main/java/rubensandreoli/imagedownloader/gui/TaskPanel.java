@@ -17,6 +17,9 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.Dimension;
+import java.util.ArrayList;
+import rubensandreoli.commons.others.Callback;
+import rubensandreoli.imagedownloader.tasks.Task;
 
 /**
  * TasksPanels act like Task factories, but 
@@ -24,25 +27,33 @@ import java.awt.Dimension;
  * the panel provides one, when created, to the 
  * TaskPanelListener set.
  * 
+ * @param <T> type of {@code Task} this panel generates
+ * @see Task
+ * 
  * @author Rubens A. A. Andreoli
  */
-public abstract class TaskPanel extends javax.swing.JPanel {
+public abstract class TaskPanel<T extends Task> extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
 
     private final String title;
-    protected TaskPanelListener listener;
+    private TaskPanelListener listener;
 
     public TaskPanel(String title) {
         this(title, null);
     }
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
     public TaskPanel(final String title, TaskPanelListener listener) {
         this.title = title;
         this.listener = listener;
-        Dimension min = new Dimension(488, 62);
+        final Dimension min = new Dimension(488, 62);
         setPreferredSize(min);
         setMinimumSize(min);
+    }
+    
+    protected boolean notify(T task, String description, Object...args){
+        if(listener == null) return false;
+        listener.taskCreated(this, task, String.format(description, args));
+        return true;
     }
     
     public void setTaskPanelListener(TaskPanelListener listener) {

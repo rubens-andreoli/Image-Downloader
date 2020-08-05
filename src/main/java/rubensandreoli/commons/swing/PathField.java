@@ -8,22 +8,23 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.regex.Matcher;
 import javax.swing.JFileChooser;
+import rubensandreoli.commons.others.Logger;
+import rubensandreoli.commons.utils.FileUtils;
 
-/** References:
- https://stackoverflow.com/questions/5931261/java-use-stringbuilder-to-insert-at-the-beginning
- https://stackoverflow.com/questions/12524826/why-should-i-use-deque-over-stack
- https://stackoverflow.com/questions/196830/what-is-the-easiest-best-most-correct-way-to-iterate-through-the-characters-of-a
- https://stackoverflow.com/questions/7569335/reverse-a-string-in-java
- https://stackoverflow.com/questions/14189262/fitting-text-to-jtextfield-using
- https://stackoverflow.com/questions/30987866/java-enforce-textfield-format-ux-00000000
- https://docs.oracle.com/javase/tutorial/uiswing/components/formattedtextfield.html
- https://stackoverflow.com/questions/8075373/path-separator-vs-filesystem-getseparator-vs-system-getpropertyfile-separato
- https://stackoverflow.com/questions/58631724/paths-get-vs-path-of
- https://stackoverflow.com/questions/811248/how-can-i-use-drag-and-drop-in-swing-to-get-path-path
+/** 
+ * References:
+ * https://stackoverflow.com/questions/5931261/java-use-stringbuilder-to-insert-at-the-beginning
+ * https://stackoverflow.com/questions/12524826/why-should-i-use-deque-over-stack
+ * https://stackoverflow.com/questions/196830/what-is-the-easiest-best-most-correct-way-to-iterate-through-the-characters-of-a
+ * https://stackoverflow.com/questions/7569335/reverse-a-string-in-java
+ * https://stackoverflow.com/questions/14189262/fitting-text-to-jtextfield-using
+ * https://stackoverflow.com/questions/30987866/java-enforce-textfield-format-ux-00000000
+ * https://docs.oracle.com/javase/tutorial/uiswing/components/formattedtextfield.html
+ * https://stackoverflow.com/questions/8075373/path-separator-vs-filesystem-getseparator-vs-system-getpropertyfile-separato
+ * https://stackoverflow.com/questions/58631724/paths-get-vs-path-of
+ * https://stackoverflow.com/questions/811248/how-can-i-use-drag-and-drop-in-swing-to-get-path-path
  * http://zetcode.com/tutorials/javaswingtutorial/draganddrop/
  */
 public class PathField extends javax.swing.JTextField{
@@ -32,10 +33,10 @@ public class PathField extends javax.swing.JTextField{
     public static final int FILES_ONLY = JFileChooser.FILES_ONLY;
     public static final int DIRECTORIES_ONLY = JFileChooser.DIRECTORIES_ONLY;
     public static final int FILES_AND_DIRECTORIES = JFileChooser.FILES_AND_DIRECTORIES;
-    private static final int MIN_LENGTH = 5;
+    public static final int MIN_LENGTH = FileUtils.MASKED_FILENAME_MIN_LENGTH;
     
     private final int mode;
-    private String path = "";
+    private File file;
     private int length;
     private static JFileChooser chooser = new JFileChooser();;
     
@@ -60,104 +61,86 @@ public class PathField extends javax.swing.JTextField{
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    final List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
                     for (File file : droppedFiles) {
-                        if ((mode==FILES_AND_DIRECTORIES) || 
-                                (mode==FILES_ONLY && file.isFile()) ||
-                                (mode==DIRECTORIES_ONLY && file.isDirectory())){
-                            chooser.setSelectedFile(new File(file, File.separator));
-                            setText(file.getAbsolutePath());
-                            fireActionPerformed();
-                        }
-                        break;
+                        if(setText(file)) break;
                     }
                 } catch (UnsupportedFlavorException | IOException ex) {
-                    System.err.println("ERROR: drag and drop failed "+ex.getMessage());
+                    Logger.log.print(Logger.Level.SEVERE, "drag and drop failed", ex);
                 }
             }
         });
     }
 
-    private String formatText(){
-        if(path.isEmpty()) return "";
-        if((length < MIN_LENGTH) || (path.length() <= length)) return path;
-
-        String root = Path.of(path).getRoot().toString();
-
-        String formated = path.substring(path.length()-length, path.length());
-        formated = formated.replaceFirst("([^\\"+File.separator
-                +"]{3}(?=\\"+File.separator
-                +"))|(.{3})(?=[^\\"+File.separator
-                +"]*$)", "..."); //or only (.{3,}?(?=\/))|(.{3})
-        
-        if(root != null){
-            formated = formated.replaceFirst(".{"+root.length()
-                    +",}(\\.{3})|(^.{"+(root.length()+3)
-                    +",}?(?=\\"+File.separator+"))", Matcher.quoteReplacement(root)+"...");
-            int index = formated.indexOf(".");
-            if(index < root.length()) formated = formated.substring(index);
-        }
-
-        return formated;
-    }
-    
     public void clear(){
         super.setText("");
-        path = "";
+        file = null;
     }
     
     @Override
     public String getText() {
-        return path;
+        return file==null? "" : file.getPath();
     }
     
     @Override
-    public void setText(String path){
-        if(path==null){ //no need for further testing
+    public void setText(String pathname){
+        if(pathname == null) {
             clear();
             return;
         }
+        pathname = FileUtils.normalize(pathname);
+        if(!setText(new File(pathname))){
+            throw new IllegalArgumentException(pathname+" is not a valid mode "+mode+" file");
+        }
+    }
+    
+    public boolean setText(File file){
+        return setText(file, false);
+    }
+    
+    private boolean setText(File file, boolean validated){
+        if(file == null){
+            clear();
+            return false;
+        }
         
-        if(mode==DIRECTORIES_ONLY && path.contains(".")) 
-            throw new IllegalArgumentException("Pathname doesn't represent a folder.");
-        if(mode==FILES_ONLY && !path.contains(".")) 
-            throw new IllegalArgumentException("Pathname doesn't represent a file.");
+        if(!validated){
+            if ((mode!=FILES_AND_DIRECTORIES) && 
+                        (mode==FILES_ONLY && !file.isFile()) ||
+                        (mode==DIRECTORIES_ONLY && !file.isDirectory())){
+                return false;
+            }
+        }
         
-        this.path = path.replaceAll("[/\\\\]", Matcher.quoteReplacement(File.separator));
-        
-        super.setText(formatText());
+        chooser.setSelectedFile(new File(file, File.separator));
+        super.setText(FileUtils.maskPathname(file.getPath(), length));
+        this.file = file;
+        fireActionPerformed();
+        return true;
     }
 
     public void setLenght(int length) {
+        if(length < MIN_LENGTH) throw new IllegalArgumentException("length "+length+" < "+MIN_LENGTH);
         this.length = length;
-        super.setText(formatText());
+        super.setText(FileUtils.maskPathname(file.getPath(), length));
+    }
+
+    public boolean select(Component parent){
+        return setText(selectFile(parent, mode), true);
     }
     
-    private boolean selectFile(Component parent, int mode){
+    public static File selectFile(Component parent, int mode){
         chooser.setFileSelectionMode(mode);
         if(chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION){
-            String selected = chooser.getSelectedFile().getAbsolutePath();
-            if(!selected.isBlank()){
-                setText(selected);
-                return true;
-            }
+            File selectedFile = chooser.getSelectedFile();
+            return selectedFile;
         }
-        return false;
-    }
-        
-    public boolean select(Component parent){
-        return selectFile(parent, mode);
+        return null;
     }
     
     public static String select(Component parent, int mode){
-        chooser.setFileSelectionMode(mode);
-        if(chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION){
-            String selected = chooser.getSelectedFile().getAbsolutePath();
-            if(!selected.isBlank()){
-                return selected;
-            }
-        }
-        return null;
+        final File selected = selectFile(parent, mode);
+        return selected==null? null : selected.getPath();
     }
 
 }

@@ -25,11 +25,11 @@
                       <Component id="txfDest" max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" attributes="0">
-                      <Component id="txfUrl" pref="336" max="32767" attributes="0"/>
+                      <Component id="txfUrl" pref="333" max="32767" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="txfNumber" min="-2" pref="35" max="-2" attributes="0"/>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                      <Component id="btnAdd" min="-2" pref="87" max="-2" attributes="0"/>
+                      <Component id="btnAdd" min="-2" pref="90" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -80,8 +80,7 @@
     <Component class="rubensandreoli.commons.swing.NumberField" name="txfNumber">
       <Properties>
         <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="text" type="java.lang.String" value="0"/>
-        <Property name="toolTipText" type="java.lang.String" value="&quot;&lt;html&gt;&quot; +&#xa;&quot;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&quot; +&#xa;&quot;&lt;i&gt;Depth limit can be set in the configurations file&lt;/i&gt;&quot; +&#xa;&quot;&lt;/html&gt;&quot;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&#xa;&lt;i&gt;Depth limit can be set in the configurations file&lt;/i&gt;&#xa;&lt;/html&gt;"/>
       </Properties>
     </Component>
     <Component class="rubensandreoli.commons.swing.PathField" name="txfDest">

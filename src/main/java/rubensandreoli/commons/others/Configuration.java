@@ -1,4 +1,4 @@
-package rubensandreoli.commons.tools;
+package rubensandreoli.commons.others;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -7,26 +7,25 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import rubensandreoli.commons.exceptions.CastException;
+import rubensandreoli.commons.exceptions.checked.CastException;
 import rubensandreoli.commons.utils.BooleanUtils;
 
-public class Configs {
+public class Configuration {
     
     private static final String COMMENT = "CONFIGURATIONS";
-    private static final String FILENAME = "config.xml";
+    public static final String FILENAME = "config.xml";
     
-    public static final Configs values = new Configs(); //eager initialization;
+    public static final Configuration values = new Configuration(); //eager initialization;
     
     private Properties p;
     private boolean changed;
     
-    private Configs(){
+    private Configuration(){
         p = new Properties();
         try(var bis = new BufferedInputStream(new FileInputStream(new File(FILENAME)))){
             p.loadFromXML(bis);
         } catch (IOException ex) {
-            System.err.println("ERROR: Failed loading config file "+ex.getMessage());
-            
+            Logger.log.print(Logger.Level.WARNING, "failed loading config file", ex);
         }
     }
     
@@ -40,7 +39,7 @@ public class Configs {
     }
     
     public Integer get(String key, int defaultValue){
-        String v = get(key, String.valueOf(defaultValue));
+        final String v = get(key, String.valueOf(defaultValue));
         try{
             return Integer.parseInt(v);
         }catch(NumberFormatException ex){
@@ -61,7 +60,7 @@ public class Configs {
     }
     
     public Double get(String key, double defaultValue){
-        String v = get(key, String.valueOf(defaultValue));
+        final String v = get(key, String.valueOf(defaultValue));
         try{
             return Double.parseDouble(v);
         }catch(NumberFormatException ex){
@@ -81,8 +80,9 @@ public class Configs {
         return v;
     }
     
+    @Deprecated
     public Boolean get(String key){
-        String v = p.getProperty(key);
+        final String v = p.getProperty(key);
         if(v == null){
             put(key, "false");
         }
@@ -90,7 +90,7 @@ public class Configs {
     }
     
     public Boolean get(String key, boolean defaultValue) {
-        String v = get(key, String.valueOf(defaultValue));
+        final String v = get(key, String.valueOf(defaultValue));
         try{
             return BooleanUtils.parseBoolean(v);
         }catch(CastException ex){
@@ -109,7 +109,7 @@ public class Configs {
                 p.storeToXML(bos, COMMENT);
                 return true;
             } catch (IOException ex) {
-                System.err.println("ERROR: Failed saving config file "+ex.getMessage());
+                Logger.log.print(Logger.Level.WARNING, "failed saving config file", ex);
             }
         }
         return false;

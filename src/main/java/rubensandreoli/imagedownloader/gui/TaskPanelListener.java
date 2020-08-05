@@ -20,7 +20,7 @@ import rubensandreoli.imagedownloader.tasks.Task;
 
 /**
  * This interface should be implemented to listen 
- * when a Task is created by a TaskPanel.
+ when a BasicTask is created by a TaskPanel.
  * 
  * @author Rubens A. Andreoli Jr.
  */
