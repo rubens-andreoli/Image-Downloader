@@ -16,32 +16,31 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import java.io.File;
-import rubensandreoli.imagedownloader.support.ProgressLog;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import rubensandreoli.commons.exceptions.checked.BoundsException;
+import rubensandreoli.commons.others.Level;
 import rubensandreoli.commons.others.Logger;
-import rubensandreoli.commons.others.Logger.Level;
-import rubensandreoli.commons.utils.FileUtils;
-import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
-import static rubensandreoli.imagedownloader.tasks.BasicTask.STATUS_LOG_MASK;
-import rubensandreoli.imagedownloader.tasks.Searcher.ImageInfo;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
+import rubensandreoli.imagedownloader.tasks.support.Downloader;
+import rubensandreoli.imagedownloader.tasks.support.ImageInfo;
+import rubensandreoli.imagedownloader.tasks.support.TaskJournal;
 
-public class MoreSubtask implements GoogleSubtask{
+public class MoreSubtask extends BasicGoogleSubtask{
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">
     public static final int PRIORITY = LargerSubtask.PRIORITY+1;
-    public static final int DEFAULT_LOWER_MARGIN = 10;
-    public static final int DEFAULT_UPPER_MARGIN = 100;
+    public static final int DEFAULT_LOWER_MARGIN = 20;
+    public static final int DEFAULT_UPPER_MARGIN = 200;
     public static final int DEFAULT_MIN_DIMENSION = 400;
+    public static final int DEFAULT_SEQUENCE_MAX_LENGHT = 1000;
     private static final int OCURRANCE_CONFIRMATION = 2;
     
     private static final String NUMBER_REGEX = "\\d+";
@@ -51,30 +50,26 @@ public class MoreSubtask implements GoogleSubtask{
     private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_REGEX);
     
     private static final String TITLE_LOG = "MORE";
-    private static final String FOUND_SEQUENCE_LOG_MASK = "Found %d potential sequence(s)";
+    private static final String FOUND_SEQUENCE_LOG_MASK = "Found %d new potential sequence(s)";
     private static final String SEQUENCE_START_LOG_MASK = "Starting sequence %s [%d:%d]"; //url; start; end
-    private static final String SEQUENCE_TOTAL_LOG = "%d sequencial download(s)";
+    private static final String SEQUENCE_TOTAL_LOG = "%d sequential download(s)";
     // </editor-fold>
 
-    private String destination;
     private final Map<String, Set<String>> links = new HashMap<>();
     private int minDimension = DEFAULT_MIN_DIMENSION;
     private int lowerMargin = DEFAULT_LOWER_MARGIN;
     private int upperMargin = DEFAULT_UPPER_MARGIN;
-    private SequentialTask currentSubtask;
+    private int sequenceMaxLenght = DEFAULT_SEQUENCE_MAX_LENGHT;
     
-    public MoreSubtask(String folder, String subfolder) throws IOException{
-        try{
-            destination = FileUtils.createSubfolder(folder, subfolder);
-        }catch(IOException ex){
-            throw new IOException(String.format("Failed to create subfolder [%s]", destination));
-        }
-    }   
+    public MoreSubtask(String subfolder) {
+        super(subfolder);
+    }
     
     @Override
-    public void processing(GoogleTask task, ImageInfo source, List<ImageInfo> similars) {
+    public void processing(TaskJournal monitor, Downloader downloader, ImageInfo source, List<ImageInfo> similars)  {
         int found = 0;
         for (ImageInfo i : similars) {
+            
             //PREPARE VALUES
             String path = i.path;
             final int index = path.lastIndexOf('?');
@@ -90,8 +85,8 @@ public class MoreSubtask implements GoogleSubtask{
                 found += addSequence(parent, filename, extension);
             }
         }
-        task.addWorkload(found);
-        task.getCurrentLog().appendLine(Tag.INFO, FOUND_SEQUENCE_LOG_MASK, found);
+        monitor.addWorkload(found);
+        monitor.getCurrentLog().appendLine(Level.INFO, FOUND_SEQUENCE_LOG_MASK, found);
     }
     
     private int addSequence(String parent, String filename, String extension){
@@ -118,7 +113,7 @@ public class MoreSubtask implements GoogleSubtask{
                     added++;
                 }
             }else{
-                numbers = new TreeSet<>();
+                numbers = new HashSet<>();
                 numbers.add(number);
                 links.put(maskedLink, numbers);
                 created = true;
@@ -132,22 +127,20 @@ public class MoreSubtask implements GoogleSubtask{
     }
     
     @Override
-    public void postProcessing(GoogleTask task){
-        if (links.isEmpty()) return;
-        var log = new ProgressLog(task.getProgress(), task.getWorkload());
-        log.appendLine(String.format(STATUS_LOG_MASK, TITLE_LOG));
-        task.reportLog(log);
+    public void postProcessing(TaskJournal journal, Downloader downloader){
+if (links.isEmpty() || journal.isInterrupted()) return;
+        journal.reportTitle(TITLE_LOG);
         
+        final List<String> more = new ArrayList<>();
         for (var entry : links.entrySet()) {
-            if(task.interrupted()) break; //INTERRUPT EXIT POINT
+            if(journal.isInterrupted()) break; //INTERRUPT EXIT POINT
             final Set<String> numbers = entry.getValue();
-            if(!numbers.contains(".")) continue; //not confirmed sequence
+            if(!numbers.contains(".")) continue; //not confirmed sequence, don't progress here
             
             //PARSE NUMBERS
-            final List<Integer> values = new ArrayList<>();
+            final TreeSet<Integer> values = new TreeSet<>();
             boolean padding = false;
-            int endZero = 0;
-            int maxLenght = 0;
+            int endZero = 0, maxLenght = 0;
             for (String v : numbers) {
                 if('0' == v.charAt(0)) padding = true;
                 if('0' == v.charAt(v.length()-1)) endZero++;
@@ -156,60 +149,83 @@ public class MoreSubtask implements GoogleSubtask{
                     values.add(Integer.parseInt(v));
                 }catch(NumberFormatException ex){}
             }
-            if(endZero == values.size()) continue; //possibly resolutions
+            if(endZero == values.size()){ //possibly resolutions
+                journal.increaseProgress();
+                continue;
+            }
             
             //PREPARE TASK VALUES
-            int start = values.get(0)-lowerMargin;
-            if(start < 1) start = 1;
-            final int end = values.get(values.size()-1)+upperMargin;
+            try{ //FIX: temporary solution
+            final int start = Math.max(values.first()-lowerMargin, 1); 
+            final int end = values.last()+upperMargin;
             String numberMask = "%d";
             if(padding) numberMask = "%0"+maxLenght+"d";
             String link = String.format(entry.getKey(), numberMask);
             link = String.format(link, start);
-            
-            //START SUB-TASK
-            task.report(Tag.INFO, false, SEQUENCE_START_LOG_MASK, link, start, end); //TODO: start -> end too big
+            final int size = end - start;
+            if(size > sequenceMaxLenght){
+                journal.report(Level.WARNING, "Sequence is to big [%,d values]", size);
+                journal.increaseProgress();
+                continue;
+            }
+
+            //SUB-TASK
+            journal.report(Level.INFO, false, SEQUENCE_START_LOG_MASK, link, start, end);
             int downloaded = 0;
             try {
-                currentSubtask = new SequentialTask(link, end);
-                currentSubtask.excludeNumbers(values); //already have similar to found by google
-                currentSubtask.setDestination(task.getDestination());
-                currentSubtask.setSafeThreshold(values.get(values.size()-1));
-                currentSubtask.run();
-                downloaded = currentSubtask.getSuccesses();
-                task.addSuccesses(downloaded);
+                var subtask = new SequenceTask(link, end);
+                subtask.silent(true);
+                subtask.excludeNumbers(values); //already have similar to found by google
+                subtask.setDestination(subfolder);
+                subtask.setSafeThreshold(values.last());
+                subtask.run();
+                downloaded = subtask.getSuccesses();
+                journal.addSuccesses(downloaded);
+                if(downloaded == size) more.add(link); //fully successful
             } catch (BoundsException | IOException ex) {
-                Logger.log.print(Level.INFO, "failed starting subtask", ex);
+                journal.report(Level.ERROR, false, "failed starting sequence [%s]", entry.getKey());
             }
-            task.report(Tag.INFO, SEQUENCE_TOTAL_LOG, downloaded);
+            journal.report(Level.INFO, SEQUENCE_TOTAL_LOG, downloaded);
+            journal.increaseProgress();
+            }catch(Exception ex){
+                Logger.log.print(Level.ERROR, String.format("%d:%d", values.first(), values.last()), ex);
+                journal.increaseProgress();
+            }
+        }
+        
+        if(!more.isEmpty());{
+            journal.reportTitle("ATTENTION");
+            journal.report(Level.INFO, false, "%s may have more values to download:", (more.size()>1? "These links":"This link"));
+            more.forEach(link -> {
+                System.out.println("link: ["+link+"]");
+                journal.report(Level.INFO, false, link);  
+            });
         }
     }
 
-    @Override
-    public void interrupt() {
-        if(currentSubtask != null) currentSubtask.interrupt();
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
+    public void setMinDimension(int d) {
+        this.minDimension = d;
     }
 
-    public void setMinDimension(int minDimension) {
-        this.minDimension = minDimension;
+    public void setLowerMargin(int amount) {
+        this.lowerMargin = amount;
     }
 
-    public void setLowerMargin(int lowerMargin) {
-        this.lowerMargin = lowerMargin;
+    public void setUpperMargin(int amount) {
+        this.upperMargin = amount;
     }
 
-    public void setUpperMargin(int upperMargin) {
-        this.upperMargin = upperMargin;
+    public void setSequenceLimit(int amount) {
+        this.sequenceMaxLenght = amount;
     }
+    // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     @Override
     public int getPriority() {
         return PRIORITY;
     }
+    // </editor-fold>
 
-    @Override
-    public String getDestination() {
-        return destination;
-    }
-    
 }

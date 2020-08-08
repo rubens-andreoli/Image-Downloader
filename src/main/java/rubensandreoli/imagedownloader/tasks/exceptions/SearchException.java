@@ -14,24 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package rubensandreoli.imagedownloader.tasks;
+package rubensandreoli.imagedownloader.tasks.exceptions;
 
-import java.util.List;
-import rubensandreoli.imagedownloader.tasks.support.Downloader;
-import rubensandreoli.imagedownloader.tasks.support.ImageInfo;
-import rubensandreoli.imagedownloader.tasks.support.TaskJournal;
+public class SearchException extends Exception{
+    private static final long serialVersionUID = 1L;
 
-public interface GoogleSubtask extends Comparable<GoogleSubtask>{
-    
-    int getPriority();
-
-    void preProcessing(String destination);
-    void processing(TaskJournal journal, Downloader downloader, ImageInfo source, List<ImageInfo> similars);
-    void postProcessing(TaskJournal journal, Downloader downloader);
-    
-    @Override
-    default int compareTo(GoogleSubtask gs) {
-        return Integer.compare(this.getPriority(), gs.getPriority());
+    public SearchException(Throwable ex) {
+        super(ex);
     }
     
 }

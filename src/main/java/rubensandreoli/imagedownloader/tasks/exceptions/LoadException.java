@@ -14,17 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package rubensandreoli.imagedownloader.gui;
+package rubensandreoli.imagedownloader.tasks.exceptions;
 
-import rubensandreoli.imagedownloader.tasks.Task;
+public class LoadException extends Exception {
+    private static final long serialVersionUID = 1L;
 
-/**
- * This interface should be implemented to listen 
- when a BasicTask is created by a TaskPanel.
- * 
- * @author Rubens A. Andreoli Jr.
- */
-@FunctionalInterface
-public interface TaskPanelListener {
-    void taskCreated(String type, Task task, String description);  
+    public LoadException(Throwable ex) {
+        super(ex);
+    }
+
 }

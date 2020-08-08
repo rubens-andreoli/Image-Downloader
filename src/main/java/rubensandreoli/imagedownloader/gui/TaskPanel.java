@@ -17,8 +17,6 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.Dimension;
-import java.util.ArrayList;
-import rubensandreoli.commons.others.Callback;
 import rubensandreoli.imagedownloader.tasks.Task;
 
 /**
@@ -52,7 +50,7 @@ public abstract class TaskPanel<T extends Task> extends javax.swing.JPanel {
     
     protected boolean notify(T task, String description, Object...args){
         if(listener == null) return false;
-        listener.taskCreated(this, task, String.format(description, args));
+        listener.taskCreated(title, task, String.format(description, args));
         return true;
     }
     

@@ -17,12 +17,12 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.commons.exceptions.checked.BoundsException;
-import rubensandreoli.imagedownloader.tasks.SequentialTask;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import javax.swing.JOptionPane;
 import rubensandreoli.commons.others.Configuration;
+import rubensandreoli.imagedownloader.tasks.SequenceTask;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
 
 /** 
  * References:
@@ -49,8 +49,8 @@ public class SequencePanel extends DownloadTaskPanel {
     private static final int FAIL_THRESHOLD;
     private static final int MIN_FILESIZE;
     static{
-        FAIL_THRESHOLD = Configuration.values.get("sequencial:fails_threshold", SequentialTask.DEFAULT_FAIL_THRESHOLD, 0);
-        MIN_FILESIZE = Configuration.values.get("sequencial:filesize_min", SequentialTask.DEFAULT_MIN_FILESIZE, 0);
+        FAIL_THRESHOLD = Configuration.values.get("sequencial:fails_threshold", SequenceTask.DEFAULT_FAIL_THRESHOLD, 0);
+        MIN_FILESIZE = Configuration.values.get("sequencial:filesize_min", SequenceTask.DEFAULT_MIN_FILESIZE, 0);
     }
     // </editor-fold>
     
@@ -132,7 +132,7 @@ public class SequencePanel extends DownloadTaskPanel {
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
         try {
-            final SequentialTask task = new SequentialTask(txfUrl.getText(), txfNumber.getInt());
+            final SequenceTask task = new SequenceTask(txfUrl.getText().trim(), txfNumber.getInt());
             
             try {
                 task.setDestination(txfDest.getText());

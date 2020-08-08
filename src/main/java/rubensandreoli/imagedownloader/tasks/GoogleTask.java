@@ -16,9 +16,6 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.imagedownloader.support.ProgressLog;
-import rubensandreoli.commons.exceptions.checked.BoundsException;
-import rubensandreoli.commons.utils.FileUtils;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -27,7 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
+import rubensandreoli.commons.others.Level;
+import rubensandreoli.commons.utils.FileUtils;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
+import rubensandreoli.imagedownloader.tasks.exceptions.LoadException;
+import rubensandreoli.imagedownloader.tasks.exceptions.SearchException;
+import rubensandreoli.imagedownloader.tasks.exceptions.UploadException;
+import rubensandreoli.imagedownloader.tasks.support.Searcher;
 
 /** 
  * References:
@@ -36,6 +39,8 @@ import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
  * https://stackoverflow.com/questions/12107049/how-can-i-make-a-copy-of-a-bufferedreader
  * https://stackoverflow.com/questions/3850074/regex-until-but-not-including
  * https://stackoverflow.com/questions/38581427/why-non-static-final-member-variables-are-not-required-to-follow-the-constant-na/38581517
+ * 
+ * @author Rubens A. Andreoli Jr.
  */
 public class GoogleTask extends DownloadTask{
 
@@ -49,31 +54,30 @@ public class GoogleTask extends DownloadTask{
     private static final String IMAGE_NUMBER_LOG_MASK = "[%d]"; //index
     private static final String LOADING_IMAGE_LOG_MASK = "Loading [%s]"; //path
     private static final String NO_SIMILAR_LOG = "No similar images were found";
-    private static final String FAILED_UPLOADING_LOG= "Failed connecting/uploading image";
+    private static final String FAILED_UPLOADING_LOG = "Failed connecting/uploading image";
     private static final String FAILED_READING_FILE_LOG = "Failed reading file";
-    private static final String UNEXPECTED_LOG_MASK = "Unexpected exception [%s]"; //exception message
     // </editor-fold>
 
-    private final String sourceFolder;
-    private final Searcher searcher;
+    private final Path source;
     private final List<Path> images;
+    private final Searcher searcher;
     private int startIndex = 0;
-    private ProgressLog currentLog;
-    private Set<GoogleSubtask> subtasks = new TreeSet<>();
-    private GoogleSubtask currentSubtask;
+    private final Set<GoogleSubtask> subtasks = new TreeSet<>();
 
-    public GoogleTask(String source, Searcher searcher) throws IOException{
-        final Path path = getFolderPath(source);
-        this.searcher = searcher;
+    public GoogleTask(String source, String linkText) throws IOException{
+        final Path path = getWritableFolder(source).toPath();
         try(DirectoryStream<Path> contents = Files.newDirectoryStream(path, FileUtils.IMAGES_GLOB)){
             images = new ArrayList<>();
             for (Path file : contents) {
                 images.add(file);
             }
             if(images.isEmpty()) throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, source));
-            sourceFolder = source;
+            this.source = path;
         }
+        this.searcher = new Searcher(linkText);
         
+        //----------SUPER----------//
+        downloader.setSleep(false);
         setFailThreshold(DEFAULT_FAIL_THRESHOLD);
         setMinFilesize(DEFAULT_MIN_FILESIZE);
     }
@@ -81,56 +85,45 @@ public class GoogleTask extends DownloadTask{
     @Override
     protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
-        setWorkload(getImageCount()-startIndex);
+        monitor.setWorkload(getImageCount()-startIndex);
         
+        //----------SUBTASKS PRE-PROCESSING----------//
+        subtasks.forEach(subtask -> subtask.preProcessing(getDestination()));
+
         for (int i = startIndex; i < images.size(); i++) {
             if(interrupted() || failed()) break; //INTERRUPT EXIT POINT
-            Path image = images.get(i);
-            currentLog = new ProgressLog(getProgress(), getWorkload());
-            currentLog.appendLine(IMAGE_NUMBER_LOG_MASK, i);
-            currentLog.appendLine(Tag.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
-            
+            final Path image = images.get(i);
+            final var log = monitor.startNewLog(false)
+                    .appendLine(IMAGE_NUMBER_LOG_MASK, i)
+                    .appendLine(Level.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
+
             try {
-                final var search = searcher.getSearch(image);
-                try{
-                    search.request();
-                    if(search.search() > 0) {
-                        //SUBTASKS PROCESSING
-                        subtasks.forEach(subtask -> {
-                            currentSubtask = subtask;
-                            subtask.processing(this, search.getSourceInfo(), search.getSimilarsInfo());
-                        });
-                    } else {
-                        currentLog.appendLine(Tag.WARNING, NO_SIMILAR_LOG);
-                    }
-                    resetFails();
-                    if(search.getDuration() < getMinCooldown()) sleepRandom();
-                }catch(IOException ex){
-                    currentLog.appendLine(Tag.ERROR, FAILED_UPLOADING_LOG);
-                    increaseFails();
+                final var result = searcher.search(image);
+                if(result.isEmpty()){
+                    log.appendLine(Level.WARNING, NO_SIMILAR_LOG);
+                }else{
+                    
+                    //----------SUBTASKS PROCESSING----------//
+                    subtasks.forEach(subtask -> subtask.processing(monitor, downloader, result.source, result.images));
+                    
                 }
-            } catch (IOException ex) {
-                currentLog.appendLine(Tag.ERROR, FAILED_READING_FILE_LOG);
-            } catch (Exception ex) {
-                currentLog.appendLine(Tag.CRITICAL, UNEXPECTED_LOG_MASK, ex.getMessage());
+                monitor.resetFails();
+            } catch (LoadException ex) {
+                log.appendLine(Level.ERROR, FAILED_READING_FILE_LOG);
+            } catch (UploadException | SearchException ex) {
+                monitor.increaseFails();
+                log.appendLine(Level.ERROR, FAILED_UPLOADING_LOG);
             }
-            reportLog(currentLog);
-            increaseProgress();
+            monitor.reportCurrentLog();
+            monitor.increaseProgress();
         }
-        //SUBTASKS POST-PROCESSING
-        subtasks.forEach(subtask -> {
-            currentSubtask = subtask;
-            subtask.postProcessing(this);
-        });
+        
+        //----------SUBTASKS POST-PROCESSING----------//
+        subtasks.forEach(subtask -> subtask.postProcessing(monitor, downloader));
+        
     }
 
-    @Override
-    public void interrupt() {
-        super.interrupt();
-        subtasks.forEach(t -> t.interrupt());
-    }
-
-    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">       
+    // <editor-fold defaultstate="collapsed" desc=" SETTERS ">
     public void setStartIndex(int startIndex) throws BoundsException {
         if(startIndex < 0 || startIndex>images.size()-1){
             throw new BoundsException(String.format(INVALID_BOUNDS_MSG_MASK, images.size()));
@@ -139,36 +132,28 @@ public class GoogleTask extends DownloadTask{
     }
     
     public boolean addSubtask(GoogleSubtask subtask){
-        if(getStatus() != Status.WAITING) return false;
+        if(getStatus() != State.WAITING) return false;
         return subtasks.add(subtask);
     }
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public int getImageCount(){
-        return images==null? 0 : images.size()-1; //FIX: why -1?
+        return images==null? 0 : images.size()-1; //TODO: why -1?
     }
 
     public String getSource() {
-        return sourceFolder;
+        return source.toString();
     }
 
     public int getStartIndex() {
         return startIndex;
     }
-     
-    public ProgressLog getCurrentLog() {
-        return currentLog;
-    }
-    
-    @Override
-    public String getDestination() {
-        if(currentSubtask != null) {
-            return currentSubtask.getDestination();
-        }
-        return super.getDestination();
-    }
     // </editor-fold>
 
+    @Override
+    public void downloadStateChanged(Level level, String description) {
+        monitor.getCurrentLog().appendLine(level, description);
+    }
 
 }

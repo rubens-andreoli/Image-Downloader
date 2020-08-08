@@ -18,7 +18,7 @@ package rubensandreoli.imagedownloader.gui;
 
 import rubensandreoli.commons.others.Configuration;
 import rubensandreoli.imagedownloader.tasks.DownloadTask;
-import rubensandreoli.imagedownloader.tasks.Task;
+import rubensandreoli.imagedownloader.tasks.support.Downloader;
 
 public abstract class DownloadTaskPanel extends TaskPanel<DownloadTask>{
     private static final long serialVersionUID = 1L;
@@ -29,10 +29,10 @@ public abstract class DownloadTaskPanel extends TaskPanel<DownloadTask>{
     public static final int MIN_COOLDOWN;
     public static final int MAX_COOLDOWN;
     static{
-        CONNECTION_TIMEOUT = Configuration.values.get("connection_timeout", DownloadTask.DEFAULT_CONNECTION_TIMEOUT, 500);
-        READ_TIMEOUT = Configuration.values.get("read_timout",  DownloadTask.DEFAULT_READ_TIMEOUT, 1000);
-        MIN_COOLDOWN = Configuration.values.get("connection_cooldown_min", DownloadTask.DEFAULT_COOLDOWN, 0);
-        MAX_COOLDOWN = Configuration.values.get("connection_cooldown_max", MIN_COOLDOWN*2, MIN_COOLDOWN);
+        CONNECTION_TIMEOUT = Configuration.values.get("connection_timeout", Downloader.DEFAULT_CONNECTION_TIMEOUT, 500);
+        READ_TIMEOUT = Configuration.values.get("read_timout",  Downloader.DEFAULT_READ_TIMEOUT, 1000);
+        MIN_COOLDOWN = Configuration.values.get("connection_cooldown_min", Downloader.DEFAULT_MIN_COOLDOWN, 0);
+        MAX_COOLDOWN = Configuration.values.get("connection_cooldown_max", Downloader.DEFAULT_MAX_COOLDOWN, MIN_COOLDOWN);
     }
     // </editor-fold>
     

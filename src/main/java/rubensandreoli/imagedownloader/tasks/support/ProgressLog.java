@@ -1,29 +1,31 @@
-package rubensandreoli.imagedownloader.support;
+package rubensandreoli.imagedownloader.tasks.support;
 
 import java.util.IllegalFormatException;
+import rubensandreoli.commons.others.Level;
 
 /** 
  * References:
  * https://howtodoinjava.com/java/string/4-ways-to-split-tokenize-strings-in-java/
+ * 
+ * @author Rubens A. Andreoli Jr.
  */
 public class ProgressLog {
     
-    public enum Tag{INFO, WARNING, ERROR, CRITICAL}
-    
+    // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     public static final String LEVEL_DELIMITER = ": ";
+    // </editor-fold>
 
     private final int number;
     private final int workload;
-    private final StringBuilder log;
+    private final StringBuilder log = new StringBuilder();
 
-    public ProgressLog(final int number, final int workload){
+    public ProgressLog(int number, int workload){
         this.number = number;
         this.workload = workload;
-        log = new StringBuilder();
     }
     
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
-    public void append(String message, Object...args){
+    public ProgressLog append(String message, Object...args){
         if(args.length != 0){
             try{
                 message = String.format(message, args);
@@ -32,21 +34,23 @@ public class ProgressLog {
             }
         }
         log.append(message);
+        return this;
     }
     
-    public void append(Tag level, String message, Object...args){
+    public ProgressLog append(Level level, String message, Object...args){
         log.append(level).append(LEVEL_DELIMITER);
-        append(message, args);
+        return append(message, args);
     }
     
-    public void appendLine(String message, Object...args){
+    public ProgressLog appendLine(String message, Object...args){
         append(message, args);
         log.append("\r\n");
+        return this;
     }
  
-    public void appendLine(Tag level, String message, Object...args){
+    public ProgressLog appendLine(Level level, String message, Object...args){
         log.append(level).append(LEVEL_DELIMITER);
-        appendLine(message, args);
+        return appendLine(message, args);
     }
     // </editor-fold>
     
@@ -64,4 +68,9 @@ public class ProgressLog {
     }
     // </editor-fold>
 
+    @Override
+    public String toString() {
+        return getMessages();
+    }
+ 
 }

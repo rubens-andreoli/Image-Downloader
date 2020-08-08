@@ -16,8 +16,6 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.commons.exceptions.checked.BoundsException;
-import rubensandreoli.commons.utils.FileUtils;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,7 +24,10 @@ import java.util.Set;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import rubensandreoli.imagedownloader.support.ProgressLog.Tag;
+import rubensandreoli.commons.others.Level;
+import rubensandreoli.commons.utils.FileUtils;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
+import rubensandreoli.imagedownloader.tasks.support.HttpUtils;
 
 public class ScraperTask extends DownloadTask{
     
@@ -44,7 +45,7 @@ public class ScraperTask extends DownloadTask{
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc=" PAGE "> 
-    public static class Page{
+    public static class Webpage{
 
         public final String domain;
         public final String url;
@@ -52,7 +53,7 @@ public class ScraperTask extends DownloadTask{
         public final Elements imgTags;
         public final Elements aTags;
 
-        public Page(String domain, String url, Document document) {
+        public Webpage(String domain, String url, Document document) {
             this.domain = domain;
             this.url = url;
             this.document = document;
@@ -121,13 +122,13 @@ public class ScraperTask extends DownloadTask{
         processed.add(url);
         try {
             //CONNECTION
-            final Document d = request(url);
-            report(Tag.INFO, false, CONNECTION_LOG_MASK, url);
-            Page page = new Page(domain, url, d);
+            final Document d = HttpUtils.getDocument(url);
+            monitor.report(Level.INFO, false, CONNECTION_LOG_MASK, url);
+            Webpage page = new Webpage(domain, url, d);
             
             //DOWNLOAD
             final Set<String> images = page.parseImages();
-            addWorkload(images.size());
+            monitor.addWorkload(images.size());
             downloadImages(images);
             if(interrupted()) return; //INTERRUPT EXIT POINT
 
@@ -135,11 +136,11 @@ public class ScraperTask extends DownloadTask{
             if(depth > 0){
                 depth--;
                 final Set<String> links = page.parseLinks();
-                addWorkload(links.size());
+                monitor.addWorkload(links.size());
                 links.forEach(this::processPage);
             }
         } catch (IOException ex) {
-            report(Tag.ERROR, CONNECTION_FAILED_LOG_MASK, url);
+            monitor.report(Level.ERROR, CONNECTION_FAILED_LOG_MASK, url);
         }
     }
 
@@ -152,7 +153,9 @@ public class ScraperTask extends DownloadTask{
             final String extension = FileUtils.getExtension(url, ".jpg");
             
             //DOWNLOAD
-            if(download(url, filename, extension) != null) increaseSuccesses();
+            if(downloader.download(url, getDestination(), filename, extension) != null){
+                monitor.increaseSuccesses();
+            }
         }
     }
 
@@ -173,4 +176,9 @@ public class ScraperTask extends DownloadTask{
     }
     // </editor-fold>
 
+    @Override
+    public void downloadStateChanged(Level level, String description) {
+        monitor.report(level, description);
+    }
+    
 }

@@ -16,23 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package rubensandreoli.commons.utils;
+package rubensandreoli.commons.others;
 
-import rubensandreoli.commons.exceptions.CastException;
-
-public class BooleanUtils {
-    
-    private BooleanUtils(){};
-    
-    public static boolean parseBoolean(String s) throws CastException {
-        switch(s.toLowerCase()){
-            case "true":
-                return true;
-            case "false":
-                return false;
-            default:
-                throw new CastException();
-        }
-    }
-    
+public enum Level {
+    INFO, WARNING, ERROR, CRITICAL, SEVERE
 }

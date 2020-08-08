@@ -9,6 +9,7 @@ import rubensandreoli.imagedownloader.gui.SequencePanel;
 public class Launcher {
     
     public static void main(String[] args) {
+        
         //<editor-fold defaultstate="collapsed" desc=" Look and Feel ">
 	try {
 	    for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {

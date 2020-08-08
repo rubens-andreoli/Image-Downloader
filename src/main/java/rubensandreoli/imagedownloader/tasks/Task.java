@@ -16,26 +16,16 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
-import rubensandreoli.imagedownloader.support.ProgressListener;
+import rubensandreoli.imagedownloader.tasks.support.ProgressListener;
 
-/**
- * Tasks can only be performed once. A task progress can be followed
- * with a progress listener or its 'getters'. The task status can also
- * be used to monitor a task.
- * It's recommend clearing implemented task fields when done to free unused memory.
- * 
- * @author Rubens A. Andreoli Jr.
- */
 public interface Task {
     
-    public enum Status {WAITING, RUNNING, COMPLETED, INTERRUPTED, FAILED}
+    public enum State {WAITING, RUNNING, COMPLETED, INTERRUPTED, FAILED}
     
     boolean perform();
-    void interrupt();
+    boolean interrupt();
     
     void setProgressListener(ProgressListener listener);
-    Status getStatus();
-    int getProgress();
-    int getWorkload();
-    
+    State getStatus();
+      
 }

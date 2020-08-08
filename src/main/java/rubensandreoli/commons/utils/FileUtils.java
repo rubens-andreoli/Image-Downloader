@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301  USA
+ */
 package rubensandreoli.commons.utils;
 
 import java.awt.Image;
@@ -29,8 +47,6 @@ import rubensandreoli.commons.others.CachedFile;
  * https://stackoverflow.com/questions/27476845/what-is-the-difference-between-a-null-array-and-an-empty-array
  */
 public class FileUtils {
-    
-    //TODO: "Accept", "image/webp,image/apng,*/*"
     
     public static final String IMAGES_REGEX = ".*\\.jpg|jpeg|bmp|png|gif";
     public static final String IMAGES_GLOB = "*.{jpg,jpeg,bmp,png,gif}";
@@ -71,7 +87,7 @@ public class FileUtils {
     }
     
     public static String getParent(String pathname){
-        pathname = pathname.replaceAll("[/\\\\]", SEPARATOR);
+        pathname = pathname.replaceAll("[/\\\\]", SEPARATOR).trim();
         final int sepIndex = pathname.lastIndexOf(SEPARATOR);
         if(sepIndex > 0) return pathname.substring(0, sepIndex);
         return pathname;
@@ -83,7 +99,7 @@ public class FileUtils {
 //        return tokens[0];
 //    }
 
-    public static String getNode(String pathname, int level) { //FIX: //something -> x/x/something x are not a nodes
+    public static String getNode(String pathname, int level) { //FIX: '//...' -> 'x/x/...' 'x' are not nodes
         pathname = pathname.replaceAll("[/\\\\]", SEPARATOR);
         final String[] tokens = pathname.split(SEPARATOR);
         if(tokens.length >= level) return tokens[tokens.length-level];
@@ -185,7 +201,7 @@ public class FileUtils {
         pathname = normalize(pathname);
         if((maxLenght < MASKED_FILENAME_MIN_LENGTH) || (pathname.length() <= maxLenght)) return pathname;
 
-        String root = Path.of(pathname).getRoot().toString(); //TODO: implement getRoot();
+        String root = Path.of(pathname).getRoot().toString(); //TODO: implement FileUtils.getRoot(String pathname);
         root = normalize(root);
         
         String formated = pathname.substring(pathname.length()-maxLenght, pathname.length());
@@ -230,10 +246,10 @@ public class FileUtils {
         if(file.getAbsolutePath().length() > FILEPATH_MAX_LENGTH){
             int toRemove = file.getAbsolutePath().length() - FILEPATH_MAX_LENGTH;
             if(filename.length() > toRemove){
-                filename = filename.substring(0, filename.length()-toRemove); //TODO: removing 1 more than needed?
+                filename = filename.substring(0, filename.length()-toRemove); //TODO: check if removing 1 more than needed?
                 file = new File(String.format(FILENAME_MASK, folder, filename, extension));
             }else{
-                return null;//TODO: throw exception?
+                return null;
             }
         }
 
@@ -350,7 +366,7 @@ public class FileUtils {
         return removed;
     }
     
-    public static String createSubfolder(String parent, String child) throws IOException{
+    public static File createSubfolder(String parent, String child) throws IOException{
         final String folder = String.format(SUBFOLDER_MASK, normalize(parent), child);
         final File subfolder = new File(folder);
         if(!subfolder.isDirectory()){
@@ -358,7 +374,7 @@ public class FileUtils {
                 throw new IOException("ERROR: failed creating folder "+folder);
             }
         }
-        return folder;
+        return subfolder;
     }
     // </editor-fold>
       

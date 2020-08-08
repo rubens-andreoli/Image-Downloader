@@ -16,22 +16,34 @@
  */
 package rubensandreoli.imagedownloader.tasks;
 
+import java.io.IOException;
 import java.util.List;
+import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.imagedownloader.tasks.support.Downloader;
 import rubensandreoli.imagedownloader.tasks.support.ImageInfo;
 import rubensandreoli.imagedownloader.tasks.support.TaskJournal;
 
-public interface GoogleSubtask extends Comparable<GoogleSubtask>{
-    
-    int getPriority();
+public abstract class BasicGoogleSubtask implements GoogleSubtask{
 
-    void preProcessing(String destination);
-    void processing(TaskJournal journal, Downloader downloader, ImageInfo source, List<ImageInfo> similars);
-    void postProcessing(TaskJournal journal, Downloader downloader);
-    
-    @Override
-    default int compareTo(GoogleSubtask gs) {
-        return Integer.compare(this.getPriority(), gs.getPriority());
+    protected String subfolder;
+
+    public BasicGoogleSubtask(String subfolder) {
+        this.subfolder = subfolder;
     }
+
+    @Override
+    public void preProcessing(String destination) {
+        try {
+            subfolder = FileUtils.createSubfolder(destination, subfolder).getPath();
+        } catch (IOException ex) {
+            subfolder = destination;
+        }
+    }
+
+    @Override
+    public abstract void processing(TaskJournal monitor, Downloader downloader, ImageInfo source, List<ImageInfo> similars);
+
+    @Override
+    public void postProcessing(TaskJournal monitor, Downloader downloader) {}
     
 }

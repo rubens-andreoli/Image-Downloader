@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301  USA
+ */
 package rubensandreoli.commons.others;
 
 import java.io.BufferedInputStream;
@@ -7,7 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import rubensandreoli.commons.exceptions.checked.CastException;
+import rubensandreoli.commons.exceptions.CastException;
 import rubensandreoli.commons.utils.BooleanUtils;
 
 public class Configuration {
@@ -25,7 +43,7 @@ public class Configuration {
         try(var bis = new BufferedInputStream(new FileInputStream(new File(FILENAME)))){
             p.loadFromXML(bis);
         } catch (IOException ex) {
-            Logger.log.print(Logger.Level.WARNING, "failed loading config file", ex);
+            Logger.log.print(Level.WARNING, "failed loading config file", ex);
         }
     }
     
@@ -109,7 +127,7 @@ public class Configuration {
                 p.storeToXML(bos, COMMENT);
                 return true;
             } catch (IOException ex) {
-                Logger.log.print(Logger.Level.WARNING, "failed saving config file", ex);
+                Logger.log.print(Level.WARNING, "failed saving config file", ex);
             }
         }
         return false;

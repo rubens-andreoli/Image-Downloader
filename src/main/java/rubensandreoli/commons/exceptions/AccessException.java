@@ -16,23 +16,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package rubensandreoli.commons.utils;
+package rubensandreoli.commons.exceptions;
 
-import rubensandreoli.commons.exceptions.CastException;
+public class AccessException extends Exception{
+    private static final long serialVersionUID = 1L;
 
-public class BooleanUtils {
-    
-    private BooleanUtils(){};
-    
-    public static boolean parseBoolean(String s) throws CastException {
-        switch(s.toLowerCase()){
-            case "true":
-                return true;
-            case "false":
-                return false;
-            default:
-                throw new CastException();
-        }
+    public AccessException() {}
+
+    public AccessException(String message) {
+        super(message);
     }
+
+    public AccessException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public AccessException(Throwable cause) {
+        super(cause);
+    } 
     
 }

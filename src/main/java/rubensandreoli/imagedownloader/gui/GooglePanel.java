@@ -17,7 +17,7 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.commons.exceptions.checked.BoundsException;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
 import rubensandreoli.imagedownloader.tasks.GoogleTask;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -30,7 +30,7 @@ import rubensandreoli.imagedownloader.tasks.MoreSubtask;
 import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_LOWER_MARGIN;
 import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_MIN_DIMENSION;
 import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_UPPER_MARGIN;
-import rubensandreoli.imagedownloader.tasks.Searcher;
+import rubensandreoli.imagedownloader.tasks.support.Searcher;
 
 /** 
  * References:
@@ -49,6 +49,8 @@ public class GooglePanel extends DownloadTaskPanel {
     private static final int MNEMONIC = KeyEvent.VK_G;
     private static final String DESCRIPTION_MASK = "%s [%d:%d] -> %s\n"; //source, start, end, destination
     
+    private static final String NO_SUBTASK_MSG = "At least one subtask must selected.";
+    private static final String NO_SUBTASK_TITLE = "No Subtasks";
     private static final String INVALID_DESTINATION_TITLE = "Invalid Folder";
     private static final String INVALID_DESTINATION_MSG = "Please verify if the destination folder is valid.\n";
     private static final String INVALID_NUMBER_TITLE = "Invalid Numbering Bounds";
@@ -67,6 +69,7 @@ public class GooglePanel extends DownloadTaskPanel {
     private static final int LOWER_MARGIN;
     private static final int UPPER_MARGIN;
     private static final int MIN_DIMENSION;
+    private static final int SEQUENCE_LIMIT;
     static{
         FAIL_THREASHOLD = Configuration.values.get("google:fail_threashold", GoogleTask.DEFAULT_FAIL_THRESHOLD, 1);
         RESPONSE_LINK_TEXT = Configuration.values.get("google:link_text_marker", Searcher.DEFAULT_LINK_TEXT);
@@ -76,9 +79,10 @@ public class GooglePanel extends DownloadTaskPanel {
         FILESIZE_RATIO = Configuration.values.get("google-large:filesize_ratio", LargerSubtask.DEFAULT_FILESIZE_RATIO, LargerSubtask.MIN_FILESIZE_RATIO);
         
         SUBFOLDER_MORE = Configuration.values.get("google-more:subfolder", "more");
-        LOWER_MARGIN = Configuration.values.get("google-more:lower_margin", DEFAULT_LOWER_MARGIN, 0);
-        UPPER_MARGIN = Configuration.values.get("google-more:upper_margin", DEFAULT_UPPER_MARGIN, 0);
-        MIN_DIMENSION = Configuration.values.get("google-more:min_dimension", DEFAULT_MIN_DIMENSION, 0);
+        LOWER_MARGIN = Configuration.values.get("google-more:lower_margin", MoreSubtask.DEFAULT_LOWER_MARGIN, 0);
+        UPPER_MARGIN = Configuration.values.get("google-more:upper_margin", MoreSubtask.DEFAULT_UPPER_MARGIN, 0);
+        MIN_DIMENSION = Configuration.values.get("google-more:min_dimension", MoreSubtask.DEFAULT_MIN_DIMENSION, 10);
+        SEQUENCE_LIMIT = Configuration.values.get("google-more:sequence_limit", MoreSubtask.DEFAULT_SEQUENCE_MAX_LENGHT, 100);
     }
     // </editor-fold>
 
@@ -94,9 +98,9 @@ public class GooglePanel extends DownloadTaskPanel {
         btnDest = new javax.swing.JButton();
         txfDest = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 60);
         btnSettings = new javax.swing.JPanel();
+        tbtLarger = new javax.swing.JToggleButton();
         tbtSize = new javax.swing.JToggleButton();
         tbtMore = new javax.swing.JToggleButton();
-        tbtLarger = new javax.swing.JToggleButton();
         btnSource = new javax.swing.JButton();
         txfSource = new rubensandreoli.commons.swing.PathField(rubensandreoli.commons.swing.PathField.DIRECTORIES_ONLY, 45);
         txfStart = new rubensandreoli.commons.swing.NumberField();
@@ -109,15 +113,29 @@ public class GooglePanel extends DownloadTaskPanel {
             }
         });
 
-        tbtSize.setIcon(FileUtils.loadIcon("save.png", 22));
-        tbtSize.setSelected(true);
-        tbtSize.setToolTipText("<html>\nIf checked, images with bigger dimensions but<br>\n<b>smaller filesize</b> will be <b>saved</b> in a <b>subfolder</b>,<br>\nand another try is performed.<br\n<i>Can generate a lot of copies of the same image</i>\n</html>");
-
-        tbtMore.setIcon(FileUtils.loadIcon("plus.png", 22));
-        tbtMore.setSelected(true);
+        txfDest.setToolTipText("<html>\n<i>If left empty, the destination will be the source folder</i>\n</html>");
 
         tbtLarger.setIcon(FileUtils.loadIcon("expand.png", 22));
         tbtLarger.setSelected(true);
+        tbtLarger.setToolTipText("<html>\nIf checked, a search for a <b>dimensionally larger copy</b> of each<br>\nsource image, will be performed. If found, it will be <b>saved</b><br>\nin a <b>subfolder</b> of the destination.<br>\n<i>Subfolder name can be set in the configurations file</i>\n</html>");
+        tbtLarger.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                tbtLargerItemStateChanged(evt);
+            }
+        });
+
+        tbtSize.setIcon(FileUtils.loadIcon("save.png", 22));
+        tbtSize.setSelected(true);
+        tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is<br>\nperformed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n<i>Size ratio can be set in the configurations file</i>\n</html>");
+        tbtSize.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                tbtSizeItemStateChanged(evt);
+            }
+        });
+
+        tbtMore.setIcon(FileUtils.loadIcon("plus.png", 22));
+        tbtMore.setSelected(true);
+        tbtMore.setToolTipText("<html>\nIf checked, sequential images, <b>potentially similar</b>, to the ones<br>\nfound in the reverse search, will be <b>saved</b> in a <b>subfolder</b>.<br>\n<i>Can generate unrelated images</i><br>\n<i>Minimal dimension and subfolder name can be set in the configurations file</i>\n</html>");
 
         javax.swing.GroupLayout btnSettingsLayout = new javax.swing.GroupLayout(btnSettings);
         btnSettings.setLayout(btnSettingsLayout);
@@ -127,19 +145,20 @@ public class GooglePanel extends DownloadTaskPanel {
                 .addGap(2, 2, 2)
                 .addComponent(tbtLarger, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(tbtMore, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(tbtSize, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
+                .addComponent(tbtMore, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0))
         );
         btnSettingsLayout.setVerticalGroup(
             btnSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(btnSettingsLayout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addGroup(btnSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tbtLarger, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tbtMore, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tbtSize, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(btnSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(tbtSize, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(btnSettingsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(tbtLarger, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(tbtMore, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))))
         );
 
         btnSource.setText("Source");
@@ -150,7 +169,7 @@ public class GooglePanel extends DownloadTaskPanel {
         });
 
         txfStart.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfStart.setToolTipText("<html>\n<b>Depth of the sub-links</b> that the scraper will crawl to.<br>\n<i>Depth limit can be set in the configurations file</i>\n</html>");
+        txfStart.setToolTipText("<html>\n<b>Start</b> image <b>position</b> within the source folder<br>\n<i>Images are sorted alphabetically</i>\n</html>");
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -209,17 +228,21 @@ public class GooglePanel extends DownloadTaskPanel {
     }//GEN-LAST:event_btnDestActionPerformed
 
     private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
-        if(!tbtLarger.isSelected() && !tbtMore.isSelected()) return; //TODO: warning
+        if(!tbtLarger.isSelected() && !tbtMore.isSelected()) {
+            JOptionPane.showMessageDialog(this,
+                    NO_SUBTASK_MSG,
+                    NO_SUBTASK_TITLE,
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
         
         final String source = txfSource.getText();
         String destination = txfDest.getText();
-        if(destination.isBlank()){
-            destination = source;
-            txfDest.setText(destination);
-        }
+        if(destination.isBlank()) destination = source;
         
         try {
-            final GoogleTask task = new GoogleTask(source, new Searcher(RESPONSE_LINK_TEXT));
+            final GoogleTask task = new GoogleTask(source, RESPONSE_LINK_TEXT);
             
             try {
                 task.setDestination(destination);
@@ -246,15 +269,17 @@ public class GooglePanel extends DownloadTaskPanel {
             }
             
             if(tbtLarger.isSelected()){
-                final LargerSubtask larger = new LargerSubtask(destination, SUBFOLDER_LARGER);
+                final LargerSubtask larger = new LargerSubtask(SUBFOLDER_LARGER);
                 larger.setRetrySmall(tbtSize.isSelected());
                 larger.setFilesizeRatio(FILESIZE_RATIO);
                 task.addSubtask(larger);
             }
             if(tbtMore.isSelected()){
-                MoreSubtask more = new MoreSubtask(destination, SUBFOLDER_MORE); 
+                final MoreSubtask more = new MoreSubtask(SUBFOLDER_MORE); 
                 more.setLowerMargin(LOWER_MARGIN);
                 more.setUpperMargin(UPPER_MARGIN);
+                more.setMinDimension(MIN_DIMENSION);
+                more.setSequenceLimit(SEQUENCE_LIMIT);
                 task.addSubtask(more);
             }
             
@@ -277,6 +302,14 @@ public class GooglePanel extends DownloadTaskPanel {
             );
         } 
     }//GEN-LAST:event_btnAddActionPerformed
+
+    private void tbtLargerItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_tbtLargerItemStateChanged
+        tbtSize.setSelected(tbtLarger.isSelected());
+    }//GEN-LAST:event_tbtLargerItemStateChanged
+
+    private void tbtSizeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_tbtSizeItemStateChanged
+        if(!tbtLarger.isSelected() && tbtSize.isSelected()) tbtLarger.setSelected(true);
+    }//GEN-LAST:event_tbtSizeItemStateChanged
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;

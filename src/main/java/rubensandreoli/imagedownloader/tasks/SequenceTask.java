@@ -20,9 +20,11 @@ import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import rubensandreoli.commons.exceptions.checked.BoundsException;
+import rubensandreoli.commons.others.CachedFile;
+import rubensandreoli.commons.others.Level;
 import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.commons.utils.IntegerUtils;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
 
 /**
  * References:
@@ -32,18 +34,21 @@ import rubensandreoli.commons.utils.IntegerUtils;
  * 
  * @author Rubens A. Andreoli Jr.
  */
-public class SequentialTask extends DownloadTask{
+public class SequenceTask extends DownloadTask{
 
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     public static final int DEFAULT_FAIL_THRESHOLD = 10;
     public static final int DEFAULT_MIN_FILESIZE = 25600; //bytes
+    private static final int REPEAT_LIMIT = 2; //+1 files same size
     
     private static final String URL_MASK = "%s/%s%s"; //path, name, extension
-    private static final String URL_REGEX = "^(https*:\\/\\/)(.*\\/)([^.]+.)([a-z]{3,})$"; //file url
+    private static final String URL_REGEX = "^(https*:\\/\\/)(.*\\/)(.{1,})(\\.[a-z]{3,})$"; //file url
     private static final String LOWER_MARKER = "{";
     private static final String UPPER_MARKER = "}";
     private static final String MARKER_REGEX = "(\\"+LOWER_MARKER+"\\d+\\"+UPPER_MARKER+")";
     private static final String URL_MARKER_REGEX = "^[^\\"+LOWER_MARKER+"\\"+UPPER_MARKER+"]+"+MARKER_REGEX+"[^\\"+LOWER_MARKER+"\\"+UPPER_MARKER+"\\/]+$"; //only one marker
+    
+    private static final String REAPAT_LOG = "Downloading repeated files. Sequence was interrupted!";
     
     private static final String INVALID_URL_MSG = "Invalid image URL.";
     private static final String MISSING_MARKERS_MSG = "Image URL missing markers "+LOWER_MARKER+"'initial_value'"+UPPER_MARKER+".";
@@ -51,13 +56,13 @@ public class SequentialTask extends DownloadTask{
     // </editor-fold>
     
     private final String parent;
-    private final String maskedFilename; //with %d where number is supposed to be
+    private final String maskedFilename; //with '%d' where number is supposed to be
     private final String extension; //with dot at start
     private final int lowerBound, upperBound;
-    private Set<Integer> excluding;
-    private int safeThreshold; //start counting fails after
-    
-    public SequentialTask(String url, int upperBound) throws MalformedURLException, BoundsException{
+    private Set<Integer> excluding; //'null' won't exclude any values
+    private int safeThreshold = 0; //start counting fails after; value '0' never safe
+
+    public SequenceTask(String url, int upperBound) throws MalformedURLException, BoundsException{
         if(!url.matches(URL_REGEX)) throw new MalformedURLException(INVALID_URL_MSG);
         if(!url.matches(URL_MARKER_REGEX)) throw new MalformedURLException(MISSING_MARKERS_MSG);
         
@@ -84,8 +89,10 @@ public class SequentialTask extends DownloadTask{
 
     @Override
     protected void run() {
-        setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
+        monitor.setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
         
+        long lastSize = 0;
+        int same = 0;
         for(int i=lowerBound; i <= upperBound; i++){
             //CHECKS
             if(interrupted()) break; //INTERRUPT EXIT POINT
@@ -97,11 +104,24 @@ public class SequentialTask extends DownloadTask{
             final String imageUrl = String.format(URL_MASK, parent, formattedFilename, extension);
             
             //DOWNLOAD
-            if(download(imageUrl, formattedFilename, extension) != null){
-                increaseSuccesses();
-                resetFails(); //successive fails
+            CachedFile file;
+            if((file = downloader.download(imageUrl, getDestination(), formattedFilename, extension)) != null){
+
+                //CHECK IF SAME SIZE
+                if(file.length() == lastSize){
+                    if(++same == REPEAT_LIMIT){
+                        monitor.report(Level.WARNING, REAPAT_LOG);
+                        break;
+                    }
+                }else{
+                    lastSize = file.length();
+                    same = 0;
+                }
+                
+                monitor.increaseSuccesses();
+                monitor.resetFails(); //successive fails
             }else{
-                increaseFails();
+                monitor.increaseFails();
             }
         }
     }
@@ -130,5 +150,10 @@ public class SequentialTask extends DownloadTask{
         return upperBound;
     }
     // </editor-fold>
+
+    @Override
+    public void downloadStateChanged(Level level, String description) {
+        monitor.report(level, description);
+    }
 
 }

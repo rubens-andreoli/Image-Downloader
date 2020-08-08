@@ -1,8 +1,28 @@
+/*
+ * Copyright (C) 2020 Rubens A. Andreoli Jr.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301  USA
+ */
 package rubensandreoli.commons.swing;
 
+import rubensandreoli.commons.utils.SwingUtils;
 import java.awt.Cursor;
 import java.awt.Frame;
 import java.io.IOException;
+import rubensandreoli.commons.others.Level;
 import rubensandreoli.commons.others.Logger;
 import rubensandreoli.commons.utils.FileUtils;
 
@@ -41,7 +61,8 @@ public class AboutDialog extends javax.swing.JDialog {
         txpLicense.setText("<html><body style=\"text-align:justify\">"+GNU_PUBLIC+"</body></html>");
         txpLicense.setCaretPosition(0);
         
-        lblHere.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        SwingUtils.addClickableLink("https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Q5NUAPVCTC5U4&currency_code=USD&source=url", lblHere, true);
+        SwingUtils.addClickableLink("https://github.com/rubens-andreoli", lblLogo, false);
     }
     
     public AboutDialog(Frame parent, String name, String version, String year, String logo) {
@@ -139,11 +160,6 @@ public class AboutDialog extends javax.swing.JDialog {
         });
 
         lblHere.setText("<html> <a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Q5NUAPVCTC5U4&currency_code=USD&source=url\">here...</a></html>");
-        lblHere.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                lblHereMouseClicked(evt);
-            }
-        });
 
         javax.swing.GroupLayout pnlColorLayout = new javax.swing.GroupLayout(pnlColor);
         pnlColor.setLayout(pnlColorLayout);
@@ -203,26 +219,6 @@ public class AboutDialog extends javax.swing.JDialog {
         dispose();
     }//GEN-LAST:event_btnCloseActionPerformed
 
-    private void lblHereMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblHereMouseClicked
-        final String url = "https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=Q5NUAPVCTC5U4&currency_code=USD&source=url";
-        final String os = System.getProperty("os.name").toLowerCase();
-        final Runtime runtime = Runtime.getRuntime();
-        IOException exception = null;
-        
-        if(os.contains("win")){
-            try { runtime.exec("rundll32 url.dll,FileProtocolHandler " + url);
-            } catch (IOException ex) {exception = ex;}
-        }else if(os.contains("mac")){
-            try { runtime.exec("open " + url);
-            } catch (IOException ex) {exception = ex;}
-        }else if(os.contains("nix") || os.contains("nux")){
-            try { runtime.exec("xdg-open " + url);
-            } catch (IOException ex) {exception = ex;}
-        }
-        
-        if(exception != null) Logger.log.print(Logger.Level.WARNING, "failed opening donate link on "+os, exception);
-    }//GEN-LAST:event_lblHereMouseClicked
-
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnClose;
@@ -240,12 +236,12 @@ public class AboutDialog extends javax.swing.JDialog {
     private javax.swing.JTextPane txpAtributions;
     private javax.swing.JTextPane txpLicense;
     // End of variables declaration//GEN-END:variables
-
+    
     @Override
     public void setVisible(boolean b) {
 	if(b){
             if(atributions!=null){
-                //TODO: add or remove panel
+                //TODO: add or remove panel if needed
                 txpAtributions.setText("<html><body>"+atributions.toString()+"</body></html>");
             }
             btnClose.requestFocus();

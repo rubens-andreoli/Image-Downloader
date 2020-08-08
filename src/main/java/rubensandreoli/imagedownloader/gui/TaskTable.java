@@ -16,13 +16,17 @@
  */
 package rubensandreoli.imagedownloader.gui;
 
+import java.awt.Component;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import rubensandreoli.imagedownloader.tasks.Task;
 
 /** 
@@ -137,8 +141,10 @@ public class TaskTable extends javax.swing.JTable {
         
         getColumnModel().getColumn(0).setMinWidth(COLUMNS_WIDTH[0]);
         getColumnModel().getColumn(0).setPreferredWidth(COLUMNS_WIDTH[0]);
+        getColumnModel().getColumn(0).setResizable(false);
         getColumnModel().getColumn(1).setMinWidth(COLUMNS_WIDTH[1]);
         getColumnModel().getColumn(1).setPreferredWidth(COLUMNS_WIDTH[1]);
+        getColumnModel().getColumn(1).setResizable(false);
         getColumnModel().getColumn(2).setPreferredWidth(COLUMNS_WIDTH[2]);
         setRowHeight(ROWS_HEIGHT); 
         
@@ -153,6 +159,7 @@ public class TaskTable extends javax.swing.JTable {
     public void addTask(TaskAdapter taskAdapter){
         tasks.add(taskAdapter);
         final int rows = model.getRowCount();
+        if(!tasks.isEmpty()) setAutoResizeMode(JTable.AUTO_RESIZE_OFF); //after first insert
         model.fireTableRowsInserted(rows, rows);
     }
     
@@ -167,6 +174,7 @@ public class TaskTable extends javax.swing.JTable {
     public void clear(){
        final int oldSize = tasks.size();
        tasks = createList();
+       setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //nedded?
        model.fireTableRowsDeleted(0, oldSize);
     }
 
@@ -192,9 +200,19 @@ public class TaskTable extends javax.swing.JTable {
                         }
                     }
                     refresh();
+                    setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //after clear
                 }
             }
         });
     }
- 
+
+    @Override
+    public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        final Component component = super.prepareRenderer(renderer, row, column);
+        int rendererWidth = component.getPreferredSize().width;
+        final TableColumn tableColumn = getColumnModel().getColumn(column);
+        tableColumn.setPreferredWidth(Math.max(rendererWidth + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
+        return component;
+    }
+
 }

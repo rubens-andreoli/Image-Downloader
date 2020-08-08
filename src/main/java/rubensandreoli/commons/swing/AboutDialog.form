@@ -251,9 +251,6 @@
           <Properties>
             <Property name="text" type="java.lang.String" value="&lt;html&gt; &lt;a href=&quot;https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=Q5NUAPVCTC5U4&amp;currency_code=USD&amp;source=url&quot;&gt;here...&lt;/a&gt;&lt;/html&gt;"/>
           </Properties>
-          <Events>
-            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="lblHereMouseClicked"/>
-          </Events>
         </Component>
       </SubComponents>
     </Container>

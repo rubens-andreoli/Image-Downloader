@@ -1,4 +1,4 @@
-package rubensandreoli.imagedownloader.support;
+package rubensandreoli.imagedownloader.tasks.support;
 
 @FunctionalInterface
 public interface ProgressListener {
