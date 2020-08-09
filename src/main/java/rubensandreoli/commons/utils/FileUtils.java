@@ -391,7 +391,7 @@ public class FileUtils {
         try{
             return new ImageIcon(FileUtils.class.getClassLoader().getResource(url));
         }catch(NullPointerException ex){
-            return null;
+            return new ImageIcon();
         }
     }
     

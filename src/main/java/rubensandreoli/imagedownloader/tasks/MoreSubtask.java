@@ -160,7 +160,7 @@ if (links.isEmpty() || journal.isInterrupted()) return;
             final int end = values.last()+upperMargin;
             String numberMask = "%d";
             if(padding) numberMask = "%0"+maxLenght+"d";
-            String link = String.format(entry.getKey(), numberMask);
+            String link = String.format(entry.getKey(), numberMask); //FIX: exception Conversion = 'L'; Conversion = 'm'
             link = String.format(link, start);
             final int size = end - start;
             if(size > sequenceMaxLenght){
@@ -188,7 +188,7 @@ if (links.isEmpty() || journal.isInterrupted()) return;
             journal.report(Level.INFO, SEQUENCE_TOTAL_LOG, downloaded);
             journal.increaseProgress();
             }catch(Exception ex){
-                Logger.log.print(Level.ERROR, String.format("%d:%d", values.first(), values.last()), ex);
+                Logger.log.print(Level.ERROR, String.format("%s %d:%d", entry.getKey(), values.first(), values.last()), ex);
                 journal.increaseProgress();
             }
         }

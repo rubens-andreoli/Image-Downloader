@@ -70,6 +70,7 @@ public class GooglePanel extends DownloadTaskPanel {
     private static final int UPPER_MARGIN;
     private static final int MIN_DIMENSION;
     private static final int SEQUENCE_LIMIT;
+    private static final double DIMENSION_RATIO;
     static{
         FAIL_THREASHOLD = Configuration.values.get("google:fail_threashold", GoogleTask.DEFAULT_FAIL_THRESHOLD, 1);
         RESPONSE_LINK_TEXT = Configuration.values.get("google:link_text_marker", Searcher.DEFAULT_LINK_TEXT);
@@ -77,6 +78,7 @@ public class GooglePanel extends DownloadTaskPanel {
         
         SUBFOLDER_LARGER = Configuration.values.get("google-large:subfolder_name", "copies");
         FILESIZE_RATIO = Configuration.values.get("google-large:filesize_ratio", LargerSubtask.DEFAULT_FILESIZE_RATIO, LargerSubtask.MIN_FILESIZE_RATIO);
+        DIMENSION_RATIO = Configuration.values.get("google-large:dimension_ratio", LargerSubtask.DEFAULT_DIMENTION_RATIO, LargerSubtask.MIN_DIMENSION_RATIO);
         
         SUBFOLDER_MORE = Configuration.values.get("google-more:subfolder", "more");
         LOWER_MARGIN = Configuration.values.get("google-more:lower_margin", MoreSubtask.DEFAULT_LOWER_MARGIN, 0);
@@ -115,7 +117,7 @@ public class GooglePanel extends DownloadTaskPanel {
 
         txfDest.setToolTipText("<html>\n<i>If left empty, the destination will be the source folder</i>\n</html>");
 
-        tbtLarger.setIcon(FileUtils.loadIcon("expand.png", 22));
+        tbtLarger.setIcon(FileUtils.loadIcon("images/expand.png", 22));
         tbtLarger.setSelected(true);
         tbtLarger.setToolTipText("<html>\nIf checked, a search for a <b>dimensionally larger copy</b> of each<br>\nsource image, will be performed. If found, it will be <b>saved</b><br>\nin a <b>subfolder</b> of the destination.<br>\n<i>Subfolder name can be set in the configurations file</i>\n</html>");
         tbtLarger.addItemListener(new java.awt.event.ItemListener() {
@@ -124,7 +126,7 @@ public class GooglePanel extends DownloadTaskPanel {
             }
         });
 
-        tbtSize.setIcon(FileUtils.loadIcon("save.png", 22));
+        tbtSize.setIcon(FileUtils.loadIcon("images/save.png", 22));
         tbtSize.setSelected(true);
         tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is<br>\nperformed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n<i>Size ratio can be set in the configurations file</i>\n</html>");
         tbtSize.addItemListener(new java.awt.event.ItemListener() {
@@ -133,7 +135,7 @@ public class GooglePanel extends DownloadTaskPanel {
             }
         });
 
-        tbtMore.setIcon(FileUtils.loadIcon("plus.png", 22));
+        tbtMore.setIcon(FileUtils.loadIcon("images/plus.png", 22));
         tbtMore.setSelected(true);
         tbtMore.setToolTipText("<html>\nIf checked, sequential images, <b>potentially similar</b>, to the ones<br>\nfound in the reverse search, will be <b>saved</b> in a <b>subfolder</b>.<br>\n<i>Can generate unrelated images</i><br>\n<i>Minimal dimension and subfolder name can be set in the configurations file</i>\n</html>");
 
@@ -272,6 +274,7 @@ public class GooglePanel extends DownloadTaskPanel {
                 final LargerSubtask larger = new LargerSubtask(SUBFOLDER_LARGER);
                 larger.setRetrySmall(tbtSize.isSelected());
                 larger.setFilesizeRatio(FILESIZE_RATIO);
+                larger.setDimensionRatio(DIMENSION_RATIO);
                 task.addSubtask(larger);
             }
             if(tbtMore.isSelected()){

@@ -26,9 +26,9 @@ import rubensandreoli.imagedownloader.tasks.Task;
 
 public class TaskCellRenderer implements TableCellRenderer {
 
-    private static final ImageIcon RUNNING_ICON = FileUtils.loadIcon("download.png");
-    private static final ImageIcon INTERRUPTED_ICON = FileUtils.loadIcon("close.png");
-    private static final ImageIcon COMPLETED_ICON = FileUtils.loadIcon("checkmark.png");
+    private static final ImageIcon RUNNING_ICON = FileUtils.loadIcon("images/download.png");
+    private static final ImageIcon INTERRUPTED_ICON = FileUtils.loadIcon("images/close.png");
+    private static final ImageIcon COMPLETED_ICON = FileUtils.loadIcon("images/checkmark.png");
 
     private final JLabel label = new JLabel();
 

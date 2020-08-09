@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>rubens-andreoli</groupId>
     <artifactId>ImageDownloader</artifactId>
-    <version>1.0.0b</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -67,7 +67,7 @@
         </plugins>
         <resources>
             <resource>
-                <directory>src/main/images</directory>
+                <directory>res</directory>
             </resource>
         </resources>
     </build>

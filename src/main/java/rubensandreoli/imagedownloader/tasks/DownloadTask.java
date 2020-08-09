@@ -34,7 +34,7 @@ public abstract class DownloadTask implements Task, DownloadListener {
     private static final String FOLDER_PERMISSION_MSG_MASK = "You don't have folder [%s] read/write permissions.";
     // </editor-fold>
     
-    protected final TaskJournal monitor = new TaskJournal();
+    protected final TaskJournal journal = new TaskJournal();
     protected Downloader downloader = new Downloader();
     private String destination;
     private boolean reportStatus = true, reportSuccesses = true;
@@ -42,15 +42,15 @@ public abstract class DownloadTask implements Task, DownloadListener {
 
     @Override
     public boolean perform(){
-        if(!monitor.start()) return false;
+        if(!journal.start()) return false;
         downloader.setListener(this);
-        if(reportStatus) monitor.reportState();
+        if(reportStatus) journal.reportState();
         
         run();
         
-        if(monitor.isRunning()) monitor.setStatus(State.COMPLETED);
-        if(reportStatus) monitor.reportState();
-        if(reportSuccesses) monitor.report(Level.INFO, DOWNLOAD_TOTAL_LOG_MASK, monitor.getSuccesses());
+        if(journal.isRunning()) journal.setStatus(State.COMPLETED);
+        if(reportStatus) journal.reportState();
+        if(reportSuccesses) journal.report(Level.INFO, DOWNLOAD_TOTAL_LOG_MASK, journal.getSuccesses());
         return true;
     }
     
@@ -58,7 +58,7 @@ public abstract class DownloadTask implements Task, DownloadListener {
     
     @Override
     public boolean interrupt() {
-        return monitor.interrupt();
+        return journal.interrupt();
     }
     
     protected File getWritableFolder(String pathname) throws IOException{
@@ -78,7 +78,7 @@ public abstract class DownloadTask implements Task, DownloadListener {
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">    
     @Override
     public void setProgressListener(ProgressListener listener) {
-        monitor.setProgressListener(listener);
+        journal.setProgressListener(listener);
     }
     
     public void setFailThreshold(int amount) {
@@ -109,7 +109,7 @@ public abstract class DownloadTask implements Task, DownloadListener {
     }
     
     public void silent(boolean b){
-        monitor.setSilent(b);
+        journal.setSilent(b);
     }
     // </editor-fold>
     
@@ -119,24 +119,24 @@ public abstract class DownloadTask implements Task, DownloadListener {
     }
 
     protected boolean interrupted(){
-        return monitor.isInterrupted();
+        return journal.isInterrupted();
     }
     
     protected boolean failed() {
-        return monitor.fail(failTreashold);
+        return journal.fail(failTreashold);
     }
     
     @Override
     public State getStatus() {
-        return monitor.getStatus();
+        return journal.getStatus();
     }
     
     public int getSuccesses(){
-        return monitor.getSuccesses();
+        return journal.getSuccesses();
     }
     
     public int getFails(){
-        return monitor.getFails();
+        return journal.getFails();
     }
     // </editor-fold>
 

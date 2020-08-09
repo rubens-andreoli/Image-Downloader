@@ -65,8 +65,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String PROGRAM_NAME = "Image Downloader";
-    private static final String PROGRAM_ICON = "download_image.png";
-    private static final String PROGRAM_VERSION = "1.0.0b";
+    private static final String PROGRAM_ICON = "images/download_image.png";
+    private static final String PROGRAM_VERSION = "1.0.0";
     private static final String PROGRAM_YEAR = "2020";
     private static final String LOG_FILE = "history.log";
     private static final int SHUTDOWN_INTERVAL = 10; //seconds
@@ -178,7 +178,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
         pnlOverlay.setLayout(new javax.swing.OverlayLayout(pnlOverlay));
 
-        lblAbout.setIcon(rubensandreoli.commons.utils.FileUtils.loadIcon("about.png"));
+        lblAbout.setIcon(rubensandreoli.commons.utils.FileUtils.loadIcon("images/about.png"));
         lblAbout.setAlignmentX(1.0F);
         lblAbout.setAlignmentY(0.0F);
         lblAbout.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 3));
@@ -303,7 +303,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     if(isCancelled()) break;
                     currentTask = tasks.removeFirst();
                     currentTask.setProgressListener(l -> publish(l));
-                    currentTask.perform();
+                    try{ //continue other tasks if one crashed
+                        currentTask.perform();
+                    }catch(Exception ex){
+                        Logger.log.print(Level.CRITICAL, "Unexpected exception", ex);
+                    }
                 }
                 return null;
             }
@@ -356,7 +360,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }//GEN-LAST:event_formWindowClosing
 
     private void lblAboutMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblAboutMouseClicked
-        new AboutDialog(this, PROGRAM_NAME, PROGRAM_VERSION, PROGRAM_YEAR, "logo.png")
+        new AboutDialog(this, PROGRAM_NAME, PROGRAM_VERSION, PROGRAM_YEAR, "images/logo.png")
                 .addAtribution("Program icon", "Good Ware", "www.flaticon.com")
                 .addAtribution("Other icons", "Pixel perfect", "www.flaticon.com")
                 .setVisible(true);

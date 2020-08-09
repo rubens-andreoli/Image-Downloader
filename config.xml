@@ -3,26 +3,27 @@
 <properties>
 <comment>CONFIGURATIONS</comment>
 <entry key="connection_cooldown_max">1000</entry>
-<entry key="log_inverted">false</entry>
 <entry key="scraper:depth_limit">3</entry>
 <entry key="font_size">10</entry>
 <entry key="sequencial:fails_threshold">10</entry>
 <entry key="google:filesize_min">25600</entry>
-<entry key="connection_cooldown_min">500</entry>
-<entry key="google:fail_threashold">10</entry>
-<entry key="google:link_text_marker">Todos os tamanhos</entry>
 <entry key="google-large:filesize_ratio">1.0</entry>
-<entry key="google-more:subfolder">more</entry>
-<entry key="read_timout">4000</entry>
-<entry key="google-large:subfolder_name">copies</entry>
-<entry key="crash_log">true</entry>
 <entry key="google-more:sequence_limit">1000</entry>
 <entry key="google-more:lower_margin">10</entry>
 <entry key="log_timer">10</entry>
 <entry key="google-more:min_dimension">400</entry>
 <entry key="log_size">60</entry>
-<entry key="google-more:upper_margin">100</entry>
-<entry key="connection_timeout">2000</entry>
-<entry key="sequencial:filesize_min">25600</entry>
 <entry key="scraper:filesize_min">25600</entry>
+<entry key="log_inverted">false</entry>
+<entry key="connection_cooldown_min">500</entry>
+<entry key="google:fail_threashold">10</entry>
+<entry key="google:link_text_marker">Todos os tamanhos</entry>
+<entry key="google-more:subfolder">more</entry>
+<entry key="read_timout">4000</entry>
+<entry key="google-large:subfolder_name">copies</entry>
+<entry key="crash_log">true</entry>
+<entry key="google-more:upper_margin">100</entry>
+<entry key="google-large:dimension_ratio">1.05</entry>
+<entry key="sequencial:filesize_min">25600</entry>
+<entry key="connection_timeout">2000</entry>
 </properties>

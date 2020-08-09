@@ -28,7 +28,9 @@ public class LargerSubtask extends BasicGoogleSubtask{
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">
     public static final int PRIORITY = 0;
-    public static final double DEFAULT_FILESIZE_RATIO = 1.00;
+    public static final double DEFAULT_DIMENTION_RATIO = 1.05;
+    public static final double MIN_DIMENSION_RATIO = 1.0;
+    public static final double DEFAULT_FILESIZE_RATIO = 1.0;
     public static final double MIN_FILESIZE_RATIO = 0.1;
     public static final boolean DEFAULT_RETRY_SMALL = true;
     public static final String ATTENTION_SUBFOLDER = "low";
@@ -42,7 +44,8 @@ public class LargerSubtask extends BasicGoogleSubtask{
     // </editor-fold>
     
     private boolean retrySmall = DEFAULT_RETRY_SMALL;
-    private double filesizeRatio = DEFAULT_FILESIZE_RATIO;
+    private double sizeRatio = DEFAULT_FILESIZE_RATIO;
+    private double dimensionRatio = DEFAULT_DIMENTION_RATIO;
 
     public LargerSubtask(String subfolder) {
         super(subfolder);
@@ -55,7 +58,7 @@ public class LargerSubtask extends BasicGoogleSubtask{
         //LOOK FOR LARGEST IMAGE LARGER THAN SOURCE (not worth sorting list before)
         ImageInfo largest = null;
         for (ImageInfo image : similars) {
-            if(image.largerThan(source) && (largest==null || image.largerThan(largest))){
+            if(image.largerOrEqualTo(source, dimensionRatio) && (largest==null || image.largerThan(largest))){
                 largest = image;
             }
         }
@@ -70,8 +73,8 @@ public class LargerSubtask extends BasicGoogleSubtask{
         boolean failed = (cachedFile == null);
         if(!failed){
             if(retrySmall){
-                if(cachedFile.length() <= source.getSize()*filesizeRatio){
-                    log.appendLine(Level.WARNING, SMALLER_THAN_SOURCE_LOG_MASK, cachedFile.length(), (long)(source.getSize()*filesizeRatio));
+                if(cachedFile.length() <= source.getSize()*sizeRatio){
+                    log.appendLine(Level.WARNING, SMALLER_THAN_SOURCE_LOG_MASK, cachedFile.length(), (long)(source.getSize()*sizeRatio));
                     FileUtils.moveFileToChild(cachedFile, ATTENTION_SUBFOLDER);
                     failed = true;
                 }else{
@@ -101,7 +104,12 @@ public class LargerSubtask extends BasicGoogleSubtask{
 
     public void setFilesizeRatio(double ratio) {
         if(ratio < MIN_FILESIZE_RATIO) throw new IllegalArgumentException("ratio "+ratio+" < "+MIN_FILESIZE_RATIO);
-        filesizeRatio = ratio;
+        sizeRatio = ratio;
+    }
+
+    public void setDimensionRatio(double ratio) {
+        if(ratio < MIN_DIMENSION_RATIO) throw new IllegalArgumentException("ratio "+ratio+" < "+MIN_DIMENSION_RATIO);
+        this.dimensionRatio = ratio;
     }
     // </editor-fold>
 

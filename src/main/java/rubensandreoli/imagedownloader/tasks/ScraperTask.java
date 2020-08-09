@@ -123,12 +123,12 @@ public class ScraperTask extends DownloadTask{
         try {
             //CONNECTION
             final Document d = HttpUtils.getDocument(url);
-            monitor.report(Level.INFO, false, CONNECTION_LOG_MASK, url);
+            journal.report(Level.INFO, false, CONNECTION_LOG_MASK, url);
             Webpage page = new Webpage(domain, url, d);
             
             //DOWNLOAD
             final Set<String> images = page.parseImages();
-            monitor.addWorkload(images.size());
+            journal.addWorkload(images.size());
             downloadImages(images);
             if(interrupted()) return; //INTERRUPT EXIT POINT
 
@@ -136,11 +136,11 @@ public class ScraperTask extends DownloadTask{
             if(depth > 0){
                 depth--;
                 final Set<String> links = page.parseLinks();
-                monitor.addWorkload(links.size());
+                journal.addWorkload(links.size());
                 links.forEach(this::processPage);
             }
         } catch (IOException ex) {
-            monitor.report(Level.ERROR, CONNECTION_FAILED_LOG_MASK, url);
+            journal.report(Level.ERROR, CONNECTION_FAILED_LOG_MASK, url);
         }
     }
 
@@ -154,7 +154,7 @@ public class ScraperTask extends DownloadTask{
             
             //DOWNLOAD
             if(downloader.download(url, getDestination(), filename, extension) != null){
-                monitor.increaseSuccesses();
+                journal.increaseSuccesses();
             }
         }
     }
@@ -178,7 +178,7 @@ public class ScraperTask extends DownloadTask{
 
     @Override
     public void downloadStateChanged(Level level, String description) {
-        monitor.report(level, description);
+        journal.report(level, description);
     }
     
 }

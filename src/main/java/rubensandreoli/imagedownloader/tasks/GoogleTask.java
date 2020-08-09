@@ -85,7 +85,7 @@ public class GoogleTask extends DownloadTask{
     @Override
     protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
-        monitor.setWorkload(getImageCount()-startIndex);
+        journal.setWorkload(getImageCount()-startIndex);
         
         //----------SUBTASKS PRE-PROCESSING----------//
         subtasks.forEach(subtask -> subtask.preProcessing(getDestination()));
@@ -93,7 +93,7 @@ public class GoogleTask extends DownloadTask{
         for (int i = startIndex; i < images.size(); i++) {
             if(interrupted() || failed()) break; //INTERRUPT EXIT POINT
             final Path image = images.get(i);
-            final var log = monitor.startNewLog(false)
+            final var log = journal.startNewLog(false)
                     .appendLine(IMAGE_NUMBER_LOG_MASK, i)
                     .appendLine(Level.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
 
@@ -104,22 +104,22 @@ public class GoogleTask extends DownloadTask{
                 }else{
                     
                     //----------SUBTASKS PROCESSING----------//
-                    subtasks.forEach(subtask -> subtask.processing(monitor, downloader, result.source, result.images));
+                    subtasks.forEach(subtask -> subtask.processing(journal, downloader, result.source, result.images));
                     
                 }
-                monitor.resetFails();
+                journal.resetFails();
             } catch (LoadException ex) {
                 log.appendLine(Level.ERROR, FAILED_READING_FILE_LOG);
             } catch (UploadException | SearchException ex) {
-                monitor.increaseFails();
+                journal.increaseFails();
                 log.appendLine(Level.ERROR, FAILED_UPLOADING_LOG);
             }
-            monitor.reportCurrentLog();
-            monitor.increaseProgress();
+            journal.reportCurrentLog();
+            journal.increaseProgress();
         }
         
         //----------SUBTASKS POST-PROCESSING----------//
-        subtasks.forEach(subtask -> subtask.postProcessing(monitor, downloader));
+        subtasks.forEach(subtask -> subtask.postProcessing(journal, downloader));
         
     }
 
@@ -153,7 +153,7 @@ public class GoogleTask extends DownloadTask{
 
     @Override
     public void downloadStateChanged(Level level, String description) {
-        monitor.getCurrentLog().appendLine(level, description);
+        journal.getCurrentLog().appendLine(level, description);
     }
 
 }

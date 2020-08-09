@@ -89,7 +89,7 @@ public class SequenceTask extends DownloadTask{
 
     @Override
     protected void run() {
-        monitor.setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
+        journal.setWorkload(upperBound-lowerBound+1); //+1: end inclusive;
         
         long lastSize = 0;
         int same = 0;
@@ -110,7 +110,7 @@ public class SequenceTask extends DownloadTask{
                 //CHECK IF SAME SIZE
                 if(file.length() == lastSize){
                     if(++same == REPEAT_LIMIT){
-                        monitor.report(Level.WARNING, REAPAT_LOG);
+                        journal.report(Level.WARNING, REAPAT_LOG);
                         break;
                     }
                 }else{
@@ -118,10 +118,10 @@ public class SequenceTask extends DownloadTask{
                     same = 0;
                 }
                 
-                monitor.increaseSuccesses();
-                monitor.resetFails(); //successive fails
+                journal.increaseSuccesses();
+                journal.resetFails(); //successive fails
             }else{
-                monitor.increaseFails();
+                journal.increaseFails();
             }
         }
     }
@@ -153,7 +153,7 @@ public class SequenceTask extends DownloadTask{
 
     @Override
     public void downloadStateChanged(Level level, String description) {
-        monitor.report(level, description);
+        journal.report(level, description);
     }
 
 }

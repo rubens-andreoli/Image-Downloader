@@ -77,6 +77,10 @@ public class ImageInfo implements Comparable<ImageInfo>{
     public boolean largerThan(ImageInfo i){
         return compareTo(i)>0;
     }
+    
+    public boolean largerOrEqualTo(ImageInfo i, double ratio){
+         return (width >= i.width*ratio && height >= i.height*ratio);
+    }
 
     public boolean smallerThan(ImageInfo i){
         return compareTo(i)<0;
