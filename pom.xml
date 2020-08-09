@@ -35,6 +35,11 @@
             <artifactId>httpmime</artifactId>
             <version>4.2.6</version> <!-- 4.5.12-->
         </dependency>
+        <dependency>
+            <groupId>rubens-andreoli</groupId>
+            <artifactId>commons</artifactId>
+            <version>0.1.0</version>
+        </dependency>
     </dependencies>
     <name>Image Downloader</name>
     <!--https://stackoverflow.com/questions/574594/how-can-i-create-an-executable-jar-with-dependencies-using-maven-->

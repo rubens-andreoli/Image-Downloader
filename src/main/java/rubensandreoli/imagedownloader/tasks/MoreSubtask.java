@@ -128,7 +128,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
     
     @Override
     public void postProcessing(TaskJournal journal, Downloader downloader){
-if (links.isEmpty() || journal.isInterrupted()) return;
+        if (links.isEmpty() || journal.isInterrupted()) return;
         journal.reportTitle(TITLE_LOG);
         
         final List<String> more = new ArrayList<>();
@@ -181,26 +181,26 @@ if (links.isEmpty() || journal.isInterrupted()) return;
                 subtask.run();
                 downloaded = subtask.getSuccesses();
                 journal.addSuccesses(downloaded);
-                if(downloaded == size) more.add(link); //fully successful
+//                if(downloaded == size) more.add(link); //fully successful
             } catch (BoundsException | IOException ex) {
                 journal.report(Level.ERROR, false, "failed starting sequence [%s]", entry.getKey());
             }
             journal.report(Level.INFO, SEQUENCE_TOTAL_LOG, downloaded);
             journal.increaseProgress();
             }catch(Exception ex){
-                Logger.log.print(Level.ERROR, String.format("%s %d:%d", entry.getKey(), values.first(), values.last()), ex);
+                Logger.log.print(Level.ERROR, String.format("%s %d:%d", entry, values.first(), values.last()), ex);
                 journal.increaseProgress();
             }
         }
         
-        if(!more.isEmpty());{
-            journal.reportTitle("ATTENTION");
-            journal.report(Level.INFO, false, "%s may have more values to download:", (more.size()>1? "These links":"This link"));
-            more.forEach(link -> {
-                System.out.println("link: ["+link+"]");
-                journal.report(Level.INFO, false, link);  
-            });
-        }
+//        if(!more.isEmpty());{
+//            journal.reportTitle("ATTENTION");
+//            journal.report(Level.INFO, false, "%s may have more values to download:", (more.size()>1? "These links":"This link"));
+//            more.forEach(link -> {
+//                System.out.println("link: ["+link+"]");
+//                journal.report(Level.INFO, false, link);  
+//            });
+//        }
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
