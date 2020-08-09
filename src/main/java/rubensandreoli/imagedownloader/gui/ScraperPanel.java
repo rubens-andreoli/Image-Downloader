@@ -149,7 +149,7 @@ public class ScraperPanel extends DownloadTaskPanel {
                 return;
             }
 
-            notify(task, DESCRIPTION_MASK, 
+            fireTaskCreated(task, DESCRIPTION_MASK, 
                     task.getURL(), 
                     task.getDepth(), 
                     task.getDestination()

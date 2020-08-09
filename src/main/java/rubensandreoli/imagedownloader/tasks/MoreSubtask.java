@@ -17,17 +17,16 @@
 package rubensandreoli.imagedownloader.tasks;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import rubensandreoli.commons.others.Level;
-import rubensandreoli.commons.others.Logger;
 import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
 import rubensandreoli.imagedownloader.tasks.support.Downloader;
 import rubensandreoli.imagedownloader.tasks.support.ImageInfo;
@@ -44,18 +43,59 @@ public class MoreSubtask extends BasicGoogleSubtask{
     private static final int OCURRANCE_CONFIRMATION = 2;
     
     private static final String NUMBER_REGEX = "\\d+";
-    private static final String CONFIRMED_MARKER = ".";
     private static final String VALID_IMAGE_REGEX = ".*"+NUMBER_REGEX+".*";
-    private static final String SEQUENCE_LINK_MASK = "%s/%s{%%s}%s%s"; //parent; filename start; filename end; extension
     private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_REGEX);
+    private static final String CONFIRMED_MARKER = ".";
     
     private static final String TITLE_LOG = "MORE";
     private static final String FOUND_SEQUENCE_LOG_MASK = "Found %d new potential sequence(s)";
-    private static final String SEQUENCE_START_LOG_MASK = "Starting sequence %s [%d:%d]"; //url; start; end
-    private static final String SEQUENCE_TOTAL_LOG = "%d sequential download(s)";
+    private static final String SEQUENCE_START_LOG_MASK = "Starting sequence [%s] -> [%d:%d]"; //url; start; end
+    private static final String SEQUENCE_TOTAL_LOG_MASK = "%d sequential download(s)";
+    private static final String SEQUENCE_TOO_BIG_LOG_MASK = "Sequence [%s] is too big [%,d values]"; //url; sequence size
+    private static final String SEQUENCE_FAILED_LOG = "Failed starting sequence";
     // </editor-fold>
 
-    private final Map<String, Set<String>> links = new HashMap<>();
+    // <editor-fold defaultstate="collapsed" desc=" LINK "> 
+    public static class Link{
+
+        public final String start;
+        public final String end;
+
+        public Link(String parent, String filenameStart, String filenameEnd, String extension) {
+            start = new StringBuilder(parent).append("/").append(filenameStart).append("{").toString();
+            end = new StringBuilder("}").append(filenameEnd).append(extension).toString();
+        }
+
+        public String getMaskedLink(String middle){
+            return new StringBuilder(start).append(middle).append(end).toString();
+        }
+        
+        public String getMaskedLink(String numberMask, int value){
+            return getMaskedLink(String.format(numberMask, value));
+        }
+
+        @Override
+        public String toString() {
+            return new StringBuilder(start).append("?").append(end).toString();
+        }
+
+        @Override
+        public int hashCode() {
+            return 97 + Objects.hashCode(this.start);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            return Objects.equals(this.start, ((Link) obj).start);
+        }
+
+    }
+    // </editor-fold>
+    
+    private final Map<Link, Set<String>> links = new HashMap<>();
     private int minDimension = DEFAULT_MIN_DIMENSION;
     private int lowerMargin = DEFAULT_LOWER_MARGIN;
     private int upperMargin = DEFAULT_UPPER_MARGIN;
@@ -66,18 +106,13 @@ public class MoreSubtask extends BasicGoogleSubtask{
     }
     
     @Override
-    public void processing(TaskJournal monitor, Downloader downloader, ImageInfo source, List<ImageInfo> similars)  {
+    public void processing(TaskJournal journal, Downloader downloader, ImageInfo source, List<ImageInfo> similars)  {
         int found = 0;
         for (ImageInfo i : similars) {
             
             //PREPARE VALUES
-            String path = i.path;
-            final int index = path.lastIndexOf('?');
-            if(index > 0){
-                path = path.substring(0, index);
-            }
             final String parent = i.getParent();
-            final String filename = i.getFilename();
+            final String filename = i.getFilename().replaceAll("%20", " ");
             final String extension = i.getExtension();
 
             //TEST AND ADD SEQUENCE
@@ -85,8 +120,8 @@ public class MoreSubtask extends BasicGoogleSubtask{
                 found += addSequence(parent, filename, extension);
             }
         }
-        monitor.addWorkload(found);
-        monitor.getCurrentLog().appendLine(Level.INFO, FOUND_SEQUENCE_LOG_MASK, found);
+        journal.addWorkload(found);
+        journal.getCurrentLog().appendLine(Level.INFO, FOUND_SEQUENCE_LOG_MASK, found);
     }
     
     private int addSequence(String parent, String filename, String extension){
@@ -98,7 +133,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
             found++;
             final int start = matcher.start();
             final int end = matcher.end();
-            final String maskedLink = String.format(SEQUENCE_LINK_MASK, 
+            final Link link = new Link(
                     parent, 
                     filename.substring(0, start), 
                     filename.substring(end), 
@@ -106,7 +141,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
             );
             final String number = filename.substring(start, end);
 
-            if((numbers = links.get(maskedLink)) != null){
+            if((numbers = links.get(link)) != null){
                 numbers.add(number);
                 if(numbers.size() == OCURRANCE_CONFIRMATION){ //confirm after X ocurrances
                     numbers.add(CONFIRMED_MARKER);
@@ -115,11 +150,11 @@ public class MoreSubtask extends BasicGoogleSubtask{
             }else{
                 numbers = new HashSet<>();
                 numbers.add(number);
-                links.put(maskedLink, numbers);
+                links.put(link, numbers);
                 created = true;
             }
         }
-        if(numbers != null && found == 1 && created){ //confirm if one number only in the name and new sequence
+        if(numbers != null && found == 1 && created){ //confirm if found only one and link first time
             numbers.add(CONFIRMED_MARKER);
             added++;
         }
@@ -129,9 +164,8 @@ public class MoreSubtask extends BasicGoogleSubtask{
     @Override
     public void postProcessing(TaskJournal journal, Downloader downloader){
         if (links.isEmpty() || journal.isInterrupted()) return;
-        journal.reportTitle(TITLE_LOG);
         
-        final List<String> more = new ArrayList<>();
+        boolean printTitle = true;
         for (var entry : links.entrySet()) {
             if(journal.isInterrupted()) break; //INTERRUPT EXIT POINT
             final Set<String> numbers = entry.getValue();
@@ -140,67 +174,57 @@ public class MoreSubtask extends BasicGoogleSubtask{
             //PARSE NUMBERS
             final TreeSet<Integer> values = new TreeSet<>();
             boolean padding = false;
-            int endZero = 0, maxLenght = 0;
+            int endInZero = 0;
+            int maxLenght = 0;
             for (String v : numbers) {
+                //TODO: number to big for integer -> numberMask_start = 'first-part-of-number'; val = 'parsed-last-index-5'
                 if('0' == v.charAt(0)) padding = true;
-                if('0' == v.charAt(v.length()-1)) endZero++;
+                if('0' == v.charAt(v.length()-1)) endInZero++;
                 if(v.length() > maxLenght) maxLenght = v.length();
                 try{
                     values.add(Integer.parseInt(v));
                 }catch(NumberFormatException ex){}
             }
-            if(endZero == values.size()){ //possibly resolutions
+            //if failed all conversions; or all end in '0' they are possibly resolutions (letting sequence fail is costlier)
+            if(values.isEmpty() || endInZero == values.size()){ 
                 journal.increaseProgress();
                 continue;
             }
             
+            if(printTitle) { //print only for first confirmed and not discarded
+                journal.reportTitle(TITLE_LOG);
+                printTitle = false;
+            } 
+            
             //PREPARE TASK VALUES
-            try{ //FIX: temporary solution
             final int start = Math.max(values.first()-lowerMargin, 1); 
             final int end = values.last()+upperMargin;
-            String numberMask = "%d";
-            if(padding) numberMask = "%0"+maxLenght+"d";
-            String link = String.format(entry.getKey(), numberMask); //FIX: exception Conversion = 'L'; Conversion = 'm'
-            link = String.format(link, start);
             final int size = end - start;
-            if(size > sequenceMaxLenght){
-                journal.report(Level.WARNING, "Sequence is to big [%,d values]", size);
-                journal.increaseProgress();
+            if(size > sequenceMaxLenght){ //TODO: do what when max lenght < 0?
+                journal.report(Level.WARNING, true, SEQUENCE_TOO_BIG_LOG_MASK, entry.getKey(), size);
                 continue;
             }
-
+            final String numberMask = padding? String.format("%%0%dd", maxLenght) : "%d";
+            final String maskedLink = entry.getKey().getMaskedLink(numberMask, start);
+            
             //SUB-TASK
-            journal.report(Level.INFO, false, SEQUENCE_START_LOG_MASK, link, start, end);
-            int downloaded = 0;
+            journal.report(Level.INFO, false, SEQUENCE_START_LOG_MASK, entry.getKey(), start, end);
             try {
-                var subtask = new SequenceTask(link, end);
+                final var subtask = new SequenceTask(maskedLink, end);
                 subtask.silent(true);
-                subtask.excludeNumbers(values); //already have similar to found by google
+                subtask.excludeNumbers(values); //already have copies of the ones found by the reverse search
                 subtask.setDestination(subfolder);
                 subtask.setSafeThreshold(values.last());
                 subtask.run();
-                downloaded = subtask.getSuccesses();
+                final int downloaded = subtask.getSuccesses();
                 journal.addSuccesses(downloaded);
-//                if(downloaded == size) more.add(link); //fully successful
+                journal.report(Level.INFO, true, SEQUENCE_TOTAL_LOG_MASK, downloaded);
             } catch (BoundsException | IOException ex) {
-                journal.report(Level.ERROR, false, "failed starting sequence [%s]", entry.getKey());
+                journal.report(Level.ERROR, true, SEQUENCE_FAILED_LOG);
             }
-            journal.report(Level.INFO, SEQUENCE_TOTAL_LOG, downloaded);
-            journal.increaseProgress();
-            }catch(Exception ex){
-                Logger.log.print(Level.ERROR, String.format("%s %d:%d", entry, values.first(), values.last()), ex);
-                journal.increaseProgress();
-            }
+
         }
-        
-//        if(!more.isEmpty());{
-//            journal.reportTitle("ATTENTION");
-//            journal.report(Level.INFO, false, "%s may have more values to download:", (more.size()>1? "These links":"This link"));
-//            more.forEach(link -> {
-//                System.out.println("link: ["+link+"]");
-//                journal.report(Level.INFO, false, link);  
-//            });
-//        }
+
     }
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 

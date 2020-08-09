@@ -85,15 +85,15 @@ public class GoogleTask extends DownloadTask{
     @Override
     protected void run() {
         images.sort((p1,p2) -> p1.getFileName().compareTo(p2.getFileName()));
-        journal.setWorkload(getImageCount()-startIndex);
+        journal.setWorkload(getImageCount()-startIndex+1); //+1: end inclusive;
         
         //----------SUBTASKS PRE-PROCESSING----------//
         subtasks.forEach(subtask -> subtask.preProcessing(getDestination()));
 
-        for (int i = startIndex; i < images.size(); i++) {
+        for (int i = startIndex; i < getImageCount(); i++) {
             if(interrupted() || failed()) break; //INTERRUPT EXIT POINT
             final Path image = images.get(i);
-            final var log = journal.startNewLog(false)
+            final var log = journal.startNewLog(true)
                     .appendLine(IMAGE_NUMBER_LOG_MASK, i)
                     .appendLine(Level.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
 
@@ -115,7 +115,6 @@ public class GoogleTask extends DownloadTask{
                 log.appendLine(Level.ERROR, FAILED_UPLOADING_LOG);
             }
             journal.reportCurrentLog();
-            journal.increaseProgress();
         }
         
         //----------SUBTASKS POST-PROCESSING----------//
@@ -139,7 +138,7 @@ public class GoogleTask extends DownloadTask{
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public int getImageCount(){
-        return images==null? 0 : images.size()-1; //TODO: why -1?
+        return images.size();
     }
 
     public String getSource() {

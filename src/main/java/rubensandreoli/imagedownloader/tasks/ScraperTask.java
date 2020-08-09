@@ -140,7 +140,7 @@ public class ScraperTask extends DownloadTask{
                 links.forEach(this::processPage);
             }
         } catch (IOException ex) {
-            journal.report(Level.ERROR, CONNECTION_FAILED_LOG_MASK, url);
+            journal.report(Level.ERROR, true, CONNECTION_FAILED_LOG_MASK, url);
         }
     }
 
@@ -175,10 +175,5 @@ public class ScraperTask extends DownloadTask{
         return depth;
     }
     // </editor-fold>
-
-    @Override
-    public void downloadStateChanged(Level level, String description) {
-        journal.report(level, description);
-    }
     
 }

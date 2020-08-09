@@ -45,11 +45,11 @@ public abstract class DownloadTaskPanel extends TaskPanel<DownloadTask>{
     }
 
     @Override
-    protected boolean notify(DownloadTask task, String description, Object... args) {
+    protected boolean fireTaskCreated(DownloadTask task, String description, Object... args) {
         task.setConnection(CONNECTION_TIMEOUT, READ_TIMEOUT, MIN_COOLDOWN, MAX_COOLDOWN);
         task.setFailThreshold(getFailThreshold());
         task.setMinFilesize(getMinFilesize());
-        return super.notify(task, description, args);
+        return super.fireTaskCreated(task, description, args);
     }
     
     protected abstract int getFailThreshold();

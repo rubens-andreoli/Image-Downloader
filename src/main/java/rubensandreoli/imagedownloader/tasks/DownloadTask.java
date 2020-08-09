@@ -19,6 +19,7 @@ package rubensandreoli.imagedownloader.tasks;
 import java.io.File;
 import java.io.IOException;
 import rubensandreoli.commons.others.Level;
+import rubensandreoli.commons.others.Logger;
 import rubensandreoli.imagedownloader.tasks.support.DownloadListener;
 import rubensandreoli.imagedownloader.tasks.support.Downloader;
 import rubensandreoli.imagedownloader.tasks.support.ProgressListener;
@@ -45,12 +46,15 @@ public abstract class DownloadTask implements Task, DownloadListener {
         if(!journal.start()) return false;
         downloader.setListener(this);
         if(reportStatus) journal.reportState();
-        
-        run();
-        
-        if(journal.isRunning()) journal.setStatus(State.COMPLETED);
+        try{
+            run();
+        }catch(Exception ex){
+            Logger.log.print(Level.CRITICAL, "Unexpected exception", ex);
+            journal.setState(State.FAILED);
+        }
+        if(journal.isRunning()) journal.setState(State.COMPLETED);
         if(reportStatus) journal.reportState();
-        if(reportSuccesses) journal.report(Level.INFO, DOWNLOAD_TOTAL_LOG_MASK, journal.getSuccesses());
+        if(reportSuccesses) journal.report(Level.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, journal.getSuccesses());
         return true;
     }
     
@@ -154,6 +158,8 @@ public abstract class DownloadTask implements Task, DownloadListener {
         this.downloadStateChanged(level, description);
     }
     
-    public abstract void downloadStateChanged(Level level, String description);
+    public void downloadStateChanged(Level level, String description) {
+        journal.report(level, true, description);
+    }
     
 }

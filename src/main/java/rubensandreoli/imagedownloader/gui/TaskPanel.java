@@ -48,7 +48,7 @@ public abstract class TaskPanel<T extends Task> extends javax.swing.JPanel {
         setMinimumSize(min);
     }
     
-    protected boolean notify(T task, String description, Object...args){
+    protected boolean fireTaskCreated(T task, String description, Object...args){
         if(listener == null) return false;
         listener.taskCreated(title, task, String.format(description, args));
         return true;

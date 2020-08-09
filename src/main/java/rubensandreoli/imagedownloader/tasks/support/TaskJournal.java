@@ -92,10 +92,6 @@ public class TaskJournal{
         reportLog(log);
     }
 
-    public void report(Level level, String message, Object...args){
-        report(level, true, message, args);
-    }
-
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void setProgressListener(ProgressListener listener){
         this.listener = listener;
@@ -125,8 +121,8 @@ public class TaskJournal{
         return workload += amount;
     }
 
-    public void setStatus(State status){
-        this.state = status;
+    public void setState(State state){
+        this.state = state;
     }
 
     public void setSuccesses(int successes){

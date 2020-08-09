@@ -16,10 +16,6 @@
  */
 package rubensandreoli.imagedownloader.gui;
 
-import rubensandreoli.commons.swing.RecycledTextArea;
-import rubensandreoli.commons.others.Configuration;
-import rubensandreoli.imagedownloader.tasks.support.ProgressLog;
-import rubensandreoli.commons.utils.FileUtils;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Frame;
@@ -44,11 +40,15 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+import rubensandreoli.commons.others.Configuration;
 import rubensandreoli.commons.others.Level;
 import rubensandreoli.commons.others.Logger;
 import rubensandreoli.commons.swing.AboutDialog;
+import rubensandreoli.commons.swing.RecycledTextArea;
+import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.imagedownloader.tasks.Task;
 import rubensandreoli.imagedownloader.tasks.Task.State;
+import rubensandreoli.imagedownloader.tasks.support.ProgressLog;
 
 /** 
  * References:
@@ -303,11 +303,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                     if(isCancelled()) break;
                     currentTask = tasks.removeFirst();
                     currentTask.setProgressListener(l -> publish(l));
-                    try{ //continue other tasks if one crashed
-                        currentTask.perform();
-                    }catch(Exception ex){
-                        Logger.log.print(Level.CRITICAL, "Unexpected exception", ex);
-                    }
+                    currentTask.perform();
                 }
                 return null;
             }
@@ -361,8 +357,9 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
     private void lblAboutMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lblAboutMouseClicked
         new AboutDialog(this, PROGRAM_NAME, PROGRAM_VERSION, PROGRAM_YEAR, "images/logo.png")
-                .addAtribution("Program icon", "Good Ware", "www.flaticon.com")
-                .addAtribution("Other icons", "Pixel perfect", "www.flaticon.com")
+                .addAtribution("Program icon", "Good Ware", "https://www.flaticon.com/authors/good-ware")
+                .addAtribution("About icon", "Gregor Cresnar", "https://www.flaticon.com/authors/gregor-cresnar")
+                .addAtribution("Other icons", "Pixel perfect", "https://www.flaticon.com/authors/pixel-perfect")
                 .setVisible(true);
     }//GEN-LAST:event_lblAboutMouseClicked
 

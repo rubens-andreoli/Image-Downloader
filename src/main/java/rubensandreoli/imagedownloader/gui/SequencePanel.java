@@ -145,7 +145,7 @@ public class SequencePanel extends DownloadTaskPanel {
                 return;
             }
 
-            notify(task, DESCRIPTION_MASK, 
+            fireTaskCreated(task, DESCRIPTION_MASK, 
                     task.getMaskedName(), 
                     task.getLowerBound(), 
                     task.getUpperBound(), 

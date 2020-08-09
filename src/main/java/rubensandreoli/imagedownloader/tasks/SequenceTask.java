@@ -80,7 +80,7 @@ public class SequenceTask extends DownloadTask{
         //MASKED FILENAME AND EXTENSION
         String numberMask = "%d";
         if(name.charAt(numberIndex) == '0') numberMask = "%0"+numberLenght+"d";
-        maskedFilename = FileUtils.getFilename(name.replaceAll(MARKER_REGEX, numberMask), false);
+        maskedFilename = FileUtils.getFilename(name.replaceAll("%", "%%").replaceAll(MARKER_REGEX, numberMask), false);
         extension = FileUtils.getExtension(name);
         
         setFailThreshold(DEFAULT_FAIL_THRESHOLD);
@@ -110,7 +110,7 @@ public class SequenceTask extends DownloadTask{
                 //CHECK IF SAME SIZE
                 if(file.length() == lastSize){
                     if(++same == REPEAT_LIMIT){
-                        journal.report(Level.WARNING, REAPAT_LOG);
+                        journal.report(Level.WARNING, false, REAPAT_LOG);
                         break;
                     }
                 }else{
@@ -150,10 +150,5 @@ public class SequenceTask extends DownloadTask{
         return upperBound;
     }
     // </editor-fold>
-
-    @Override
-    public void downloadStateChanged(Level level, String description) {
-        journal.report(level, description);
-    }
 
 }

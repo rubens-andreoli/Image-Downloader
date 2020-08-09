@@ -286,10 +286,10 @@ public class GooglePanel extends DownloadTaskPanel {
                 task.addSubtask(more);
             }
             
-            notify(task, DESCRIPTION_MASK,
+            fireTaskCreated(task, DESCRIPTION_MASK,
                     task.getSource(),
                     task.getStartIndex(),
-                    task.getImageCount(), 
+                    task.getImageCount()-1, 
                     task.getDestination()
             );
         
