@@ -29,6 +29,7 @@ public class TaskCellRenderer implements TableCellRenderer {
     private static final ImageIcon RUNNING_ICON = FileUtils.loadIcon("images/download.png");
     private static final ImageIcon INTERRUPTED_ICON = FileUtils.loadIcon("images/close.png");
     private static final ImageIcon COMPLETED_ICON = FileUtils.loadIcon("images/checkmark.png");
+    private static final ImageIcon CRASHED_ICON = FileUtils.loadIcon("images/attention.png");
 
     private final JLabel label = new JLabel();
 
@@ -50,6 +51,8 @@ public class TaskCellRenderer implements TableCellRenderer {
             case COMPLETED:
                 label.setIcon(COMPLETED_ICON);
                 break;
+            case CRASHED:
+                label.setIcon(CRASHED_ICON);
             default:
                 label.setIcon(null);
         }

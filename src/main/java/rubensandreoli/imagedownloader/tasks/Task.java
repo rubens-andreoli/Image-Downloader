@@ -20,7 +20,7 @@ import rubensandreoli.imagedownloader.tasks.support.ProgressListener;
 
 public interface Task {
     
-    public enum State {WAITING, RUNNING, COMPLETED, INTERRUPTED, FAILED}
+    public enum State {WAITING, RUNNING, COMPLETED, INTERRUPTED, FAILED, CRASHED}
     
     boolean perform();
     boolean interrupt();
