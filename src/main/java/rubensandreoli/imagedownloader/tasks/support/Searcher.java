@@ -111,7 +111,7 @@ public class Searcher {
                 String similarLink = null;
                 for (Element e : HttpUtils.getDocument(responseLink).getElementsByTag("a")) {
                     final String ref = e.attr("href");
-                    if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().equals(linkText)){
+                    if(ref.startsWith(RESPONSE_LINK_PREFIX) && e.text().toLowerCase().equals(linkText)){
                         similarLink = e.absUrl("href");
                         break; //just one
                     }
@@ -167,7 +167,7 @@ public class Searcher {
     private final String linkText;
 
     public Searcher(String linkText){
-        this.linkText = linkText;
+        this.linkText = linkText.trim().toLowerCase();
     }
     
     public Searcher(){

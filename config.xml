@@ -5,10 +5,12 @@
 <entry key="connection_cooldown_max">1200</entry>
 <entry key="scraper:depth_limit">3</entry>
 <entry key="font_size">10</entry>
-<entry key="sequencial:fails_threshold">10</entry>
 <entry key="google:filesize_min">25600</entry>
+<entry key="sequence:fails_threshold">10</entry>
 <entry key="google-large:filesize_ratio">1.0</entry>
+<entry key="google-large:source_name">false</entry>
 <entry key="google-more:sequence_limit">1000</entry>
+<entry key="sequence:filesize_min">25600</entry>
 <entry key="google-more:lower_margin">20</entry>
 <entry key="log_timer">10</entry>
 <entry key="google-more:min_dimension">400</entry>
@@ -24,6 +26,5 @@
 <entry key="crash_log">true</entry>
 <entry key="google-more:upper_margin">200</entry>
 <entry key="google-large:dimension_ratio">1.05</entry>
-<entry key="sequencial:filesize_min">25600</entry>
 <entry key="connection_timeout">2000</entry>
 </properties>

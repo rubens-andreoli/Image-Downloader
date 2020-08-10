@@ -39,7 +39,8 @@ public class MoreSubtask extends BasicGoogleSubtask{
     public static final int DEFAULT_LOWER_MARGIN = 20;
     public static final int DEFAULT_UPPER_MARGIN = 200;
     public static final int DEFAULT_MIN_DIMENSION = 400;
-    public static final int DEFAULT_SEQUENCE_MAX_LENGHT = 1000;
+    public static final int MIN_MIN_DIMENSION = 10;
+    public static final int DEFAULT_SEQUENCE_LIMIT = 1000;
     private static final int OCURRANCE_CONFIRMATION = 2;
     
     private static final String NUMBER_REGEX = "\\d+";
@@ -99,7 +100,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
     private int minDimension = DEFAULT_MIN_DIMENSION;
     private int lowerMargin = DEFAULT_LOWER_MARGIN;
     private int upperMargin = DEFAULT_UPPER_MARGIN;
-    private int sequenceMaxLenght = DEFAULT_SEQUENCE_MAX_LENGHT;
+    private int sequenceLimit = DEFAULT_SEQUENCE_LIMIT;
     
     public MoreSubtask(String subfolder) {
         super(subfolder);
@@ -200,7 +201,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
             final int start = Math.max(values.first()-lowerMargin, 1); 
             final int end = values.last()+upperMargin;
             final int size = end - start;
-            if(size > sequenceMaxLenght){ //TODO: do what when max lenght < 0?
+            if(sequenceLimit > 0 && size > sequenceLimit){
                 journal.report(Level.WARNING, true, SEQUENCE_TOO_BIG_LOG_MASK, entry.getKey(), size);
                 continue;
             }
@@ -229,19 +230,23 @@ public class MoreSubtask extends BasicGoogleSubtask{
 
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void setMinDimension(int d) {
+        if(d < MIN_MIN_DIMENSION) throw new IllegalArgumentException("min dimension "+d+" < "+MIN_MIN_DIMENSION);
         this.minDimension = d;
     }
 
     public void setLowerMargin(int amount) {
+        if(amount < 0) throw new IllegalArgumentException("lower margin "+amount+" < 0");
         this.lowerMargin = amount;
     }
 
     public void setUpperMargin(int amount) {
+        if(amount < 0) throw new IllegalArgumentException("upper margin "+amount+" < 0");
         this.upperMargin = amount;
     }
 
     public void setSequenceLimit(int amount) {
-        this.sequenceMaxLenght = amount;
+        if(amount < 0) throw new IllegalArgumentException("sequence limit "+amount+" < 0");
+        this.sequenceLimit = amount;
     }
     // </editor-fold>
 

@@ -28,9 +28,9 @@ import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.imagedownloader.tasks.LargerSubtask;
 import rubensandreoli.imagedownloader.tasks.MoreSubtask;
 import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_LOWER_MARGIN;
-import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_MIN_DIMENSION;
 import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_UPPER_MARGIN;
 import rubensandreoli.imagedownloader.tasks.support.Searcher;
+import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_MIN_DIMENSION;
 
 /** 
  * References:
@@ -71,20 +71,22 @@ public class GooglePanel extends DownloadTaskPanel {
     private static final int MIN_DIMENSION;
     private static final int SEQUENCE_LIMIT;
     private static final double DIMENSION_RATIO;
+    private static final boolean SOURCE_NAME;
     static{
-        FAIL_THREASHOLD = Configuration.values.get("google:fail_threashold", GoogleTask.DEFAULT_FAIL_THRESHOLD, 1);
+        FAIL_THREASHOLD = Configuration.values.get("google:fail_threashold", GoogleTask.DEFAULT_FAIL_THRESHOLD, 0);
         RESPONSE_LINK_TEXT = Configuration.values.get("google:link_text_marker", Searcher.DEFAULT_LINK_TEXT);
         MIN_FILESIZE = Configuration.values.get("google:filesize_min", GoogleTask.DEFAULT_MIN_FILESIZE, 0);
         
         SUBFOLDER_LARGER = Configuration.values.get("google-large:subfolder_name", "copies");
         FILESIZE_RATIO = Configuration.values.get("google-large:filesize_ratio", LargerSubtask.DEFAULT_FILESIZE_RATIO, LargerSubtask.MIN_FILESIZE_RATIO);
-        DIMENSION_RATIO = Configuration.values.get("google-large:dimension_ratio", LargerSubtask.DEFAULT_DIMENTION_RATIO, LargerSubtask.MIN_DIMENSION_RATIO);
+        DIMENSION_RATIO = Configuration.values.get("google-large:dimension_ratio", LargerSubtask.DEFAULT_DIMENSION_RATIO, LargerSubtask.MIN_DIMENSION_RATIO);
+        SOURCE_NAME = Configuration.values.get("google-large:source_name", LargerSubtask.DEFAULT_SOURCE_NAME);
         
         SUBFOLDER_MORE = Configuration.values.get("google-more:subfolder", "more");
         LOWER_MARGIN = Configuration.values.get("google-more:lower_margin", MoreSubtask.DEFAULT_LOWER_MARGIN, 0);
         UPPER_MARGIN = Configuration.values.get("google-more:upper_margin", MoreSubtask.DEFAULT_UPPER_MARGIN, 0);
-        MIN_DIMENSION = Configuration.values.get("google-more:min_dimension", MoreSubtask.DEFAULT_MIN_DIMENSION, 10);
-        SEQUENCE_LIMIT = Configuration.values.get("google-more:sequence_limit", MoreSubtask.DEFAULT_SEQUENCE_MAX_LENGHT, 100);
+        MIN_DIMENSION = Configuration.values.get("google-more:min_dimension", MoreSubtask.DEFAULT_MIN_DIMENSION, MoreSubtask.MIN_MIN_DIMENSION);
+        SEQUENCE_LIMIT = Configuration.values.get("google-more:sequence_limit", MoreSubtask.DEFAULT_SEQUENCE_LIMIT, 0);
     }
     // </editor-fold>
 
@@ -275,6 +277,7 @@ public class GooglePanel extends DownloadTaskPanel {
                 larger.setRetrySmall(tbtSize.isSelected());
                 larger.setFilesizeRatio(FILESIZE_RATIO);
                 larger.setDimensionRatio(DIMENSION_RATIO);
+                larger.setSourceName(SOURCE_NAME);
                 task.addSubtask(larger);
             }
             if(tbtMore.isSelected()){

@@ -28,12 +28,13 @@ public class LargerSubtask extends BasicGoogleSubtask{
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">
     public static final int PRIORITY = 0;
-    public static final double DEFAULT_DIMENTION_RATIO = 1.05;
+    public static final double DEFAULT_DIMENSION_RATIO = 1.05;
     public static final double MIN_DIMENSION_RATIO = 1.0;
     public static final double DEFAULT_FILESIZE_RATIO = 1.0;
     public static final double MIN_FILESIZE_RATIO = 0.1;
     public static final boolean DEFAULT_RETRY_SMALL = true;
     public static final String ATTENTION_SUBFOLDER = "low";
+    public static final boolean DEFAULT_SOURCE_NAME = false;
 
     private static final String NO_LARGER_LOG_MASK = "No larger images were found within %d image(s)"; //image count
     private static final String LARGER_FOUND_LOG_MASK = "Found image with larger dimensions [%d:%d] > [%d:%d]"; //width, height; source width; source height
@@ -43,9 +44,10 @@ public class LargerSubtask extends BasicGoogleSubtask{
     private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]"; //downloaded size; source size
     // </editor-fold>
     
+    private boolean sourceName = DEFAULT_SOURCE_NAME;
     private boolean retrySmall = DEFAULT_RETRY_SMALL;
     private double sizeRatio = DEFAULT_FILESIZE_RATIO;
-    private double dimensionRatio = DEFAULT_DIMENTION_RATIO;
+    private double dimensionRatio = DEFAULT_DIMENSION_RATIO;
 
     public LargerSubtask(String subfolder) {
         super(subfolder);
@@ -69,7 +71,7 @@ public class LargerSubtask extends BasicGoogleSubtask{
         
         //FOUND LARGER
         log.appendLine(Level.INFO, LARGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height);
-        final CachedFile cachedFile = downloader.download(largest.path, subfolder, largest.getFilename(), largest.getExtension());
+        final CachedFile cachedFile = downloader.download(largest.path, subfolder, sourceName? source.getFilename():largest.getFilename(), largest.getExtension());
         boolean failed = (cachedFile == null);
         if(!failed){
             if(retrySmall){
@@ -110,6 +112,10 @@ public class LargerSubtask extends BasicGoogleSubtask{
     public void setDimensionRatio(double ratio) {
         if(ratio < MIN_DIMENSION_RATIO) throw new IllegalArgumentException("ratio "+ratio+" < "+MIN_DIMENSION_RATIO);
         this.dimensionRatio = ratio;
+    }
+
+    public void setSourceName(boolean sourceName) {
+        this.sourceName = sourceName;
     }
     // </editor-fold>
 

@@ -49,8 +49,8 @@ public class SequencePanel extends DownloadTaskPanel {
     private static final int FAIL_THRESHOLD;
     private static final int MIN_FILESIZE;
     static{
-        FAIL_THRESHOLD = Configuration.values.get("sequencial:fails_threshold", SequenceTask.DEFAULT_FAIL_THRESHOLD, 0);
-        MIN_FILESIZE = Configuration.values.get("sequencial:filesize_min", SequenceTask.DEFAULT_MIN_FILESIZE, 0);
+        FAIL_THRESHOLD = Configuration.values.get("sequence:fails_threshold", SequenceTask.DEFAULT_FAIL_THRESHOLD, 0);
+        MIN_FILESIZE = Configuration.values.get("sequence:filesize_min", SequenceTask.DEFAULT_MIN_FILESIZE, 0);
     }
     // </editor-fold>
     
