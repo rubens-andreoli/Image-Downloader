@@ -174,7 +174,7 @@ public class TaskTable extends javax.swing.JTable {
     public void clear(){
        final int oldSize = tasks.size();
        tasks = createList();
-       setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //nedded?
+       setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
        model.fireTableRowsDeleted(0, oldSize);
     }
 
@@ -200,7 +200,7 @@ public class TaskTable extends javax.swing.JTable {
                         }
                     }
                     refresh();
-                    setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //after clear
+                    if(tasks.isEmpty())setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
                 }
             }
         });

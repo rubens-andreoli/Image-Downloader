@@ -31,17 +31,17 @@ public class LargerSubtask extends BasicGoogleSubtask{
     public static final double DEFAULT_DIMENSION_RATIO = 1.05;
     public static final double MIN_DIMENSION_RATIO = 1.0;
     public static final double DEFAULT_FILESIZE_RATIO = 1.0;
-    public static final double MIN_FILESIZE_RATIO = 0.1;
+    public static final double MIN_FILESIZE_RATIO = 1.0;
     public static final boolean DEFAULT_RETRY_SMALL = true;
     public static final String ATTENTION_SUBFOLDER = "low";
     public static final boolean DEFAULT_SOURCE_NAME = false;
 
     private static final String NO_LARGER_LOG_MASK = "No larger images were found within %d image(s)"; //image count
-    private static final String LARGER_FOUND_LOG_MASK = "Found image with larger dimensions [%d:%d] > [%d:%d]"; //width, height; source width; source height
+    private static final String LARGER_FOUND_LOG_MASK = "Found image with larger dimensions [%d:%d] >= [%d:%d]"; //width, height; source width; source height
     private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found";
-    private static final String SMALLER_THAN_SOURCE_LOG_MASK = "Image has a smaller file size than desired [%,d bytes] < [%,d bytes]"; //source size; target size
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] > [%,d bytes]"; //downloaded size; source size
+    private static final String SMALLER_THAN_SOURCE_LOG_MASK = "Image has a smaller file size than desired [%,d bytes] <= [%,d bytes]"; //source size; target size
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] >= [%,d bytes]"; //downloaded size; source size
     // </editor-fold>
     
     private boolean sourceName = DEFAULT_SOURCE_NAME;

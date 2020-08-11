@@ -236,7 +236,7 @@ public class GooglePanel extends DownloadTaskPanel {
             JOptionPane.showMessageDialog(this,
                     NO_SUBTASK_MSG,
                     NO_SUBTASK_TITLE,
-                    JOptionPane.ERROR_MESSAGE
+                    JOptionPane.INFORMATION_MESSAGE
             );
             return;
         }
