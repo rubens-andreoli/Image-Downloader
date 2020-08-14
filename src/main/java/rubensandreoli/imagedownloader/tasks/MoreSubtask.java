@@ -198,7 +198,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
             } 
             
             //PREPARE TASK VALUES
-            final int start = Math.max(values.first()-lowerMargin, 1); 
+            final int start = Math.max(values.first()-lowerMargin, 0); 
             final int end = values.last()+upperMargin;
             final int size = end - start;
             if(sequenceLimit > 0 && size > sequenceLimit){

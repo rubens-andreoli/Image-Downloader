@@ -33,6 +33,7 @@ import rubensandreoli.imagedownloader.tasks.Task;
  * References:
  * https://stackoverflow.com/questions/17858132/automatically-adjust-jtable-column-to-fit-content
  * http://www.java2s.com/Tutorial/Java/0240__Swing/Setcolumnwidthbasedoncellrenderer.htm
+ * https://stackoverflow.com/questions/34862674/java-how-to-prevent-the-horizontal-auto-scrolling-in-a-jtable-when-clicking-th
  */
 public class TaskTable extends javax.swing.JTable {
     private static final long serialVersionUID = 1L;
@@ -213,6 +214,11 @@ public class TaskTable extends javax.swing.JTable {
         final TableColumn tableColumn = getColumnModel().getColumn(column);
         tableColumn.setPreferredWidth(Math.max(rendererWidth + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
         return component;
+    }
+    
+    @Override
+    public void changeSelection(int row, int column, boolean toggle, boolean extend) {
+        super.changeSelection(row, 0, toggle, extend);
     }
 
 }

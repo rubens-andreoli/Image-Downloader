@@ -28,7 +28,7 @@ import rubensandreoli.imagedownloader.tasks.support.TaskJournal;
 public abstract class DownloadTask implements Task, DownloadListener {
     
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
-    public static final String DOWNLOAD_TOTAL_LOG_MASK = "%d successful download(s)\n"; //successess
+    public static final String DOWNLOAD_TOTAL_LOG_MASK = "%d successful download(s)"; //successess
     
     private static final String NO_FOLDER_MSG = "No folder selected.";
     private static final String NOT_FOLDER_MSG_MASK = "Path [%s] is not a folder, or couldn't be found."; //filepath

@@ -26,12 +26,15 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jsoup.nodes.Element;
+import rubensandreoli.commons.others.Level;
+import rubensandreoli.commons.others.Logger;
 import rubensandreoli.imagedownloader.tasks.exceptions.LoadException;
 import rubensandreoli.imagedownloader.tasks.exceptions.SearchException;
 import rubensandreoli.imagedownloader.tasks.exceptions.UploadException;
@@ -99,8 +102,12 @@ public class Searcher {
             try(CloseableHttpClient client = HttpUtils.getClient()){
                 final HttpResponse response = client.execute(post);
                 sourceBytes = null; //free memory
-                responseLink = response.getFirstHeader("location").getValue();
+                final Header header = response.getFirstHeader("location");
+                responseLink = header.getValue(); //FIX: crashed!! why? null pointer?
             } catch (IOException ex) {
+                throw new UploadException(ex);
+            } catch (RuntimeException ex){
+                Logger.log.print(Level.CRITICAL, "responseLink ["+responseLink+"]", ex); //TODO: remove debugging
                 throw new UploadException(ex);
             }
         }

@@ -301,9 +301,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
             protected Void doInBackground() throws Exception {
                 while(!tasks.isEmpty()){
                     if(isCancelled()) break;
-                    currentTask = tasks.removeFirst();
+                    currentTask = tasks.peekFirst();
                     currentTask.setProgressListener(l -> publish(l));
                     currentTask.perform();
+                    tasks.removeFirst();
                 }
                 return null;
             }
@@ -447,7 +448,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setToolTipText(null);
         pgbTasks.setValue(0);
         if(isCanceled) tasks.clear(); //if cancelled remove remaining tasks
-        tblTasks.clear();
+//        tblTasks.clear();
         btnStart.setEnabled(true);
         btnStop.setEnabled(true);
     }
@@ -463,6 +464,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
     @Override
     public void taskCreated(String type, Task task, String description) {
+        if(tasks.isEmpty()) tblTasks.clear();
         tasks.addLast(task);
         tblTasks.addTask(type, task, description);
     }

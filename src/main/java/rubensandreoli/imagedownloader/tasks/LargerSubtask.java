@@ -37,11 +37,11 @@ public class LargerSubtask extends BasicGoogleSubtask{
     public static final boolean DEFAULT_SOURCE_NAME = false;
 
     private static final String NO_LARGER_LOG_MASK = "No larger images were found within %d image(s)"; //image count
-    private static final String LARGER_FOUND_LOG_MASK = "Found image with larger dimensions [%d:%d] >= [%d:%d]"; //width, height; source width; source height
+    private static final String LARGER_FOUND_LOG_MASK = "Found image larger than desired [%d:%d] >= [%d:%d]"; //width, height; source width; source height
     private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found";
-    private static final String SMALLER_THAN_SOURCE_LOG_MASK = "Image has a smaller file size than desired [%,d bytes] <= [%,d bytes]"; //source size; target size
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size also [%,d bytes] >= [%,d bytes]"; //downloaded size; source size
+    private static final String SMALLER_THAN_SOURCE_LOG_MASK = "Image has a smaller file size than desired [%,d bytes] < [%,d bytes]"; //source size; target size
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size than desired [%,d bytes] >= [%,d bytes]"; //downloaded size; source size
     // </editor-fold>
     
     private boolean sourceName = DEFAULT_SOURCE_NAME;
@@ -70,17 +70,18 @@ public class LargerSubtask extends BasicGoogleSubtask{
         }
         
         //FOUND LARGER
-        log.appendLine(Level.INFO, LARGER_FOUND_LOG_MASK, largest.width, largest.height, source.width, source.height);
+        log.appendLine(Level.INFO, LARGER_FOUND_LOG_MASK, largest.width, largest.height, (long)(source.width*dimensionRatio), (long)(source.height*dimensionRatio));
         final CachedFile cachedFile = downloader.download(largest.path, subfolder, sourceName? source.getFilename():largest.getFilename(), largest.getExtension());
         boolean failed = (cachedFile == null);
         if(!failed){
             if(retrySmall){
-                if(cachedFile.length() <= source.getSize()*sizeRatio){
-                    log.appendLine(Level.WARNING, SMALLER_THAN_SOURCE_LOG_MASK, cachedFile.length(), (long)(source.getSize()*sizeRatio));
+                long desiredSize = (long)(source.getSize()*sizeRatio);
+                if(Long.compare(cachedFile.length(), desiredSize) < 0){
+                    log.appendLine(Level.WARNING, SMALLER_THAN_SOURCE_LOG_MASK, cachedFile.length(), desiredSize);
                     FileUtils.moveFileToChild(cachedFile, ATTENTION_SUBFOLDER);
                     failed = true;
                 }else{
-                    log.appendLine(Level.INFO, BIGGER_SIZE_LOG_MASK, cachedFile.length(), source.getSize());
+                    log.appendLine(Level.INFO, BIGGER_SIZE_LOG_MASK, cachedFile.length(), desiredSize);
                     journal.increaseSuccesses();
                 }
             }else{
