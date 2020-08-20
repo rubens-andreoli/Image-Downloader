@@ -37,12 +37,7 @@ public abstract class TaskPanel<T extends Task> extends javax.swing.JPanel {
     private TaskPanelListener listener;
 
     public TaskPanel(String title) {
-        this(title, null);
-    }
-
-    public TaskPanel(final String title, TaskPanelListener listener) {
         this.title = title;
-        this.listener = listener;
         final Dimension min = new Dimension(488, 62);
         setPreferredSize(min);
         setMinimumSize(min);

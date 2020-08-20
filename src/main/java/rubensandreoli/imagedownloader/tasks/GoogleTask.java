@@ -95,7 +95,7 @@ public class GoogleTask extends DownloadTask{
             final Path image = images.get(i);
             final var log = journal.startNewLog(true)
                     .appendLine(IMAGE_NUMBER_LOG_MASK, i)
-                    .appendLine(Level.INFO, LOADING_IMAGE_LOG_MASK, image.getFileName().toString());
+                    .appendLine(Level.INFO, LOADING_IMAGE_LOG_MASK, image.toString());
 
             try {
                 final var result = searcher.search(image);

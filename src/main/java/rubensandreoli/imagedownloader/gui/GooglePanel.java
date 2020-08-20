@@ -17,20 +17,15 @@
 package rubensandreoli.imagedownloader.gui;
 
 import java.awt.event.KeyEvent;
-import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
-import rubensandreoli.imagedownloader.tasks.GoogleTask;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import rubensandreoli.commons.others.Configuration;
 import rubensandreoli.commons.utils.FileUtils;
+import rubensandreoli.imagedownloader.tasks.GoogleTask;
 import rubensandreoli.imagedownloader.tasks.LargerSubtask;
 import rubensandreoli.imagedownloader.tasks.MoreSubtask;
-import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_LOWER_MARGIN;
-import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_UPPER_MARGIN;
+import rubensandreoli.imagedownloader.tasks.exceptions.BoundsException;
 import rubensandreoli.imagedownloader.tasks.support.Searcher;
-import static rubensandreoli.imagedownloader.tasks.MoreSubtask.DEFAULT_MIN_DIMENSION;
 
 /** 
  * References:

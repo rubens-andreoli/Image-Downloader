@@ -16,13 +16,13 @@
 <entry key="google-more:min_dimension">400</entry>
 <entry key="log_size">120</entry>
 <entry key="scraper:filesize_min">25600</entry>
+<entry key="google-large:subfolder">copies</entry>
 <entry key="log_inverted">false</entry>
 <entry key="connection_cooldown_min">600</entry>
 <entry key="google:fail_threashold">10</entry>
 <entry key="google:link_text_marker">Todos os tamanhos</entry>
 <entry key="google-more:subfolder">more</entry>
 <entry key="read_timout">4000</entry>
-<entry key="google-large:subfolder_name">copies</entry>
 <entry key="crash_log">true</entry>
 <entry key="google-more:upper_margin">200</entry>
 <entry key="google-large:dimension_ratio">1.05</entry>

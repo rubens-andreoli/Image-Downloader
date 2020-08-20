@@ -22,11 +22,14 @@ import java.awt.event.KeyEvent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import rubensandreoli.commons.utils.FileUtils;
 import rubensandreoli.imagedownloader.tasks.Task;
 
 /** 
@@ -47,21 +50,17 @@ public class TaskTable extends javax.swing.JTable {
     
     private TableModel model = new TableModel();
     private List<TaskAdapter> tasks = createList();
-    
+       
     // <editor-fold defaultstate="collapsed" desc=" TASK ADAPTER "> 
     public static class TaskAdapter {
         public final String type;
         public final Task task;
         public final String description;
 
-        public TaskAdapter(final String type, final Task task, final String description) {
+        public TaskAdapter(String type, Task task, String description) {
             this.type = type;
             this.task = task;
             this.description = description;
-        }
-        
-        private TaskAdapter(Task task){
-            this(null, task, null);
         }
 
         @Override
@@ -79,7 +78,7 @@ public class TaskTable extends javax.swing.JTable {
     }
     // </editor-fold>
     
-    // <editor-fold defaultstate="collapsed" desc=" TABLE MODEL "> 
+    // <editor-fold defaultstate="collapsed" desc=" MODEL "> 
     private class TableModel extends AbstractTableModel{
         private static final long serialVersionUID = 1L;
 
@@ -135,6 +134,45 @@ public class TaskTable extends javax.swing.JTable {
     }
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc=" RENDERER "> 
+    public static class TaskCellRenderer implements TableCellRenderer {
+
+        private static final ImageIcon RUNNING_ICON = FileUtils.loadIcon("images/download.png");
+        private static final ImageIcon INTERRUPTED_ICON = FileUtils.loadIcon("images/close.png");
+        private static final ImageIcon COMPLETED_ICON = FileUtils.loadIcon("images/checkmark.png");
+        private static final ImageIcon CRASHED_ICON = FileUtils.loadIcon("images/attention.png");
+
+        private final JLabel label = new JLabel();
+
+        public TaskCellRenderer(){
+            label.setHorizontalAlignment(JLabel.CENTER);
+            label.setVerticalAlignment(JLabel.BOTTOM);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Task task = (Task) value;
+            switch(task.getStatus()){
+                case RUNNING:
+                    label.setIcon(RUNNING_ICON);
+                    break;
+                case INTERRUPTED:
+                    label.setIcon(INTERRUPTED_ICON);
+                    break;
+                case COMPLETED:
+                    label.setIcon(COMPLETED_ICON);
+                    break;
+                case CRASHED:
+                    label.setIcon(CRASHED_ICON);
+                    break;
+                default:
+                    label.setIcon(null);
+            }
+            return label;
+        }
+    }
+    // </editor-fold>
+    
     public TaskTable(){
         setModel(model);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -160,7 +198,7 @@ public class TaskTable extends javax.swing.JTable {
     public void addTask(TaskAdapter taskAdapter){
         tasks.add(taskAdapter);
         final int rows = model.getRowCount();
-        if(!tasks.isEmpty()) setAutoResizeMode(JTable.AUTO_RESIZE_OFF); //after first insert
+        setAutoResizeMode(JTable.AUTO_RESIZE_OFF); //after first add resize is off
         model.fireTableRowsInserted(rows, rows);
     }
     
@@ -175,7 +213,7 @@ public class TaskTable extends javax.swing.JTable {
     public void clear(){
        final int oldSize = tasks.size();
        tasks = createList();
-       setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+       setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //resize if empty
        model.fireTableRowsDeleted(0, oldSize);
     }
 
@@ -201,7 +239,7 @@ public class TaskTable extends javax.swing.JTable {
                         }
                     }
                     refresh();
-                    if(tasks.isEmpty())setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+                    if(tasks.isEmpty()) setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN); //resize if empty
                 }
             }
         });
@@ -209,16 +247,16 @@ public class TaskTable extends javax.swing.JTable {
 
     @Override
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-        final Component component = super.prepareRenderer(renderer, row, column);
-        int rendererWidth = component.getPreferredSize().width;
+        final Component c = super.prepareRenderer(renderer, row, column);
+        int width = c.getPreferredSize().width;
         final TableColumn tableColumn = getColumnModel().getColumn(column);
-        tableColumn.setPreferredWidth(Math.max(rendererWidth + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
-        return component;
+        tableColumn.setPreferredWidth(Math.max(width + getIntercellSpacing().width, tableColumn.getPreferredWidth()));
+        return c;
     }
     
     @Override
     public void changeSelection(int row, int column, boolean toggle, boolean extend) {
-        super.changeSelection(row, 0, toggle, extend);
+        super.changeSelection(row, 0, toggle, extend); //prevent horizontal auto-scrolling
     }
 
 }

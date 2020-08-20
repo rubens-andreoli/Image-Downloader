@@ -40,10 +40,6 @@ public abstract class DownloadTaskPanel extends TaskPanel<DownloadTask>{
         super(title);
     }
 
-    public DownloadTaskPanel(String title, TaskPanelListener listener) {
-        super(title, listener);
-    }
-
     @Override
     protected boolean fireTaskCreated(DownloadTask task, String description, Object... args) {
         task.setConnection(CONNECTION_TIMEOUT, READ_TIMEOUT, MIN_COOLDOWN, MAX_COOLDOWN);

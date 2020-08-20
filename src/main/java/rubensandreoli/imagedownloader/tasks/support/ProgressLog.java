@@ -66,6 +66,14 @@ public class ProgressLog {
     public int getWorkload() {
         return workload;
     }
+    
+    public boolean isFirst() {
+        return number == 0;
+    }
+    
+    public boolean isLast() {
+        return number == workload;
+    }
     // </editor-fold>
 
     @Override

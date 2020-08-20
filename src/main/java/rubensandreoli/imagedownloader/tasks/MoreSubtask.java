@@ -117,7 +117,7 @@ public class MoreSubtask extends BasicGoogleSubtask{
             final String extension = i.getExtension();
 
             //TEST AND ADD SEQUENCE
-            if(filename.matches(VALID_IMAGE_REGEX) && (i.width > minDimension || i.height > minDimension)){
+            if(filename.matches(VALID_IMAGE_REGEX) && (i.width > minDimension && i.height > minDimension)){
                 found += addSequence(parent, filename, extension);
             }
         }
