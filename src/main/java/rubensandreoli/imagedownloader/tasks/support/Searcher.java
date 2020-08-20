@@ -85,6 +85,7 @@ public class Searcher {
             try(var imageStream = new BufferedInputStream(Files.newInputStream(image))){
                 sourceBytes = imageStream.readAllBytes();
                 final var bufferedImage = ImageIO.read(new ByteArrayInputStream(sourceBytes));
+                if(bufferedImage == null) throw new IOException("failed reading image from file");
                 sourceInfo = new ImageInfo(image.toString(), bufferedImage.getWidth(), bufferedImage.getHeight());
                 sourceInfo.setSize(sourceBytes.length);
             } catch (IOException ex) {
@@ -103,6 +104,7 @@ public class Searcher {
                 final HttpResponse response = client.execute(post);
                 sourceBytes = null; //free memory
                 final Header header = response.getFirstHeader("location");
+//                if(header == null) throw new UploadException("location header not foound");
                 responseLink = header.getValue(); //FIX: crashed!! why? null pointer?
             } catch (IOException ex) {
                 throw new UploadException(ex);

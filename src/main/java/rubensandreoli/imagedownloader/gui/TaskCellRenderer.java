@@ -53,6 +53,7 @@ public class TaskCellRenderer implements TableCellRenderer {
                 break;
             case CRASHED:
                 label.setIcon(CRASHED_ICON);
+                break;
             default:
                 label.setIcon(null);
         }

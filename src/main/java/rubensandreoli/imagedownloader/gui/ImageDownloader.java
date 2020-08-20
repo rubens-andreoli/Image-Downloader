@@ -19,6 +19,7 @@ package rubensandreoli.imagedownloader.gui;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Taskbar;
 import java.awt.event.WindowEvent;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -59,6 +60,7 @@ import rubensandreoli.imagedownloader.tasks.support.ProgressLog;
  * https://stackoverflow.com/questions/1426754/linkedblockingqueue-vs-concurrentlinkedqueue
  * https://stackoverflow.com/questions/1614772/how-to-change-jframe-icon
  * https://stackoverflow.com/questions/3965336/how-to-minimize-a-jframe-window-from-java
+ * https://stackoverflow.com/questions/2167037/windows-7-taskbar-progress-bar-in-java
  */
 public class ImageDownloader extends javax.swing.JFrame implements TaskPanelListener, TaskTableListener {
     private static final long serialVersionUID = 1L;
@@ -103,6 +105,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private SwingWorker<Void, ProgressLog> worker;
     private Task currentTask;
     private ScheduledExecutorService logger;
+    private Taskbar taskbar = Taskbar.getTaskbar();
+    private int totalTasks;
 
     public ImageDownloader() { 
         initComponents();
@@ -116,12 +120,12 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         txaLogs.setInverted(LOG_INVERTED);
         txaLogs.setFont(LOG_FONT);
         loadLog();
-        
+
         if(SAVE_INTERVAL != 0){ //TODO: logger is running even when no task is performed; ineficient
             logger = Executors.newSingleThreadScheduledExecutor();
             logger.scheduleAtFixedRate(this::saveLog, SAVE_INTERVAL, SAVE_INTERVAL, TimeUnit.MINUTES);  
         }
-        
+    
         // <editor-fold defaultstate="collapsed" desc=" SSL TRUST MANAGER "> 
 	// Create a new trust manager that trust all certificates
 	TrustManager[] trustAllCerts = new TrustManager[]{ new X509TrustManager() {
@@ -321,12 +325,21 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
                 pgbTasks.setValue(lastLog.getNumber());
                 pgbTasks.setMaximum(lastLog.getWorkload());
                 pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
+                try{
+                    taskbar.setWindowProgressValue(ImageDownloader.this, (100*(totalTasks-tasks.size()))/totalTasks);
+                }catch(RuntimeException ex){}
             }
 
             @Override
             protected void done() {
                 currentTask = null;
+                totalTasks = 0;
+                try{
+                    if(isCancelled()) taskbar.setWindowProgressState(ImageDownloader.this, Taskbar.State.ERROR);
+                    taskbar.setWindowProgressValue(ImageDownloader.this, 100);
+                }catch(RuntimeException ex){}
                 clear(isCancelled());
+                taskbar.setWindowProgressState(ImageDownloader.this, Taskbar.State.OFF);
                 if(!isCancelled() && chkShutdown.isSelected()){
                     ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, SHUTDOWN_EVENT_CODE));
                 }
@@ -467,6 +480,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(tasks.isEmpty()) tblTasks.clear();
         tasks.addLast(task);
         tblTasks.addTask(type, task, description);
+        totalTasks++;
     }
 
     @Override
@@ -475,6 +489,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(task.getStatus() == State.WAITING){
             tasks.remove(task);
             removed = true;
+            totalTasks--;
         }else if(task == currentTask){
             currentTask.interrupt();
         }

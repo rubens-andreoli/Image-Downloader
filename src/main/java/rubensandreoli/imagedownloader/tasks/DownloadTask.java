@@ -49,7 +49,7 @@ public abstract class DownloadTask implements Task, DownloadListener {
         try{
             run();
         }catch(Exception ex){
-            Logger.log.print(Level.CRITICAL, "Unexpected exception", ex);
+            Logger.log.print(Level.CRITICAL, "Unexpected exception "+ex.getClass().toString(), ex);
             journal.setState(State.CRASHED);
         }
         if(journal.isRunning()) journal.setState(State.COMPLETED);

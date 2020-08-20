@@ -22,5 +22,9 @@ public class UploadException extends Exception{
     public UploadException(Throwable ex) {
         super(ex);
     }
-    
+
+    public UploadException(String message) {
+        super(message);
+    }
+     
 }

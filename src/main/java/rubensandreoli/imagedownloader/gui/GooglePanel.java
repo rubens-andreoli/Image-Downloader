@@ -77,7 +77,7 @@ public class GooglePanel extends DownloadTaskPanel {
         RESPONSE_LINK_TEXT = Configuration.values.get("google:link_text_marker", Searcher.DEFAULT_LINK_TEXT);
         MIN_FILESIZE = Configuration.values.get("google:filesize_min", GoogleTask.DEFAULT_MIN_FILESIZE, 0);
         
-        SUBFOLDER_LARGER = Configuration.values.get("google-large:subfolder_name", "copies");
+        SUBFOLDER_LARGER = Configuration.values.get("google-large:subfolder", "copies");
         FILESIZE_RATIO = Configuration.values.get("google-large:filesize_ratio", LargerSubtask.DEFAULT_FILESIZE_RATIO, LargerSubtask.MIN_FILESIZE_RATIO);
         DIMENSION_RATIO = Configuration.values.get("google-large:dimension_ratio", LargerSubtask.DEFAULT_DIMENSION_RATIO, LargerSubtask.MIN_DIMENSION_RATIO);
         SOURCE_NAME = Configuration.values.get("google-large:source_name", LargerSubtask.DEFAULT_SOURCE_NAME);
