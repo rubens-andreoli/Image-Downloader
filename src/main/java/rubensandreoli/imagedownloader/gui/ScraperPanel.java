@@ -82,7 +82,7 @@ public class ScraperPanel extends DownloadTaskPanel {
         });
 
         txfNumber.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfNumber.setToolTipText("<html>\n<b>Depth of the sub-links</b> that the scraper will crawl to.<br>\n<i>Depth limit can be set in the configurations file</i>\n</html>");
+        txfNumber.setToolTipText("<html><b>Depth of the sub-links</b> that the scraper will crawl to.<br><i>Depth limit = "+DEPTH_LIMIT+"</i></html>");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

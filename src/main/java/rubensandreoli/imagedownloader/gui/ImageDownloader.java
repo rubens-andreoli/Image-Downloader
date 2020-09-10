@@ -108,7 +108,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private volatile Task currentTask; //set by worker thread
     private ScheduledExecutorService logger;
     private Taskbar taskbar = Taskbar.getTaskbar();
-    private int totalTasks;
 
     public ImageDownloader() { 
         initComponents();
@@ -315,21 +314,26 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
 
             @Override
             protected void process(List<ProgressLog> logs) {
-                for (ProgressLog log : logs) {
+                for(ProgressLog log : logs) {
                     if(log.isFirst()) tblTasks.refresh();
                     txaLogs.addText(log.getMessages());
                 }
                 final ProgressLog lastLog = logs.get(logs.size()-1);
-                pgbTasks.setValue(lastLog.getNumber());
-                pgbTasks.setMaximum(lastLog.getWorkload());
-                pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, pgbTasks.getValue(), pgbTasks.getMaximum()));
-                try{ taskbar.setWindowProgressValue(ImageDownloader.this, (100*(totalTasks-tasks.size()))/totalTasks);
-                }catch(RuntimeException ex){}
+                final int number = lastLog.getNumber();
+                final int workload = lastLog.getWorkload();
+                pgbTasks.setValue(number);
+                pgbTasks.setMaximum(workload);
+                try {taskbar.setWindowProgressValue(ImageDownloader.this, (100*number)/workload);
+                } catch(RuntimeException ex){}
+                pgbTasks.setToolTipText(String.format(PROGRESSBAR_TOOLTIP_MASK, number, workload));
             }
 
             @Override
             protected void done() {
-                clear(isCancelled());
+                worker = null;
+                currentTask = null;
+                ImageDownloader.this.saveLog();
+                ImageDownloader.this.clear(isCancelled());
                 if(logger != null) try{ logger.shutdownNow();}catch(RuntimeException ex){}
                 if(!isCancelled() && chkShutdown.isSelected()){
                     ImageDownloader.this.formWindowClosing(new WindowEvent(ImageDownloader.this, SHUTDOWN_EVENT_CODE));
@@ -344,6 +348,15 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }//GEN-LAST:event_btnStopActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        if(currentTask != null){
+            if(JOptionPane.showConfirmDialog(
+                    this, 
+                    "Closing the program while running will stop all current donwloads.\nDo you wish to exit?", 
+                    "Closing", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.QUESTION_MESSAGE) != JOptionPane.YES_OPTION) 
+                return;
+        }
         stop(true);
         if(logger != null) logger.shutdownNow();
         saveLog();
@@ -382,7 +395,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     private rubensandreoli.imagedownloader.gui.TaskTable tblTasks;
     private rubensandreoli.commons.swing.RecycledTextArea txaLogs;
     // End of variables declaration//GEN-END:variables
-
+    
     private void stop(boolean interrupt){
         if(worker != null && currentTask != null){
             currentTask.interrupt();
@@ -416,18 +429,11 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     }
     
     private void securityAlert(){
-        JOptionPane.showMessageDialog(ImageDownloader.this,
-                SECURITY_MSG,
-                SECURITY_TITLE,
-                JOptionPane.ERROR_MESSAGE
-        );
+        JOptionPane.showMessageDialog(this, SECURITY_MSG, SECURITY_TITLE, JOptionPane.ERROR_MESSAGE);
     }
 
-    private void clear(boolean isCanceled){
+    private void clear(boolean isCanceled){ 
         //BEFORE USER VERIFICATION
-        worker = null;
-        currentTask = null;
-        totalTasks = 0;
         try{
             if(isCanceled) taskbar.setWindowProgressState(ImageDownloader.this, Taskbar.State.ERROR);
             taskbar.setWindowProgressValue(ImageDownloader.this, 100);
@@ -435,23 +441,14 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         pgbTasks.setCursor(Cursor.getDefaultCursor());
         pgbTasks.setValue(pgbTasks.getMaximum()); //if for some reason it's not filled completely
         tblTasks.refresh();
-        saveLog();
         
         //ALERT USER
         if(!chkShutdown.isSelected()) {
             setState(Frame.NORMAL);
             if(!isCanceled){
-                JOptionPane.showMessageDialog(ImageDownloader.this,
-                        COMPLETE_MSG,
-                        COMPLETE_TITLE,
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, COMPLETE_MSG, COMPLETE_TITLE, JOptionPane.INFORMATION_MESSAGE);   
             }else{
-                JOptionPane.showMessageDialog(ImageDownloader.this,
-                        ABORTED_MSG,
-                        ABORTED_TITLE,
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, ABORTED_MSG, ABORTED_TITLE, JOptionPane.INFORMATION_MESSAGE);
             }
         }
         
@@ -478,7 +475,6 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(tasks.isEmpty()) tblTasks.clear();
         tasks.addLast(task);
         tblTasks.addTask(type, task, description);
-        totalTasks++;
     }
 
     @Override
@@ -487,11 +483,10 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(task.getStatus() == State.WAITING){
             tasks.remove(task);
             removed = true;
-            totalTasks--;
         }else if(task == currentTask){
             currentTask.interrupt();
         }
         return removed;
     }
-     
+
 }

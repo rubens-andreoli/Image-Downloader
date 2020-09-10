@@ -118,7 +118,7 @@
               <Connection code="FileUtils.loadIcon(&quot;images/expand.png&quot;, 22)" type="code"/>
             </Property>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, a search for a &lt;b&gt;dimensionally larger copy&lt;/b&gt; of each&lt;br&gt;&#xa;source image, will be performed. If found, it will be &lt;b&gt;saved&lt;/b&gt;&lt;br&gt;&#xa;in a &lt;b&gt;subfolder&lt;/b&gt; of the destination.&lt;br&gt;&#xa;&lt;i&gt;Subfolder name can be set in the configurations file&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, a search for a &lt;b&gt;dimensionally larger copy&lt;/b&gt; of each&lt;br&gt;&#xa;source image, will be performed. If found, it will be &lt;b&gt;saved&lt;/b&gt;&lt;br&gt;&#xa;in a &lt;b&gt;subfolder&lt;/b&gt; of the destination.&lt;br&gt;&#xa;&lt;/html&gt;"/>
           </Properties>
           <Events>
             <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="tbtLargerItemStateChanged"/>
@@ -130,7 +130,7 @@
               <Connection code="FileUtils.loadIcon(&quot;images/save.png&quot;, 22)" type="code"/>
             </Property>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, images with larger dimensions but &lt;b&gt;smaller filesize&lt;/b&gt;&lt;br&gt;&#xa;will be &lt;b&gt;moved&lt;/b&gt; to a &lt;b&gt;copies subfolder&lt;/b&gt;, and another try is&lt;br&gt;&#xa;performed.&lt;br&gt;&#xa;&lt;i&gt;Can generate a lot of copies of the same image&lt;/i&gt;&lt;br&gt;&#xa;&lt;i&gt;Size ratio can be set in the configurations file&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, images with larger dimensions but &lt;b&gt;smaller filesize&lt;/b&gt;&lt;br&gt;&#xa;will be &lt;b&gt;moved&lt;/b&gt; to a &lt;b&gt;copies subfolder&lt;/b&gt;, and another try is&lt;br&gt;&#xa;performed.&lt;br&gt;&#xa;&lt;i&gt;Can generate a lot of copies of the same image&lt;/i&gt;&lt;br&gt;&#xa;&lt;/html&gt;"/>
           </Properties>
           <Events>
             <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="tbtSizeItemStateChanged"/>
@@ -141,8 +141,7 @@
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
               <Connection code="FileUtils.loadIcon(&quot;images/plus.png&quot;, 22)" type="code"/>
             </Property>
-            <Property name="selected" type="boolean" value="true"/>
-            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, sequential images, &lt;b&gt;potentially similar&lt;/b&gt;, to the ones&lt;br&gt;&#xa;found in the reverse search, will be &lt;b&gt;saved&lt;/b&gt; in a &lt;b&gt;subfolder&lt;/b&gt;.&lt;br&gt;&#xa;&lt;i&gt;Can generate unrelated images&lt;/i&gt;&lt;br&gt;&#xa;&lt;i&gt;Minimal dimension and subfolder name can be set in the configurations file&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, sequential images, &lt;b&gt;potentially similar&lt;/b&gt;, to the ones&lt;br&gt;&#xa;found in the reverse search, will be &lt;b&gt;saved&lt;/b&gt; in a &lt;b&gt;subfolder&lt;/b&gt;.&lt;br&gt;&#xa;&lt;i&gt;Can generate unrelated images&lt;/i&gt;&lt;br&gt;&#xa;&lt;/html&gt;"/>
           </Properties>
         </Component>
       </SubComponents>

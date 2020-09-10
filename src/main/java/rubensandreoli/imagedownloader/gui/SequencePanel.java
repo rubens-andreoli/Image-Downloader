@@ -76,7 +76,7 @@ public class SequencePanel extends DownloadTaskPanel {
             }
         });
 
-        txfUrl.setToolTipText("<html>\nSource image <b>URL</b>, with <b>first number</b> of the sequence between <b>curly brackets</b>.<br>\n<i>Eg.: https://www.site.com/image_{003}.jpg</i><br>\n<i>The maximum number of consecutive failed attempts can be set in<br>\nthe configuration file (a value of '0' means no fail threashold).</i>\n</html>");
+        txfUrl.setToolTipText("<html>\nSource image <b>URL</b>, with <b>first number</b> of the sequence between <b>curly brackets</b>.<br>\n<i>Eg.: https://www.site.com/image_{003}.jpg</i>\n</html>");
         txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
 
         btnAdd.setText("Add Task");

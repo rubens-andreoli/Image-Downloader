@@ -156,6 +156,7 @@ public class TaskTable extends javax.swing.JTable {
                 case RUNNING:
                     label.setIcon(RUNNING_ICON);
                     break;
+                case FAILED:
                 case INTERRUPTED:
                     label.setIcon(INTERRUPTED_ICON);
                     break;
@@ -165,6 +166,7 @@ public class TaskTable extends javax.swing.JTable {
                 case CRASHED:
                     label.setIcon(CRASHED_ICON);
                     break;
+                case WAITING:
                 default:
                     label.setIcon(null);
             }

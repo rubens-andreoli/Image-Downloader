@@ -116,7 +116,7 @@ public class GooglePanel extends DownloadTaskPanel {
 
         tbtLarger.setIcon(FileUtils.loadIcon("images/expand.png", 22));
         tbtLarger.setSelected(true);
-        tbtLarger.setToolTipText("<html>\nIf checked, a search for a <b>dimensionally larger copy</b> of each<br>\nsource image, will be performed. If found, it will be <b>saved</b><br>\nin a <b>subfolder</b> of the destination.<br>\n<i>Subfolder name can be set in the configurations file</i>\n</html>");
+        tbtLarger.setToolTipText("<html>\nIf checked, a search for a <b>dimensionally larger copy</b> of each<br>\nsource image, will be performed. If found, it will be <b>saved</b><br>\nin a <b>subfolder</b> of the destination.<br>\n</html>");
         tbtLarger.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 tbtLargerItemStateChanged(evt);
@@ -125,7 +125,7 @@ public class GooglePanel extends DownloadTaskPanel {
 
         tbtSize.setIcon(FileUtils.loadIcon("images/save.png", 22));
         tbtSize.setSelected(true);
-        tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is<br>\nperformed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n<i>Size ratio can be set in the configurations file</i>\n</html>");
+        tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is<br>\nperformed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n</html>");
         tbtSize.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 tbtSizeItemStateChanged(evt);
@@ -133,8 +133,7 @@ public class GooglePanel extends DownloadTaskPanel {
         });
 
         tbtMore.setIcon(FileUtils.loadIcon("images/plus.png", 22));
-        tbtMore.setSelected(true);
-        tbtMore.setToolTipText("<html>\nIf checked, sequential images, <b>potentially similar</b>, to the ones<br>\nfound in the reverse search, will be <b>saved</b> in a <b>subfolder</b>.<br>\n<i>Can generate unrelated images</i><br>\n<i>Minimal dimension and subfolder name can be set in the configurations file</i>\n</html>");
+        tbtMore.setToolTipText("<html>\nIf checked, sequential images, <b>potentially similar</b>, to the ones<br>\nfound in the reverse search, will be <b>saved</b> in a <b>subfolder</b>.<br>\n<i>Can generate unrelated images</i><br>\n</html>");
 
         javax.swing.GroupLayout btnSettingsLayout = new javax.swing.GroupLayout(btnSettings);
         btnSettings.setLayout(btnSettingsLayout);

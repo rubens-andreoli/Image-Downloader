@@ -80,7 +80,9 @@
     <Component class="rubensandreoli.commons.swing.NumberField" name="txfNumber">
       <Properties>
         <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&#xa;&lt;i&gt;Depth limit can be set in the configurations file&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="&quot;&lt;html&gt;&lt;b&gt;Depth of the sub-links&lt;/b&gt; that the scraper will crawl to.&lt;br&gt;&lt;i&gt;Depth limit = &quot;+DEPTH_LIMIT+&quot;&lt;/i&gt;&lt;/html&gt;&quot;" type="code"/>
+        </Property>
       </Properties>
     </Component>
     <Component class="rubensandreoli.commons.swing.PathField" name="txfDest">
