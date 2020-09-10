@@ -78,6 +78,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     
     private static final String PROGRESSBAR_TOOLTIP_MASK = "%d/%d"; //progress, total
     
+    private static final String CLOSING_TITLE = "Close";
+    private static final String CLOSING_MSG = "Closing the program while running will stop all current donwloads.\nDo you wish to exit anyway?";
     private static final String SECURITY_TITLE = "Security Error";
     private static final String SECURITY_MSG = "This program doesn't have permission to read/write in the folder where it is located.";
     private static final String EMPTY_MSG = "At least one task must be created before starting.";
@@ -351,8 +353,8 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
         if(currentTask != null){
             if(JOptionPane.showConfirmDialog(
                     this, 
-                    "Closing the program while running will stop all current donwloads.\nDo you wish to exit?", 
-                    "Closing", 
+                    CLOSING_MSG, 
+                    CLOSING_TITLE, 
                     JOptionPane.YES_NO_OPTION, 
                     JOptionPane.QUESTION_MESSAGE) != JOptionPane.YES_OPTION) 
                 return;

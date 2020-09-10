@@ -130,7 +130,7 @@
               <Connection code="FileUtils.loadIcon(&quot;images/save.png&quot;, 22)" type="code"/>
             </Property>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, images with larger dimensions but &lt;b&gt;smaller filesize&lt;/b&gt;&lt;br&gt;&#xa;will be &lt;b&gt;moved&lt;/b&gt; to a &lt;b&gt;copies subfolder&lt;/b&gt;, and another try is&lt;br&gt;&#xa;performed.&lt;br&gt;&#xa;&lt;i&gt;Can generate a lot of copies of the same image&lt;/i&gt;&lt;br&gt;&#xa;&lt;/html&gt;"/>
+            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;If checked, images with larger dimensions but &lt;b&gt;smaller filesize&lt;/b&gt;&lt;br&gt;&#xa;will be &lt;b&gt;moved&lt;/b&gt; to a &lt;b&gt;copies subfolder&lt;/b&gt;, and another try is performed.&lt;br&gt;&#xa;&lt;i&gt;Can generate a lot of copies of the same image&lt;/i&gt;&lt;br&gt;&#xa;&lt;/html&gt;"/>
           </Properties>
           <Events>
             <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="tbtSizeItemStateChanged"/>
@@ -162,7 +162,7 @@
     <Component class="rubensandreoli.commons.swing.NumberField" name="txfStart">
       <Properties>
         <Property name="horizontalAlignment" type="int" value="0"/>
-        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;&lt;b&gt;Start&lt;/b&gt; image &lt;b&gt;position&lt;/b&gt; within the source folder&lt;br&gt;&#xa;&lt;i&gt;Images are sorted alphabetically&lt;/i&gt;&#xa;&lt;/html&gt;"/>
+        <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;&#xa;&lt;b&gt;Start&lt;/b&gt; image &lt;b&gt;position&lt;/b&gt; within the source folder.&lt;br&gt;&#xa;&lt;i&gt;Images are sorted alphabetically&lt;/i&gt;&#xa;&lt;/html&gt;"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JButton" name="btnAdd">

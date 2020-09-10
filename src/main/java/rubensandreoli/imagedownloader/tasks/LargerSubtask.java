@@ -41,7 +41,7 @@ public class LargerSubtask extends BasicGoogleSubtask{
     private static final String TRY_OTHER_IMAGE_LOG = "Attempting to find another image";
     private static final String NO_NEW_IMAGES_LOG ="No new images were found";
     private static final String SMALLER_THAN_SOURCE_LOG_MASK = "Image has a smaller file size than desired [%,d bytes] < [%,d bytes]"; //source size; target size
-    private static final String BIGGER_SIZE_LOG_MASK = "Image found has a bigger file size than desired [%,d bytes] >= [%,d bytes]"; //downloaded size; source size
+    private static final String BIGGER_SIZE_LOG_MASK = "Image found has desired file size [%,d bytes] >= [%,d bytes]"; //downloaded size; source size
     // </editor-fold>
     
     private boolean sourceName = DEFAULT_SOURCE_NAME;

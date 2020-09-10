@@ -126,6 +126,11 @@ public class SequenceTask extends DownloadTask{
         }
     }
 
+    @Override
+    protected void close() {
+        excluding = null;
+    }
+
     // <editor-fold defaultstate="collapsed" desc=" SETTERS "> 
     public void excludeNumbers(Collection<Integer> values){
         if(excluding == null) excluding = new HashSet<>();

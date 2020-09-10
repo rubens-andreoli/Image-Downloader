@@ -125,7 +125,7 @@ public class GooglePanel extends DownloadTaskPanel {
 
         tbtSize.setIcon(FileUtils.loadIcon("images/save.png", 22));
         tbtSize.setSelected(true);
-        tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is<br>\nperformed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n</html>");
+        tbtSize.setToolTipText("<html>\nIf checked, images with larger dimensions but <b>smaller filesize</b><br>\nwill be <b>moved</b> to a <b>copies subfolder</b>, and another try is performed.<br>\n<i>Can generate a lot of copies of the same image</i><br>\n</html>");
         tbtSize.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 tbtSizeItemStateChanged(evt);
@@ -167,7 +167,7 @@ public class GooglePanel extends DownloadTaskPanel {
         });
 
         txfStart.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        txfStart.setToolTipText("<html>\n<b>Start</b> image <b>position</b> within the source folder<br>\n<i>Images are sorted alphabetically</i>\n</html>");
+        txfStart.setToolTipText("<html>\n<b>Start</b> image <b>position</b> within the source folder.<br>\n<i>Images are sorted alphabetically</i>\n</html>");
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {

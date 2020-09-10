@@ -104,12 +104,9 @@ public class Searcher {
                 final HttpResponse response = client.execute(post);
                 sourceBytes = null; //free memory
                 final Header header = response.getFirstHeader("location");
-//                if(header == null) throw new UploadException("location header not foound");
-                responseLink = header.getValue(); //FIX: crashed!! why? null pointer?
+                if(header == null) throw new UploadException("location header not foound");
+                responseLink = header.getValue();
             } catch (IOException ex) {
-                throw new UploadException(ex);
-            } catch (RuntimeException ex){
-                Logger.log.print(Level.CRITICAL, "responseLink ["+responseLink+"]", ex); //TODO: remove debugging
                 throw new UploadException(ex);
             }
         }

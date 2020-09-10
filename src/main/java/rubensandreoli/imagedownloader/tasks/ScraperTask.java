@@ -89,10 +89,9 @@ public class ScraperTask extends DownloadTask{
      
     private final String url;
     private final String domain;
-    private int depth = 0;
-    private final Set<String> processed = new HashSet<>();
     private final int depthLimit;
-    private int minFilezise = DEFAULT_MIN_FILESIZE;
+    private int depth = 0;
+    private Set<String> processed;
 
     public ScraperTask(String url, int depthLimit) throws MalformedURLException{
         if(depthLimit < 0) throw new IllegalArgumentException(depthLimit+" < 0");
@@ -102,7 +101,7 @@ public class ScraperTask extends DownloadTask{
             this.url = validUrl.toString();
             domain = String.format(SITE_MASK, validUrl.getProtocol(), validUrl.getAuthority());
             
-            setMinFilesize(minFilezise);
+            setMinFilesize(DEFAULT_MIN_FILESIZE);
         } catch (MalformedURLException ex) {
             throw new MalformedURLException(INVALID_URL_MSG);
         }
@@ -114,7 +113,13 @@ public class ScraperTask extends DownloadTask{
     
     @Override
     protected void run() {
+        processed = new HashSet<>();
         processPage(url);
+    }
+
+    @Override
+    protected void close() {
+        processed = null;
     }
         
     private void processPage(String url){

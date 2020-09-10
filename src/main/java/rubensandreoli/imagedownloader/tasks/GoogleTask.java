@@ -60,9 +60,10 @@ public class GoogleTask extends DownloadTask{
 
     private final Path source;
     private final List<Path> images;
+    private final int size;
     private final Searcher searcher;
     private int startIndex = 0;
-    private final Set<GoogleSubtask> subtasks = new TreeSet<>();
+    private Set<GoogleSubtask> subtasks;
 
     public GoogleTask(String source, String linkText) throws IOException{
         final Path path = getWritableFolder(source).toPath();
@@ -72,6 +73,7 @@ public class GoogleTask extends DownloadTask{
                 images.add(file);
             }
             if(images.isEmpty()) throw new IOException(String.format(EMPTY_SOURCE_MSG_MASK, source));
+            size = images.size();
             this.source = path;
         }
         this.searcher = new Searcher(linkText);
@@ -122,6 +124,12 @@ public class GoogleTask extends DownloadTask{
         
     }
 
+    @Override
+    protected void close() {
+        images.clear();
+        subtasks = null;
+    }
+
     // <editor-fold defaultstate="collapsed" desc=" SETTERS ">
     public void setStartIndex(int startIndex) throws BoundsException {
         if(startIndex < 0 || startIndex>images.size()-1){
@@ -132,13 +140,14 @@ public class GoogleTask extends DownloadTask{
     
     public boolean addSubtask(GoogleSubtask subtask){
         if(getStatus() != State.WAITING) return false;
+        else if(subtasks == null) subtasks = new TreeSet<>();
         return subtasks.add(subtask);
     }
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc=" GETTERS "> 
     public int getImageCount(){
-        return images.size();
+        return size;
     }
 
     public String getSource() {

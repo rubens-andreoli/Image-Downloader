@@ -55,10 +55,12 @@ public abstract class DownloadTask implements Task, DownloadListener {
         if(journal.isRunning()) journal.setState(State.COMPLETED);
         if(reportStatus) journal.reportState();
         if(reportSuccesses) journal.report(Level.INFO, false, DOWNLOAD_TOTAL_LOG_MASK, journal.getSuccesses());
+        close();
         return true;
     }
     
     protected abstract void run();
+    protected abstract void close();
     
     @Override
     public boolean interrupt() {
