@@ -70,7 +70,7 @@ public class ImageDownloader extends javax.swing.JFrame implements TaskPanelList
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS "> 
     private static final String PROGRAM_NAME = "Image Downloader";
     private static final String PROGRAM_ICON = "images/download_image.png";
-    private static final String PROGRAM_VERSION = "1.0.0";
+    private static final String PROGRAM_VERSION = "1.1.0";
     private static final String PROGRAM_YEAR = "2020";
     private static final String LOG_FILE = "history.log";
     private static final int SHUTDOWN_INTERVAL = 10; //seconds
