@@ -29,7 +29,7 @@ public class LargerSubtask extends BasicGoogleSubtask{
     // <editor-fold defaultstate="collapsed" desc=" STATIC FIELDS ">
     public static final int PRIORITY = 0;
     public static final double DEFAULT_DIMENSION_RATIO = 1.05;
-    public static final double MIN_DIMENSION_RATIO = 1.0;
+    public static final double MIN_DIMENSION_RATIO = 0.5;
     public static final double DEFAULT_FILESIZE_RATIO = 1.0;
     public static final double MIN_FILESIZE_RATIO = 1.0;
     public static final boolean DEFAULT_RETRY_SMALL = true;

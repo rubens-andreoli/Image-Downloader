@@ -78,6 +78,11 @@ public class SequencePanel extends DownloadTaskPanel {
 
         txfUrl.setToolTipText("<html>\nSource image <b>URL</b>, with <b>first number</b> of the sequence between <b>curly brackets</b>.<br>\n<i>Eg.: https://www.site.com/image_{003}.jpg</i>\n</html>");
         txfUrl.setPreferredSize(new java.awt.Dimension(300, 22));
+        txfUrl.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txfUrlKeyReleased(evt);
+            }
+        });
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -167,6 +172,10 @@ public class SequencePanel extends DownloadTaskPanel {
             );
         }
     }//GEN-LAST:event_btnAddActionPerformed
+
+    private void txfUrlKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txfUrlKeyReleased
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER) btnAddActionPerformed(null);
+    }//GEN-LAST:event_txfUrlKeyReleased
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;

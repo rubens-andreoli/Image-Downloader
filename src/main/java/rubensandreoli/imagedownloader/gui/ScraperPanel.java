@@ -73,6 +73,11 @@ public class ScraperPanel extends DownloadTaskPanel {
         });
 
         txfUrl.setToolTipText("<html>\n<b>Root URL</b> from where the scraper will try to crawl downloading images.<br>\n<i>Eg.: https://www.site.com/page.html</i>\n</html>");
+        txfUrl.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txfUrlKeyReleased(evt);
+            }
+        });
 
         btnAdd.setText("Add Task");
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
@@ -164,6 +169,10 @@ public class ScraperPanel extends DownloadTaskPanel {
             );
         }
     }//GEN-LAST:event_btnAddActionPerformed
+
+    private void txfUrlKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txfUrlKeyReleased
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER) btnAddActionPerformed(null);
+    }//GEN-LAST:event_txfUrlKeyReleased
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
